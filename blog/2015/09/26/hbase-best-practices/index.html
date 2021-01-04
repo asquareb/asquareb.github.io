@@ -1,0 +1,303 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>HBase - Best Practices - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Application Development Connection Object Reuse Creating connections to a server component from an application is a heavy weight operation and it is &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/09/26/hbase-best-practices/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">HBase - Best Practices</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-09-26T19:06:10-05:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>26</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>7:06 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><strong>Application Development</strong></p>
+
+<p><strong>Connection Object Reuse</strong></p>
+
+<p>Creating connections to a server component from an application is a heavy weight operation and it is much pronounced when connecting to a database server. That being the reason database connection pooling is used to reuse connection objects and HBase is no exception. In HBase, data from meta table that stores details about region servers that can serve data for specific key ranges gets cached at the individual connection level that makes HBase connections much heavier. So if there are region movements for balancing or if a region server fails, the meta data need to be refreshed for each connection object which is a performance overhead. For these reasons, applications need to try to reuse connection objects created.</p>
+
+<!--more-->
+
+
+<p>The following code snippet shows how to create a HBase connection object in a Java application using HBase.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Configuration conf = HBaseConfiguration.create();
+</span><span class='line'>conf.set("hbase.zookeeper.quorum", "localhost");
+</span><span class='line'>HConnection conn = HConnectionManager.createConnection(conf);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If the application is multi-threaded, then it need to reuse the connection object to perform any data manipulation operations on tables. This can be achieved by individual threads creating the HTable object using the getTable(TableName) method of the HConnection object.
+Once the data manipulation operations are complete each thread should close corresponding HTable but not the HConnection object so that it can be reused by other threads.</p>
+
+<p><strong>Pre-split Table</strong></p>
+
+<p>In order to prevent skews in processing of queries and to distribute query processing work load across all the nodes in the cluster, it is a good practice to create tables which is pre-split. The key is to identify the split point so that the data will be distributed across all the nodes in the cluster. Once the split point is identified the table can be created pre-split using HBase shell and the following is an example of a table with 3 split points.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):001:0&gt; create 'split_table', 'cf1', {SPLITS =&gt; ['a','g','o']}
+</span><span class='line'>0 row(s) in 2.5540 seconds
+</span><span class='line'>=&gt; Hbase::Table - split_table</span></code></pre></td></tr></table></div></figure>
+
+
+<p>During start of development, when the split points in the data are not clear but if some one still want to pre-split the table, HBase provides a utility program which can split the table and uniformly distribute the data. The following is an example which creates a table with 10 splits and columnfamily &lsquo;cf1&rsquo;.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase org.apache.hadoop.hbase.util.RegionSplitter 'split_table2' UniformSplit -c 10 -f 'cf1'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you are creating tables programmatically using Java APIs, the following code snippet shows how to pre-split the table during creation</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>// Instantiating configuration class
+</span><span class='line'>Configuration conf = HBaseConfiguration.create();
+</span><span class='line'>System.out.println(conf.get("hbase.zookeeper.quorum"));
+</span><span class='line'>conf.set("hbase.zookeeper.quorum", "localhost");
+</span><span class='line'>conf.setInt("hbase.zookeeper.property.clientPort",2181);
+</span><span class='line'>// Creating a connection
+</span><span class='line'>Connection conn = ConnectionFactory.createConnection(conf);
+</span><span class='line'>// Instantiating admin class
+</span><span class='line'>Admin admin = conn.getAdmin();
+</span><span class='line'>// Instantiating table descriptor class
+</span><span class='line'>HTableDescriptor tableDescriptor = new
+</span><span class='line'>HTableDescriptor(TableName.valueOf("emp5"));
+</span><span class='line'>byte[][] splitKeys = ...;
+</span><span class='line'>// Adding column families to table descriptor
+</span><span class='line'>tableDescriptor.addFamily(new HColumnDescriptor("market"));
+</span><span class='line'>tableDescriptor.addFamily(new HColumnDescriptor("corp"));
+</span><span class='line'>// Create and pre-split the table through admin
+</span><span class='line'>admin.createTable(tableDescriptor, splitKeys);
+</span><span class='line'>System.out.println(" Table created ");
+</span><span class='line'>admin.close();
+</span><span class='line'>conn.close();</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For further reading and understanding the details about HBase table splitting and merging refer <a href="http://hortonworks.com/blog/apache-hbase-region-splitting-and-merging">this blog post</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-09-26T19:06:10-05:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>26</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>7:06 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hbase/'>hbase</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/09/26/hbase-best-practices/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/09/26/hbase-best-practices/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/08/16/hbase-data-load/" title="Previous Post: HBase - Data Load">&laquo; HBase - Data Load</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/10/24/hbase-back-up/" title="Next Post: HBase Back-up">HBase Back-up &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/09/26/hbase-best-practices/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/09/26/hbase-best-practices/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

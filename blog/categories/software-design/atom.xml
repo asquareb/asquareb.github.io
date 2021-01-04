@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Software-design | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/software-design/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Points to Remember While Designing for Concurrency]]></title>
+    <link href="http://asquareb.github.io/blog/2013/11/14/points-to-remember-while-designing-for-concurrency/"/>
+    <updated>2013-11-14T17:52:27-04:00</updated>
+    <id>http://asquareb.github.io/blog/2013/11/14/points-to-remember-while-designing-for-concurrency</id>
+    <content type="html"><![CDATA[<p>Following are some of the points to consider while designing and developing solutions involving concurrent processing.</p>
+
+<ul>
+<li>Identify independent computations using techniques like task partitioning and data partitioning.</li>
+</ul>
+
+
+<!-- more -->
+
+
+<ul>
+<li><p>Implement concurrency at the highest level possible.</p></li>
+<li><p>Don&rsquo;t make any assumptions on the number of cores available i.e the solution should be able to scale with the number of cores.</p></li>
+<li><p>Use the best processing model; multiple processes or multiple threads to solve the issue.</p></li>
+<li><p>If using multiple processes is found to be well suited, associate individual locks to variables which are shared.</p></li>
+<li><p>If threads are best suited for the solution, identify thread safe libraries that can be used. Also use thread local storage when ever possible.</p></li>
+<li><p>Never assume a particular execution order of the code which is one of the criteria for concurrent processing.</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Steps to Design and Develop Concurrent Processes]]></title>
+    <link href="http://asquareb.github.io/blog/2013/10/27/steps-to-design-and-develop-concurrent-processes/"/>
+    <updated>2013-10-27T18:07:21-04:00</updated>
+    <id>http://asquareb.github.io/blog/2013/10/27/steps-to-design-and-develop-concurrent-processes</id>
+    <content type="html"><![CDATA[<p>High level sequence of steps which can be followed to design/develop concurrent processes</p>
+
+<ul>
+<li>Start with a well tuned and fully functional serial processing design/code to solve the problem.</li>
+</ul>
+
+
+<!-- more -->
+
+
+<ul>
+<li><p>Come-up with a design to solve the problem using concurrency.</p></li>
+<li><p>Calculate the speedup and efficiency of the design for concurrency.</p></li>
+<li><p>If sufficient speedup can be expected from the calculation, develop the code to do concurrent processing.</p></li>
+<li><p>Test the code and verify the results for various scenarios. Care need to be taken to verify situations like  correctness for loop executions, rounding errors of numerical  values, etc.</p></li>
+<li><p>Tune the code for performance and to minimize hotspots by identifying it through tools like profilers.</p></li>
+<li><p>Compare the performance and elapsed time of the serial code against the code for concurrency.</p></li>
+<li><p>If the performance has significant improvement implement concurrent processing instead of the serial processing code.</p></li>
+</ul>
+
+
+<p>All these steps may not be applicable for a given situation, but following through them provides a good guideline.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Challenges in Concurrent Programming - II]]></title>
+    <link href="http://asquareb.github.io/blog/2013/09/15/challenges-in-concurrent-programming-ii/"/>
+    <updated>2013-09-15T18:41:18-04:00</updated>
+    <id>http://asquareb.github.io/blog/2013/09/15/challenges-in-concurrent-programming-ii</id>
+    <content type="html"><![CDATA[<p>In addition to <a href="/blog/2013/08/15/challenges-in-concurrent-programming-i/">race conditions</a>, the second challenge in developing concurrent processing is deadlocks and they occur when the processes running concurrently need access to more than one resource. For e.g. if there are two resources R1 &amp; R2 which will be accessed by two concurrent processes A &amp; B,</p>
+
+<ul>
+<li><p>Lets assume process A acquired resource R1</p></li>
+<li><p>OS swaps processes A to start executing process B and processes B acquired resource R2</p></li>
+</ul>
+
+
+<!-- more -->
+
+
+<ul>
+<li><p>Process B tries to acquire resource R1 which is help by process A. Process B gets blocked and gets swapped</p></li>
+<li><p>Process A gets scheduled and tries to acquire resource R2 and it will get blocked since R2 is held by process B</p></li>
+</ul>
+
+
+<p>In this situation process A and B will not be able to proceed further and they are deadlocked. To generalize, the following four conditions need to be met for a deadlock situation to occur</p>
+
+<ul>
+<li><p>A resource can be held by only one process at a time and if not it should be available. This condition is called Mutual Exclusion</p></li>
+<li><p>A process can hold a resource and make a request to acquire other resources. This condition is called Hold and Wait Condition</p></li>
+<li><p>Resources held by a process can only be released voluntarily by the process and this condition is called no pre-emption condition</p></li>
+<li><p>A processes holding resources should request resources held by other processes forming a circular chain and this condition is referred to as circular wait</p></li>
+</ul>
+
+
+<p>Solutions to overcome deadlocks can use one of the following strategies</p>
+
+<ul>
+<li><p>Including retry logic to acquire a resource if a process is not able to access it with in a certain time</p></li>
+<li><p>Rolling back processes in deadlock to a earlier point in execution and try again</p></li>
+<li><p>Plan allocation of resources so that deadlock can be prevented</p></li>
+<li><p>Programming such a way that one of the four conditions for deadlocks can be eliminated</p></li>
+</ul>
+
+
+<p>In order to overcome the issues like race conditions and deadlocks in concurrent processing</p>
+
+<ul>
+<li><p>Thoroughly analyze the execution sequence of the programs and resource requirements using tools like state diagrams</p></li>
+<li><p>Identify the potential situations which can cause these issues</p></li>
+<li><p>Implement solutions using the best strategy which can prevent/resolve the issue</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Challenges in Concurrent Programming - I]]></title>
+    <link href="http://asquareb.github.io/blog/2013/08/15/challenges-in-concurrent-programming-i/"/>
+    <updated>2013-08-15T18:38:19-04:00</updated>
+    <id>http://asquareb.github.io/blog/2013/08/15/challenges-in-concurrent-programming-i</id>
+    <content type="html"><![CDATA[<p>Inherently concurrent processing will involve shared resources like memory and will lead to race conditions. A simple example would be an accumulator variable which needs to be read by all the processes running concurrently, adding some value to it and storing back the result. The race condition occurs when</p>
+
+<!-- more -->
+
+
+<ul>
+<li><p>Process A reads the accumulator value</p></li>
+<li><p>OS stops process A and schedules process B to run which also reads the accumulator value</p></li>
+<li><p>Now OS switches process A to run which adds some value to the accumulator value and stores back</p></li>
+<li><p>By the time when Process B gets scheduled to run, it will not see the updated accumulator value resulting in incorrect value stored back by process B</p></li>
+</ul>
+
+
+<p>Such race conditions will break one of the criteria concurrent processes need to satisfy namely, any order of execution of the processes participating in concurrent processing should generate the same result. To avoid race conditions processes need to be synchronized and any solution to prevent race condition need to satisfy the following four conditions.</p>
+
+<p>Lets define the code segment executed by each process to access any shared resource as the &ldquo;critical section&rdquo; of the code</p>
+
+<ul>
+<li><p>Only one process should be allowed to execute its critical section of the code at any time</p></li>
+<li><p>There should be no assumptions made regarding the number of CPUs, timing of executions of the processes or the order</p></li>
+<li><p>No process should be prevented from executing its critical section of the code</p></li>
+<li><p>No process which is executing code in its non critical section should be able to block execution of another process</p></li>
+</ul>
+
+
+<p>Some of the code constructs, techniques which can used to synchronize process executions are semaphores, mutex (a type of semaphore), monitors,  barriers and producer-consumer which uses messaging. Based on the programming language you choose one or more of these constructs may already be available or can be developed.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Determine to Stay Serial or Go Parallel]]></title>
+    <link href="http://asquareb.github.io/blog/2013/07/29/determine-to-stay-serial-or-go-parallel/"/>
+    <updated>2013-07-29T18:12:46-04:00</updated>
+    <id>http://asquareb.github.io/blog/2013/07/29/determine-to-stay-serial-or-go-parallel</id>
+    <content type="html"><![CDATA[<p>Given that concurrent programming involves unique challenges like race conditions and deadlocks, it would be advantageous to determine whether concurrent processing of a problem provides better performance than serial processing. Speedup is the metric which can be used to make this comparison. This involves identifying the best solutions to solve the problem through serial processing and concurrent processing.</p>
+
+<!-- more -->
+
+
+<p>Speed up in simple terms is the ratio of serial execution time to parallel execution time and is expressed as a multiplier. For e.g if it takes 1000 seconds and 100 seconds to complete a problem through serial and concurrent execution then the speedup is 10 times normally indicated as 10x. In order to determine an approximate speedup without actually developing and executing any programs, two laws Amdhal&rsquo;s and/or Gustafson&rsquo;s can be used. It would require a good understanding of the percentage of time the concurrent processing solution can execute concurrently. Even though  the values derived out of these laws may not be perfect with out actual execution, it would give a good idea as to whether one can pursue developing the concurrent processing solution.</p>
+
+<h2> Amdhal's Law: </h2>
+
+
+<p>Amdhal&rsquo;s law states that Speedup &lt;= 1/((1-PCTpar)+(PCTpar/P))</p>
+
+<ul>
+<li><p>where PCTpar is the percentage of code which will run concurrently</p></li>
+<li><p>P is the number of processors/cores</p></li>
+</ul>
+
+
+<p>For e.g. if the percentage of code which will run concurrently is 90 and there are 8 cores available on the machine the speedup &lt;= 1/((1-0.9)+(0.9/8) which is 4.7x speedup compared to serial processing.</p>
+
+<h2> Gustafson's Law: </h2>
+
+
+<ul>
+<li><p>Gustafson&rsquo;s law covers some of the criticisms about Amdhal&rsquo;s law like not taking into account the increase in the data processed with the increase in the number of cores.</p></li>
+<li><p>It states that Speedup &lt;= P + (1-P) S</p></li>
+<li><p>where P is the number of processors/cores as in Amdhal&rsquo;s law</p></li>
+<li><p>S is the percentage of time spend in serial execution</p></li>
+</ul>
+
+
+<p>For e.g. if the percentage of time which will be spent in serial execution is 1% and if there are 32 cores then the speedup will be &lt;= 32+(1-32)*0.01 which is 31.69x speedup</p>
+
+<ul>
+<li><p>Another metric which is can be used to measure concurrent processing is its efficiency which provides the percentage utilization of the computational resources.</p></li>
+<li><p>Efficiency is defined as Speedup/number of cores and is expressed as a percentage. For e.g. the efficiency of 31.69x speedup on 32 core is 99% efficient.</p></li>
+</ul>
+
+
+<p>By doing this calculations upfront one can determine whether to go concurrent or stay serial.</p>
+]]></content>
+  </entry>
+  
+</feed>

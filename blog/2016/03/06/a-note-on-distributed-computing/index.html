@@ -1,0 +1,273 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>A Note on Distributed Computing - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="A distributed system is a collection of independent computers that appears to its users as a single coherent system. This paper argues that the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">A Note on Distributed Computing</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-03-06T16:18:22-05:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>6</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>4:18 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>A distributed system is a collection of independent computers that appears to its users as a single coherent system. <a href="http://theory.stanford.edu/people/jcm/cs358-96/spring-os.ps">This paper</a> argues that the objects in a distributed object oriented system form a single ontological class where all entities can be described by the specification of the set of interfaces of the objects and the semantics of operation is mistaken. This vision of unified objects for distributed systems is centered around the principles that</p>
+
+<!-- more -->
+
+
+<ul>
+<li>There is a single natural object oriented design for a given application, irrespective of context in which the application will be deployed</li>
+<li>Failure and performance issues are tied to the implementation of the components of the application and can be left out of initial design</li>
+<li>The interface of an object is independent of the context in which the object is used</li>
+</ul>
+
+
+<p>While this view is a natural extension of object oriented design, it doesn&rsquo;t take into account the important issues in distributed systems namely</p>
+
+<ul>
+<li>Latency
+
+<ul>
+<li>Ignoring the difference between the performance of local and remote invocations can lead to designs whose implementations will have performance problems because of large amount of communication between components that are in different address spaces and on different machines.</li>
+</ul>
+</li>
+<li>Memory access
+
+<ul>
+<li>Disparate address spaces both local and remote makes accessing memory locations/objects a bigger challenge</li>
+<li>This would require a common component like DSM which would translate memory pointer/object locations</li>
+<li>The other option is that the programmer is aware of the local and remote access which breaks transparency</li>
+</ul>
+</li>
+<li>Partial failure and concurrency due to lack of common agent
+
+<ul>
+<li>Interfaces of components can be designed as if all are local resulting in unhandled catastrophic failures</li>
+<li>Or design the interfaces as if all objects are remote resulting in the undesirable overhead on components which are local</li>
+<li>Partial failure also brings up the challenge of bringing back to an acceptable state which is not there in non distributed systems</li>
+</ul>
+</li>
+</ul>
+
+
+<p>Historically there is a desire to merge programming and computational models of local and remote computing. For e.g. communications protocol development has followed</p>
+
+<ul>
+<li>A path where integration with the current programming language is emphasized</li>
+<li>The other path where solving the inherent problems in distributed computing is emphasized</li>
+</ul>
+
+
+<p>These two approaches can be used in distributed object oriented systems by accepting the fact that there are irreconcilable differences in local and distributed computing</p>
+
+<ul>
+<li>Using IDLs which can be used to define local and remote objects and the IDL compilers which can vary its output based on object location</li>
+<li>Objects which are local but on a different address space can be considered as a separate category of object by the IDL compilers</li>
+<li>Developing tools like the ones which can identify the interaction between objects so that they can be designed to be local or remote</li>
+<li>Programmers being aware of the location of the objects so that they can think about the problems differently</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-03-06T16:18:22-05:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>6</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>4:18 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/distributed-sytems/'>distributed sytems</a>, <a class='category' href='/blog/categories/paper/'>paper</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/" data-via="" data-counturl="http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/02/07/end-to-end-arguments-in-system-design/" title="Previous Post: End-to-end arguments in system design">&laquo; End-to-end arguments in system design</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration/" title="Next Post: HBase 1.0 - Offheap Cache Configuration">HBase 1.0 - Offheap Cache Configuration &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/';
+        var disqus_url = 'http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

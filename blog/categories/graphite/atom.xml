@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Graphite | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/graphite/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Adding Users to Graphite]]></title>
+    <link href="http://asquareb.github.io/blog/2014/11/19/adding-users-to-graphite/"/>
+    <updated>2014-11-19T14:42:56-05:00</updated>
+    <id>http://asquareb.github.io/blog/2014/11/19/adding-users-to-graphite</id>
+    <content type="html"><![CDATA[<p>Once you start populating data to Graphite database, users can see data on Graphite UI and create custom graphs to see the data in realtime. When graphs are created users want to save the graphs for future use and probably want to create a dashboard with all the graphs created. One simple (but non user friendly) way to accomplish this is to save the URLs of the graphs created and users can use it to bring up the graphs when they need them.</p>
+
+<!-- more -->
+
+
+<p>Another option is to use the graph save option in Graphite web app UI which also provides an option to create and save dashboards. Both these options require logging onto web app which requires an user-id/password to log on to the web app. Here is the way to go about creating one.</p>
+
+<ul>
+<li>Logon to the server running Graphite web app</li>
+<li><code>cd</code> to <code>/opt/graphite/webapp/graphite/</code> (or the install directory)</li>
+<li>Execute the python script <code>manage.py</code> with the option <code>createsuperuser</code></li>
+</ul>
+
+
+<pre><code>  python manage.py createsuperuser
+  Username (Leave blank to use 'root'): test
+  E-mail address: test@happyday.com
+  Password:
+  Password (again):
+  Superuser created successfully.
+</code></pre>
+
+<ul>
+<li><code>admin</code> user is defined during installation and if you don&rsquo;t know the password (for admin or any user) run</li>
+</ul>
+
+
+<pre><code>  python manage.py changepassword
+</code></pre>
+
+<ul>
+<li>Once you have the user-id/password set the user can log on to the web app and create graphs/dahsboards and save them for future use.</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

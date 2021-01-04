@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Management | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/management/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Organizational Knowledge Management]]></title>
+    <link href="http://asquareb.github.io/blog/2011/11/08/organizational-knowledge-management/"/>
+    <updated>2011-11-08T12:08:32-05:00</updated>
+    <id>http://asquareb.github.io/blog/2011/11/08/organizational-knowledge-management</id>
+    <content type="html"><![CDATA[<p>With increased opportunity for mobility comes the higher risk of losing knowledge. Knowledge which is detrimental to the success of an organization, mitigating the risk of losing it is vital.</p>
+
+<p>Knowledge is broadly categorized as <strong>explicit</strong> and <strong>tacit</strong>. Explicit knowledge is something which can be recorded, for e.g. the process of multiplying numbers and multiplication tables. A person learns from explicit knowledge and assimilates it through reflective cognition. Then by repeatedly applying the knowledge they gain the expertise and it becomes part of their reflective cognition and in turn tacit.</p>
+
+<!-- more -->
+
+
+<p>Using the simple example of multiplication and multiplication tables, considerable amount of effort is put in to learn the concepts of multiplication from books along with multiplication tables. As we repeatedly use the concepts and tables it becomes part of our reflective cognition and the proof would be to check yourself how long it takes to express 12 * 2 i.e it becomes an reflexive action. Researchers report that it takes anywhere between 5000 to 10000 hours to gain such expertise.</p>
+
+<p>Similarly gaining the expertise in an organization&rsquo;s unique way of functioning, products, business process etc  takes time. Even if we take an average of 20% of the time reported by researchers to gain expertise in an area, it takes around 1000 to 2000 hours. So if employees who have gained the knowledge leave the organization, the effort and cost involved to fill the knowledge gap is substantial let alone the risk of instability. Worse than leaving an organization, employees not being able to move within the organization primarily due to the knowledge they have acquired  is not healthy for employee career growth and in turn to the organization. To overcome these issues it is important that organizations identify knowledge management as strategically important for its efficiency and growth.</p>
+
+<p>With internet, electronic knowledge base, e-books and other electronic media like videos, audios, podcasts combined with search technology almost all the standard knowledge required for any industry is readily available for any one to learn. From an organizational perspective the key is to be able to manage the knowledge specific to each organization which can&rsquo;t be done by any other way other than organizations taking conscious decisions to do the same.</p>
+
+<p>This will involve <strong>management recognition and commitment for knowledge management</strong> primarily due to the fact that it will incur some cost. Also with out that recognition and commitment, knowledge management will be deemed as an over head.</p>
+
+<p>Organizational <strong>processes should enable knowledge management integrate seamlessly</strong></p>
+
+<ul>
+<li>Automating information capture like customer information, patterns, workflow productivity can help derive knowledge to make improvements</li>
+<li>Weaving in steps in organizational workflow to record relevant information will generate explicit knowledge for reference and learning</li>
+<li>Including incentives and making knowledge management as one of the performance criteria at all levels of an organization will help organizational growth and remove bottle- necks</li>
+<li>Having programs like job rotation, creating opportunities for employee collaboration like peer programming or reviewing work or shadowing peer work etc will increase tacit knowledge</li>
+</ul>
+
+
+<p>To integrate knowledge management into organizational processes seamlessly with reduced over head, <strong>deploying proper tools</strong> will help. At minimum these tools should</p>
+
+<ul>
+<li>Have an efficient search facility so that relevant information can be retrieved with ease</li>
+<li>Should have features which enables collaboration</li>
+<li>Should help with maintaining continuity. This is important since most of the changes to existing processes, systems etc in an organization is undertaken as projects and with out being able to maintain continuity it is certain that knowledge will get lost</li>
+<li>Based on the information being captured tools deployed should support analytics and visualization so that knowledge can be derived easily</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Customer Centricity and Projects]]></title>
+    <link href="http://asquareb.github.io/blog/2011/08/12/customer-centricity-and-projects/"/>
+    <updated>2011-08-12T11:58:39-05:00</updated>
+    <id>http://asquareb.github.io/blog/2011/08/12/customer-centricity-and-projects</id>
+    <content type="html"><![CDATA[<p>Customer centricity is being embraced in all aspects of business like moving to a customer centric organization, customer centric design, in sales, marketing etc. It is only a click away to amazon.com to understand the benefits of being customer centric. It is being fully realized now what Mahatma Gandhi said about customers and I quote</p>
+
+<!-- more -->
+
+
+<p>“A customer is the most important visitor on our premises. He is not dependent on us. We are dependent on him. He is not an interruption in our work. He is the purpose of it. He is not an outsider in our business. He is part of it. We are not doing him a favor by serving him. He is doing us a favor by giving us an opportunity to do so.”</p>
+
+<p>Since projects are part of a business, what &ldquo;customer centricity&rdquo; means to a  project and how projects can be customer centric?</p>
+
+<p>Traditionally projects are deemed successful if its scope of work is completed on time and cost with acceptable quality. But not anymore. Projects are deemed successful only if it generates the required benefits to the customer for which the project outcome is meant for. So are there steps we can take to do a project in a customer centric way so that the customer needs are fulfilled which in turn make the project a successful one. Here are some basic ones</p>
+
+<p><strong>Understand the real need of the customer</strong> which will be satisfied by the project outcome and the bigger picture into which the project fits</p>
+
+<ul>
+<li>How the project outcome fits the business lifecycle or user lifecycle</li>
+<li>What are the underlying metrics which will be used to measure whether the project outcome meets the needs of the customer</li>
+</ul>
+
+
+<p>Keep the <strong>project team reminded of the needs</strong> being satisfied by the project and how the project fits into the bigger picture</p>
+
+<ul>
+<li>This will help the project team to be creative</li>
+<li>Use industry specific techniques like story boarding, life cycle sequencing, mental model etc to keep the team reminded</li>
+</ul>
+
+
+<p><strong>Build an advisory partnership</strong> with the customer/stakeholders of the project</p>
+
+<ul>
+<li>Customers may not always know what can and cannot be done and also whether what they are asking for will help meet their success. It is important to advice customers when gaps in understanding are found and build a trusted relationship</li>
+<li>Plan to deliver projects in iterations so that early feedback can be received from the customer without expending all the resources. This will help build trust and also get early buy in from the customer.</li>
+</ul>
+
+
+<p>Cultivate the <strong>culture of answering</strong> the following <strong>three basic questions</strong> by the project team whenever the team works on a deliverable.This requires the team to clearly understand the need being satisfied by the project.</p>
+
+<ul>
+<li>Is the deliverable being produced useful in terms of meeting the customer needs</li>
+<li>Is the deliverable being produced usable to meet the customer needs</li>
+<li>Will the deliverable be used to meet the customer needs</li>
+</ul>
+
+
+<p>Put in place <strong>processes for the project to be agile</strong>. It will help the project team to respond quickly based on the feedback from the customer based on the past iterations. For e.g. using a components based model of development will help reusability when the customer wants a change, resulting in quick turn around and minimal cost/time/effort impact.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[People Management for Project Success]]></title>
+    <link href="http://asquareb.github.io/blog/2011/07/10/people-management-for-project-success/"/>
+    <updated>2011-07-10T11:46:43-05:00</updated>
+    <id>http://asquareb.github.io/blog/2011/07/10/people-management-for-project-success</id>
+    <content type="html"><![CDATA[<p>Even though &ldquo;it&rsquo;s all about people&rdquo; people management is one of the <a href="/blog/2011/06/20/simple-themes-of-project-failures/">major areas over looked in a team resulting in project failures</a>. The following are some of the people management aspects which every manager needs to practice for any undertaking to be successful</p>
+
+<!-- more -->
+
+
+<p>1) <strong>Identifying the right resource</strong> to join the team is a critical one and has multiple dimensions. The top three which I consider important are</p>
+
+<ul>
+<li>Obviously, identifying a candidate having the <strong>right skills</strong> to perform the job</li>
+<li><strong>Cultural fitness</strong> and general outlook of the candidate. For e.g. a candidate who is an &ldquo;A&rdquo; in skills but not a team player may do more harm than good. Similarly in a knowledge based industry having a candidate who doesn&rsquo;t have the aptitude towards keeping abreast of the changes in the area of choosing may not be the right one.</li>
+<li>In the event of recruiting new candidate, making sure that the candidate has the potential to grow in the organization is important. Even though the candidate is being recruited for a project to fill the gaps, for the long term success of the candidate and the organization, making sure that the candidate has <strong>growth potential</strong> is a vital element a manager needs to make sure.</li>
+</ul>
+
+
+<p>2) <strong>Define roles and responsibilities</strong> for everyone in the team as clearly as possible. Not defining the roles generates duplication,  complacency, power struggle and all the ill effects which goes with it, resulting in huge amount of unproductiveness.</p>
+
+<p>3) Tightly coupled with defining roles and responsibilities is <strong>setting expectations</strong> of what is expected from all the members in the team. It should cover not only the delivery aspects of the work to be done, but at the minimum the processes, team norms and also the benefits if the expectations are met. At no point and under any circumstances dilute the standards for a member or a group. Such dilution will make it difficult for members to believe in the standards and hold on to it. It will also encourage mediocrity.</p>
+
+<p>4) Often members have defined roles and responsibilities but not the <strong>necessary authority</strong> and/or the tools to carry out the same. Responsibility without the necessary authority is farce and relieves the member from being accountable. Without being accountable, defining a members role, responsibilities and setting expectations becomes meaningless and there will be finger pointing for not making a delivery or a failure.</p>
+
+<p>Similarly <strong>micro management</strong> relives members from taking complete responsibility and in turn being accountable. This is a common mistake I have seen in managers who have been in the field for long and moved to do management. Instead of guiding the team and leading, they tend to micro manage which sends the message that the manager doesn&rsquo;t trust the team and prevents them from taking full responsibility.</p>
+
+<p>Diagonally opposite to micro management style can be loosely termed as <strong>&ldquo;hands free&rdquo;</strong> has its consequences too. In this the manager assumes that the team members are very good independent performers under minimal or no supervision and so will be able to do the required follow-ups and deliver as planned. It is subconscious since most of the managers are independent and entrepreneurial and the normal human psychology is to assume others are the same as they are. But in reality it is not the case and managers need to do the active verification and provide guidance. Another group of managers who seem to practice &ldquo;hands free&rdquo; style of management are the ones who are not familiar with the field in which they are managers. The solution to this would be for the managers to make an effort to understand the field to do the proper verification so that they can be effective.</p>
+
+<p>5) <strong>Provide and receive feedback</strong> at regular intervals and this should not be a yearly or half yearly ritual or a one way communication. This will make sure that there is good alignment on the expectations and also help the members perform well. Most of the time feedback is given at the end of the year or project resulting in surprises and low morale. Regular one on one communication with team members will also help with understanding any external factors e.g personal or  organizational factors which is affecting the member performance and take possible steps to fix it early on.</p>
+
+<p>6) Early in my career one advise I got from an experienced manager is to plan for team members winning a lottery and not showing up to work the next day. Even if it is not planned for all the members in the team, there are instances I have seen projects struggle and fail due to <strong>key members departing suddenly</strong>. Always plan for such a scenario by for e.g. having knowledge sharing weaved in the processes so that there is minimal impact to the team if a member leaves.</p>
+
+<p>7) Last but not the least, watch out for <strong>silent leaders</strong> in the team who are very knowledgeable, talented, responsible and very focused on the work but not flamboyant about their work. Such people in the team can be easily identified by the observing to whom others in the team go to for guidance or by the nature of the work they deliver. Identifying and appreciating silent leaders has always been one of the key elements in my successful project deliveries.</p>
+
+<p>At this time of greater mobility where gaining respect from peers trumps titles, persuasion trumps organizational hierarchy, effective people management is more important to the success of any project and the manager than anytime before.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Simple Themes of Project Failures]]></title>
+    <link href="http://asquareb.github.io/blog/2011/06/20/simple-themes-of-project-failures/"/>
+    <updated>2011-06-20T11:36:37-05:00</updated>
+    <id>http://asquareb.github.io/blog/2011/06/20/simple-themes-of-project-failures</id>
+    <content type="html"><![CDATA[<p>Having executed and helped turn around multiple projects under stress, the following are few common themes which I have seen resulting in projects getting into stress. Even though they are common sense and simple things, quiet often they are overlooked by the project team.</p>
+
+<!-- more -->
+
+
+<p><strong>Process</strong>: Not having a process defined for each aspect of project management like scope, schedule, change, quality etc results in work done in a non coherent manner. Coherency is important when many people are involved to achieve a common goal in a short time like that of a project. I am sure that we all have been part of a team sport at some point in our life and can easily relate to it. Need for a process is much more pronounced when more and more projects are done using distributed virtual teams from various organizations and or from various countries. <strong>Having a process defined</strong> however unsophisticated (simple process is even better) and making sure that the project team understands it is vital to success of a project.</p>
+
+<p><strong>Project/Task Plan</strong>: Often projects not having a project/task plan detailed enough to identify project issues like schedule delays or cost overruns much earlier results in projects getting into stress. I have seen extreme cases where the projects have only the major milestones in their plans and no detailed tasks in it to track progress on a regular basis. If the process defined is to have weekly status reviews, then the <strong>project plan should be detailed enough </strong>that tasks assigned to the team is less than a week (lesser is preferred) in duration. This will help identify delays much earlier and take action.</p>
+
+<p><strong>People</strong>: Most often projects fail or get into stress due to not having the right people in the key roles. For e.g, in one of the teams where I got involved to help improve the delivery, when asked about not having a detailed project plan, the feedback from the project management team was &ldquo;it is a lot of work&rdquo; which is not something you expect from someone committed to the profession of project management. Evaluate whether the resources assigned to key roles in the project are interested and committed to the role. People get assigned to roles or take up roles not fully understanding the role in relation to their core interest. Building a <strong>trustable team is key for project delivery</strong> and one way it can be achieved is by verification.</p>
+
+<p><strong>Communication</strong>: As anyone involved in project management know, more than <strong>80 percent of project management is communication</strong>. Facilitating and consuming information from various sources like from the project team, stake holders, vendors, project plan, risks and issues etc, understanding its impact on the project, communicating in a timely fashion with the correct level of priority to the right audience and following through is vital for the success of any project. There are so many instances I have seen failure in communication resulting in negative impact to project out come. One simple example being not knowing the vacation plan of key project members and build a backup plan resulting in delays in project delivery.</p>
+
+<p><strong>Estimation</strong>: Even though it is a task in a project unlike the others which are broader themes, <strong>estimation is one of the major reasons for project failures</strong>. Since estimation is what is used to come up project cost and schedule, getting it correct is much important than any. Some of the main reasons I have seen for not having the correct estimation are lack of expertise in the team to come up with proper estimation, not saving the details of similar past projects in the organization to refer to. If these or similar gaps are identified during estimation phase, every possible options to mitigate it like bring in a expert from outside or using data from industry standards or including enough buffer in the estimation should be considered.</p>
+
+<p>I use PC-PEPtalk (Process Communication People Estimation Plan) as a easy way to remember these observations. As always interested in hearing from you.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Procurement and Project Risks]]></title>
+    <link href="http://asquareb.github.io/blog/2011/05/07/procurement-and-project-risks/"/>
+    <updated>2011-05-07T11:31:23-05:00</updated>
+    <id>http://asquareb.github.io/blog/2011/05/07/procurement-and-project-risks</id>
+    <content type="html"><![CDATA[<p>Once it is determined that the current <a href="/blog/2011/04/17/risks-when-a-project-manager-is-assigned/">organizational capabilities</a> are not sufficient to execute and deliver a project successfully, organizations need to procure the required capabilities from the  vendors. This process involves vendor selection including solicitation of information from vendors like their capabilities, references, cost etc, shortlisting of vendor(s) and having a contract with vendor(s) to provide the capabilities. During the process the symptoms which highlight risks can vary based on the specific capability being procured. We will look at some of the common risk symptoms not related to the capabilities being procured that can impact the project success.</p>
+
+<!-- more -->
+
+
+<ul>
+<li>Not having a well defined procurement process and assigned responsibility</li>
+<li>Not clearly defining the scope of work to solicit response from vendors</li>
+<li>Not having a clearly defined vendor evaluation criteria</li>
+<li>Not vetting vendor capabilities thoroughly like not verifying references</li>
+</ul>
+
+
+<p>are some of the key procurement process areas which can impact a project success and shouldn&rsquo;t be overlooked.</p>
+
+<p>During solicitation of information and shortlisting of vendors</p>
+
+<ul>
+<li>Vendors who are not contacting for clarifications</li>
+<li>Vendors contacting with trivial questions</li>
+<li>Vendors who are not able to provide references of past experience</li>
+<li>Vendors who are not able to show skilled resources committed to the project</li>
+<li>Vendors who are reluctant to let customers assess their capabilities</li>
+</ul>
+
+
+<p>are some of the risk indicators that the vendor may not be capable to deliver the required scope of work.</p>
+
+<p>Contract with a shortlisted vendor which is legal document is detrimental to project success. Given the legal nature of the document, there can be many things to be watched out for to reduce risks. The following are some of the items related to project delivery which should be given extra care when entering into a contract.</p>
+
+<ul>
+<li>Clearly defining the scope of work and deliverables</li>
+<li>Defining a process to be used for any change</li>
+<li>Defining the responsibilities without ambiguities</li>
+<li>Defining the time lines, dependencies and penalties</li>
+<li>Defining the deliverables, how they are measured and accepted</li>
+<li>Clear payment terms, conditions and cost</li>
+<li>Attaching payment to achievement of results</li>
+</ul>
+
+
+<p>As always, it would be good to hear your experience with vendors and what to look out for during procurement to reduce project risk.</p>
+]]></content>
+  </entry>
+  
+</feed>

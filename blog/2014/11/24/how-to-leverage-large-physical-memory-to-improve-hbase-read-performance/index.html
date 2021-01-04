@@ -1,0 +1,387 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Leverage Large Physical Memory to Improve HBase Read Performance - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="HBase uses block cache to store data read from disks in memory so that data referenced repeatedly are serviced with out disk reads. Block cache uses &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Leverage Large Physical Memory to Improve HBase Read Performance</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-11-24T08:29:34-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>8:29 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>HBase uses <a href="/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/">block cache</a> to store data read from disks in memory so that data referenced repeatedly are serviced with out disk reads. Block cache uses the HBase JVM heap to store cache data and that means any factor which adversely impacts JVM GC process will impact cache and hence query performance.It is commonly known that large heap sizes of say more than 16 GB will make &ldquo;stop the world&rdquo; instances of GC run very slow and the time taken to complete can even make the HBase region server to be marked as dead.</p>
+
+<!-- more -->
+
+
+<p>Given that physical servers currently deployed has large memories like 128 GB or 256 GB, the 16 GB JVM heap limitation will result in inefficient server utilization. Apart from inefficient utilization, the ability to utilize the large memory to store data in HBase cache which will considerably improve query performance will be missed.</p>
+
+<p>To mitigate this drawback, HBase includes another in-memory data structure called BucketCache. Unlike block cache which utilizes the JVM heap, bucket cache utilizes offheap memory created using Java <code>ByteBuffer</code>. Bucket cache is not enabled by default but once enabled large physical memory can be allocated to bucket cache since it is not impacted by JVM GC as with block cache. By being able to allocate large memory to HBase for caching, large volume of data can be stored in memory which will improve query latencies. In tests we were able to allocate BucketCache of upto 91 GB and data loaded into it with no issues.</p>
+
+<p>When bucket cache is enabled in HBase, it will act as L2 (level 2 similar to processor cache hierarchy) cache and the default block cache will act as L1 cache. What that means is data need to be copied from L2 cache into L1 cache for HBase to service the query request. So on a read request when bucket cache is enabled, data block will be copied from disk onto bucket cache and then onto the block cache before served to the client making the request. On further reads of the same data, it will either be served directly from block cache or copied from  bucket cache into block cache before serving the client request avoiding disk reads. So if there is a 10 node cluster with 128 GB of RAM each, it is possible to have almost 1 TB of data stored in HBase cache with bucket cache enabled and not get impacted by JVM GC which is not the case using just the default block cache.</p>
+
+<p>Inorder to enable bucket cache, changes need to be made to HBase JVM parameters in <code>hbase-env.sh</code> file and new HBase properties need to be set in <code>hbase-site.xml</code> file. Following summarizes the properties and the calculation on how to set the properties.</p>
+
+<p>Let us assume the following</p>
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;"> Memory type                            </th>
+<th style="text-align:center;"> Mnemonic </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;"> Physical memory available for HBase RS </td>
+<td style="text-align:center;">  Tot</td>
+</tr>
+<tr>
+<td style="text-align:left;"> Memory size for memstore               </td>
+<td style="text-align:center;">  Msz</td>
+</tr>
+<tr>
+<td style="text-align:left;"> Memory for block cache (L1) cache      </td>
+<td style="text-align:center;">  L1Sz</td>
+</tr>
+<tr>
+<td style="text-align:left;"> Memory for JVM related components      </td>
+<td style="text-align:center;">  JHSz</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>The following are the properties and the values to be set on each HBase region servers.</p>
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;"> Location       </th>
+<th style="text-align:left;">  Name                                        </th>
+<th style="text-align:center;"> Mnemonic    </th>
+<th style="text-align:left;"> Value            </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;"> hbase-env.sh   </td>
+<td style="text-align:left;"> XX:MaxDirectMemorySize                       </td>
+<td style="text-align:center;">   DMem      </td>
+<td style="text-align:left;"> Tot-Msz-L1Sz-JHSz</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase-env.sh   </td>
+<td style="text-align:left;"> Xmx                                          </td>
+<td style="text-align:center;">   Xmx       </td>
+<td style="text-align:left;"> MSz+L1Sz+JHSz</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase-site.xml </td>
+<td style="text-align:left;"> hbase.regionserver.global.memstore.upperLimit</td>
+<td style="text-align:center;">   ULim      </td>
+<td style="text-align:left;"> MSz/Xmx</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase-site.xml </td>
+<td style="text-align:left;"> hfile.block.cache.size                       </td>
+<td style="text-align:center;">   blksz     </td>
+<td style="text-align:left;"> 0.8-ULim</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase-site.xml </td>
+<td style="text-align:left;"> hbase.bucketcache.size                       </td>
+<td style="text-align:center;">   bucsz     </td>
+<td style="text-align:left;"> DMem+(blksz*Xmx)</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase-site.xml </td>
+<td style="text-align:left;"> hbase.bucketcache.percentage.in.combinedcache</td>
+<td style="text-align:center;">   ccsz      </td>
+<td style="text-align:left;"> 1-((blksz*Xmx)/bucsz))</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase-site.xml </td>
+<td style="text-align:left;"> hbase.bucketcache.ioengine                   </td>
+<td style="text-align:center;">             </td>
+<td style="text-align:left;"> offheap or file:/localfile</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>The following is an example</p>
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">      Item                                    </th>
+<th style="text-align:left;">  Value     </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;"> Physical memory available for HBase RS       </td>
+<td style="text-align:left;">  96000 MB</td>
+</tr>
+<tr>
+<td style="text-align:left;"> Memory size for memstore                     </td>
+<td style="text-align:left;">  2000 MB</td>
+</tr>
+<tr>
+<td style="text-align:left;"> Memory for block cache (L1) cache            </td>
+<td style="text-align:left;">  2000 MB</td>
+</tr>
+<tr>
+<td style="text-align:left;"> Memory for JVM related components            </td>
+<td style="text-align:left;">  1000 MB</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase.regionserver.global.memstore.upperLimit</td>
+<td style="text-align:left;">  91000</td>
+</tr>
+<tr>
+<td style="text-align:left;"> Xmx                                          </td>
+<td style="text-align:left;">  5000</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase.regionserver.global.memstore.upperLimit</td>
+<td style="text-align:left;">   0.4</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hfile.block.cache.size                       </td>
+<td style="text-align:left;">   0.4</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase.bucketcache.size                       </td>
+<td style="text-align:left;">  93000</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase.bucketcache.percentage.in.combinedcache</td>
+<td style="text-align:left;">  0.97849</td>
+</tr>
+<tr>
+<td style="text-align:left;"> hbase.bucketcache.ioengine                   </td>
+<td style="text-align:left;">  offheap</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>Apart from acting as L1 cache the block cache should be able to store block indexes and bloom filters and so should be sized accordingly. The size of block index and bloom filters can be easily identified by looking at the HBase store file details displayed on the HBase master URL. Changes mentioned need to be made to all the HBase region server nodes for bucket cache to be enabled and all the region server nodes need to be restarted for the changes to take in effect. To ease these calculations use the simple python script available <a href="https://github.com/bijugs/simple-scripts/blob/master/hbase-bucketcache.py">here</a>.</p>
+
+<p>If using more than 22 GB of offheap memory, it is better to mount the RAM as a <a href="http://en.wikipedia.org/wiki/Tmpfs">tempfs</a> and use the <code>file:/localfile</code> value for the  <code>hbase.bucketcache.ioengine</code> hbase-site.xml property. This is due to the existing open issue <a href="https://issues.apache.org/jira/browse/HBASE-10643">HBASE-10643</a>.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a>.</p>
+
+<p>For any one interested in visuals, the following presentation may help.</p>
+
+<iframe src="http://www.slideshare.net/slideshow/embed_code/37639243 " width="595" height="446" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC;border-width:1px 1px 0;margin-bottom:5px" allowfullscreen></iframe>
+
+
+<p></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-11-24T08:29:34-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>8:29 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hbase/'>hbase</a>, <a class='category' href='/blog/categories/performance/'>performance</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/" data-via="" data-counturl="http://asquareb.github.io/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/" title="Previous Post: Leverage HBase Cache and Improve Read Performance">&laquo; Leverage HBase Cache and Improve Read Performance</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/12/13/jvm-gc-settings-and-hbase/" title="Next Post: JVM GC settings and HBase Performance">JVM GC settings and HBase Performance &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/';
+        var disqus_url = 'http://asquareb.github.io/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

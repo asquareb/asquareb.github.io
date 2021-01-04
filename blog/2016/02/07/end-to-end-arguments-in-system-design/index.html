@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>End-to-end Arguments in System Design - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="This paper presents the design principle regarding placement of functions in computer system design called &ldquo;end-to-end argument&rdquo;. The &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">End-to-end Arguments in System Design</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-02-07T18:41:26-05:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:41 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://web.mit.edu/Saltzer/www/publications/endtoend/endtoend.pdf">This paper</a> presents the design principle regarding placement of functions in computer system design called &ldquo;end-to-end argument&rdquo;.  The argument of the principle is that any application functions implemented at lower levels of a system may be redundant or of little value when compared with the cost of providing them at lower level.  The paper articulates the argument through requirements and examples in distributed systems like reliable data transmission, encryption, duplicate message detection, message sequencing, detecting host crashes, delivery receipts etc.</p>
+
+<!--more-->
+
+
+<p>Reliable Data Transmission</p>
+
+<ul>
+<li>Even if the communication network provides aid in coping with issues in data transmission like data buffering issues, processor or memory issues, loss of packet, host crashes through duplicate copies, timeout and retry, redundancy for error detection, crash recovery etc, at the end the data transfer application need to perform the check of the data transferred to claim it to be successful</li>
+<li>This makes the functions in the network layer for reliable data transfer redundant. More over these functions will impact other applications which will be using the network layer but doesn&rsquo;t require all the functions</li>
+</ul>
+
+
+<p>Lower layers can implement function which can improve the performance of the application using it. For e.g. in the case of reliable data transmission</p>
+
+<ul>
+<li>The application need to make sure that the data transferred matches the source for e.g. by using checksums. If the checksum at the source and target don&rsquo;t match the data transfer need to be redone</li>
+<li>If functions can be included which will cost less but enhances the end to end reliability this will reduce the retries required to have the data data transferred reliably and hence improves the performance</li>
+</ul>
+
+
+<p>Decisions to include functions in lower layers</p>
+
+<ul>
+<li>Need to take into account the cost of implementing it at the lower layer and the impact on other applications which may be using it</li>
+<li>Need to be made with the understanding that the higher level layers will have much more information than the lower level layers to guarantee a feature/functionality</li>
+</ul>
+
+
+<p>In order to make these decisions i.e. whether to include functions in lower layers or let the application handle it at the end, application requirements of what need to be accomplished need to be well understood.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-02-07T18:41:26-05:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:41 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/distributed-systems/'>distributed systems</a>, <a class='category' href='/blog/categories/paper/'>paper</a>, <a class='category' href='/blog/categories/system-design/'>system design</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design/" data-via="" data-counturl="http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/01/10/scale-in-distributed-systems/" title="Previous Post: Scale in Distributed Systems">&laquo; Scale in Distributed Systems</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/03/06/a-note-on-distributed-computing/" title="Next Post: A note on Distributed Computing">A note on Distributed Computing &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design/';
+        var disqus_url = 'http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

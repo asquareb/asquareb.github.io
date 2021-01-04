@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Developing Chef Community Cookbook Which Allows Changing Execution Flow Dynamically - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="If you have been working on Chef you may already know that attributes and resources in recipes defined in a community cookbook can be modified. But &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2014/11/19/developing-chef-community-cookbooks-which-allows-changing-execution-flow-dynamically/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Developing Chef Community Cookbook Which Allows Changing Execution Flow Dynamically</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-11-19T07:37:24-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>7:37 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>If you have been working on Chef you may already know that attributes and resources in recipes defined in a community cookbook can be modified. But there can be a need to allow users of community cookbook to be able to change the execution flow of recipes in the community cookbook. We will go over an approach using an example.</p>
+
+<!-- more -->
+
+
+<p>Consider a generic use case of a community cookbook which installs a service along with its configuration which can be modified by the user of the cookbook using a wrapper cookbook. When there is a change in the configuration the service need to be restarted so that the configuration can take in effect.
+In a distributed compluting platform, multiple instances of a service is deployed in an environment/cluster for scalability and availability. When chef-client is run as daemon regularly which is typically the case in large clusters for cluster management, there is a possibility that auto run of chef-client on the nodes of the cluster can bring down and restart all the service instances at the same time so that the new configuration can take in effect. This can result in service outage which is not preferred. So there need to be some coordination which need to be implemented so that all instances of the service is not brought down at the same time and this will vary with each user using the community cookbook. If you are wondering about cases which matches this generic use cases, some of the distributed computing platform components like Apache HDFS, HBase, YARN, Kakfa, ZooKeeper are good examples.</p>
+
+<p>Here is an approach to provide the flexibility for users to be able to incorporate the logic to coordinate the restart of the service so that all instances doesn&rsquo;t come down at the same time. We will use Kafka as an example. Kafka server gets deployed at multiple nodes to form a cluster so that it is highly available and scalable.</p>
+
+<ul>
+<li>Add a new attribute to the cookbook which defines the name of the recipe which should be used to coordinate start/restart of the service. For e.g. assuming Kafka as the cookbook name the attribute can be</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>default[:kafka][:start_coordination][:recipe] = `kafka::_coordinate`</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Instead of defining a service resource in a recipe in the cookbook to start/restart the Kafka service, create a new recipe called <code>_coordinate</code> similar to the following</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ruby_block "coordinate_kafka_start" do
+</span><span class='line'>    block do
+</span><span class='line'>      Chef::Log.debug ("Default recipe to coordinate Kafka start is used")
+</span><span class='line'>    end
+</span><span class='line'>    action :create
+</span><span class='line'>    notifies :restart, 'service[kafka]', :delayed
+</span><span class='line'>  end
+</span><span class='line'>  service 'kafka' do
+</span><span class='line'>    provider kafka_init_opts[:provider]
+</span><span class='line'>    supports start: true, stop: true, restart: true, status: true
+</span><span class='line'>    action [:enable, :start]
+</span><span class='line'>  end</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Include this recipe at the location where you would have defined the service resource to start/restart Kafka. For e.g.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>include_recipe node.kafka.start_coordination.recipe</span></code></pre></td></tr></table></div></figure>
+
+
+<p>
+- Send all notifications normally targeted to the service resource like notifications from template resources for configuration changes, redirect it to the ruby_block resource in the <code>_coordinate</code> recipe with <code>:immediate</code> option.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>notifies :create, 'ruby_block[coordinate_kafka_start]', :immediately</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>This will make the community cookbook flexible enough for users to be able to include their logic to control the service restart process.</li>
+</ul>
+
+
+<p>If you are an user who would want to use a community cookbook with similar option to overwrite the restart logic, the following is an approach on how to go about overwriting the default logic without making any modifications to the community cookbook.</p>
+
+<ul>
+<li>Assuming that you will be creating a cookbook (e.g. <code>use_community</code>) to use the community cookbook, add a new recipe to the cookbook similar to the following</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ruby_block "coordinate_kafka_start" do
+</span><span class='line'>    block do
+</span><span class='line'>      Chef::Log.info (" Custom recipe to coordinate Kafka start is used")
+</span><span class='line'>    end
+</span><span class='line'>    action :create
+</span><span class='line'>    notifies :create, 'ruby_block[restart_coordination]', :delayed
+</span><span class='line'>  end
+</span><span class='line'>  ruby_block "restart_coordination" do
+</span><span class='line'>    block do
+</span><span class='line'>      Chef::Log.info ("Need to implement the process to coordinate the restart process like using ZK")
+</span><span class='line'>    end
+</span><span class='line'>    action :nothing
+</span><span class='line'>    notifies :restart, 'service[kafka]', :delayed
+</span><span class='line'>  end
+</span><span class='line'>  service 'kafka' do
+</span><span class='line'>    provider kafka_init_opts[:provider]
+</span><span class='line'>    supports start: true, stop: true, restart: true, status: true
+</span><span class='line'>    action [:enable, :start]
+</span><span class='line'>  end
+</span><span class='line'>  ruby_block "restart_coordination_cleanup" do
+</span><span class='line'>     block do
+</span><span class='line'>       Chef::Log.info ("Implement any cleanup logic required after restart like releasing locks")
+</span><span class='line'>     end
+</span><span class='line'>     action :nothing
+</span><span class='line'>  end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that the first resource is the same as the default <code>_coordinate</code> recipe in the community cookbook and it is requirement so that notifcations are intercepted appropriately. Also the new cookbook should retain the service resource defined in the community <code>_coordinate</code> recipe.</p>
+
+<ul>
+<li><p>Since all the restart notifications will be received by the <code>ruby_block[coordinate-kafka-start]</code> resource logic can be included in the new recipe as in the sample above.</p></li>
+<li><p>Now we need to overwrite the community cookbook attribute value which stored the name of the recipe to be used for the start/restart process. It is easy as setting the attribute value in wrapper cookbook. In order to have the overwrite to take in effect, atleast one recipe from the wrapper cookbook should be included in the run list. This an be accomplished by creating a &ldquo;NOP&rdquo; recipe or a recipe which does the overwrite of the attribute and include it in the run list.</p></li>
+<li><p>The following is an example of the content in the  recipe which over writes the attribute in the community cookbook</p></li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>node.default.kafka.start_coordination.recipe = 'kafka-bcpc::coordinate'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>
+- Once this is done, update the role which installs the service with the recipe of the wrapper cookbook</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>  "name": "Kafka-Server",
+</span><span class='line'>  "json_class": "Chef::Role",
+</span><span class='line'>  "run_list": [
+</span><span class='line'>    "role[Basic]",
+</span><span class='line'>    ...
+</span><span class='line'>    "recipe[kafka-use-community::default]",
+</span><span class='line'>    "recipe[kafka-community::setattr]",
+</span><span class='line'>    ...
+</span><span class='line'>  ],
+</span><span class='line'>  "description": "Role to setup Kafka Server",
+</span><span class='line'>  ...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Even though the write-up is long, as you may have noted the idea is to simply use a notification interceptor <code>ruby_block</code> to pass control to the users of the community cookbook. In this case <code>ruby_block "coordinate_kafka_start"</code>.</p>
+
+<p>The same technique can be used to change the behavior of other community cookbooks by the users of the cookbook. As with any framework the users of community cookbook need to know the notification interceptor <code>ruby_block</code> and the creator of the community cookbook should adhere to the framework strictly.</p>
+
+<p> If you are looking for real world example,<a href="https://github.com/mthssdrbrg/kafka-cookbook/pull/63">Kafka community cookbook</a> is an example and the <a href="https://github.com/mthssdrbrg/kafka-cookbook/blob/master/README.md#controlling-restart-of-kafka-brokers-in-a-cluster">readme</a> provides the details about restart coordination.</p>
+
+<p>Also if you are looking for other similar chef patterns and solutions using chef, come join us at <a href="http://sched.co/2HtF">ChefConf 2015</a>.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-11-19T07:37:24-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>7:37 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/chef-patterns/'>chef-patterns</a>, <a class='category' href='/blog/categories/infrastructure-mgmt/'>infrastructure-mgmt</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2014/11/19/developing-chef-community-cookbooks-which-allows-changing-execution-flow-dynamically/" data-via="" data-counturl="http://asquareb.github.io/blog/2014/11/19/developing-chef-community-cookbooks-which-allows-changing-execution-flow-dynamically/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/19/oo-programming-aspects-of-python/" title="Previous Post: OO Programming aspects of Python">&laquo; OO Programming aspects of Python</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/11/19/adding-users-to-graphite/" title="Next Post: Adding users to Graphite">Adding users to Graphite &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2014/11/19/developing-chef-community-cookbooks-which-allows-changing-execution-flow-dynamically/';
+        var disqus_url = 'http://asquareb.github.io/blog/2014/11/19/developing-chef-community-cookbooks-which-allows-changing-execution-flow-dynamically/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

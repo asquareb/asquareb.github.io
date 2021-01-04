@@ -1,0 +1,378 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Creating a Single Node Kafka Server Using Chef - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="If you need to create a single node Kafka server quickly for development or testing and need to be repeatable, the following are the steps. This uses &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2014/06/19/creating-a-single-node-kafka-server-using-chef/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Creating a Single Node Kafka Server Using Chef</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-06-19T18:13:42-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>6:13 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>If you need to create a single node Kafka server quickly for development or testing and need to be repeatable, the following are the steps. This uses Chef-Solo and community cookbooks.</p>
+
+<!-- more -->
+
+
+<h2>Pre-req:</h2>
+
+
+<ul>
+<li><p>A linux server machine or VM with just the OS installed</p></li>
+<li><p>Connection to internet</p></li>
+<li><p>git, curl and wget tools available for the user</p></li>
+<li><p>If the tools are not available, as root or using sudo install these tools using apt-get or yum</p></li>
+</ul>
+
+
+<h2>Installing Chef:</h2>
+
+
+<ul>
+<li>As root:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl -L https://www.opscode.com/chef/install.sh | bash</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><p>cwd to a directory where you want to run chef-solo from</p></li>
+<li><p>Run:</p></li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>wget http://github.com/opscode/chef-repo/tarball/master</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Do:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>tar -zxf master</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Do:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>mv opscode-chef-repo* chef-repo</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Do:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>rm master</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>cd to chef-repo; if you do a ls there will be a list of directories</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>mkdir .chef</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Do:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>echo "cookbook_path [ '/path-to/chef-repo/cookbooks' ]" > .chef/knife.rb</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><p>This completes the installation and configuration of Chef</p></li>
+<li><p>cd into the chef-repo/cookbooks directory</p></li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git clone https://github.com/socrata-cookbooks/java.git
+</span><span class='line'>git clone https://github.com/bijugs/kafka-cookbook.git -b kafka_enhancement kafka</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>cd into kafka directory</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>vi attributes/zookeeper.rb</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and change the default[:zookeeper][:data_dir] value if required</p>
+
+<ul>
+<li>Under chef-solo directory: vi solo.rb and add the following details</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>file_cache_path "/where-ever/chef-solo"
+</span><span class='line'>cookbook_path "/where-ever/chef-repo/cookbooks"</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Under chef-solo directory: vi kafka.json and include the following</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>  "java": {
+</span><span class='line'>      "jdk_version" : "7",
+</span><span class='line'>      "accept_license_agreement": true,
+</span><span class='line'>      "oracle": {
+</span><span class='line'>        "accept_oracle_download_terms": true
+</span><span class='line'>      }   
+</span><span class='line'>   },
+</span><span class='line'>   "run_list": [
+</span><span class='line'>     "recipe[java::oracle]",
+</span><span class='line'>     "recipe[kafka::zookeeper]",
+</span><span class='line'>     "recipe[kafka]"
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Staying under the chef-solo directory run</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo chef-solo -c solo.rb -j kafka.json</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you don&rsquo;t have the time to go through these steps manually, check out a quick hack which automates these steps <a href="https://github.com/bijugs/simple-scripts/blob/master/install_kafka_using_chef_solo.sh">https://github.com/bijugs/simple-scripts/blob/master/install_kafka_using_chef_solo.sh</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-06-19T18:13:42-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>6:13 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/infrastructure-mgmt/'>infrastructure-mgmt</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2014/06/19/creating-a-single-node-kafka-server-using-chef/" data-via="" data-counturl="http://asquareb.github.io/blog/2014/06/19/creating-a-single-node-kafka-server-using-chef/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/06/19/making-a-git-pull-request-for-specific-commits/" title="Previous Post: Making a git pull request for specific commits">&laquo; Making a git pull request for specific commits</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/09/14/python-basics-for-programmers/" title="Next Post: Python Basics For Programmers">Python Basics For Programmers &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2014/06/19/creating-a-single-node-kafka-server-using-chef/';
+        var disqus_url = 'http://asquareb.github.io/blog/2014/06/19/creating-a-single-node-kafka-server-using-chef/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

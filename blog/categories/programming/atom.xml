@@ -1,0 +1,981 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Programming | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/programming/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Java Direct ByteBuffer Performance Advantages and Considerations]]></title>
+    <link href="http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/"/>
+    <updated>2015-06-05T21:38:40-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations</id>
+    <content type="html"><![CDATA[<p>During execution, objects/variables created by Java programs gets their space allocated in the JVM heap memory. The total amount of heap memory available for a JVM is determined by the value set to -Xmx parameter when starting the Java process. When object allocated is released by the Java program, the corresponding memory is made available for later use by the JVM garbage collection (GC) process.</p>
+
+<p>The GC process gets invoked typically when the amount of free memory in the JVM falls below a certain threshold. At a very high level, the GC process involves identification of objects which are not used any more i.e. not referenced anymore, releasing the memory and compacting the memory to reduce memory fragmentation. Readers who are interested in understanding the details of GC process can find it <a href="http://blog.asquareb.com/blog/2014/12/13/jvm-gc-settings-and-hbase">here</a>. As one can imagine, the time it takes to complete the GC process will increase with the increase in size of the Java heap memory since it takes more time to identify the objects which can be released and also to perform compaction.</p>
+
+<!--more-->
+
+
+<p>If a Java application requires large memory (in GBs), the time it takes to complete the GC process will be detrimental to its performance. If the application is performance sensitive, then large heap memory size can adversely impact its performance. In order to mitigate this, one can try to use memory outside Java heap and hence reduce the Java heap memory use and its size. This can be done using the Java <a href="http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html">ByteBuffer</a> class which provides the option to allocate ByteBuffers outside JVM heap using <a href="http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html#allocateDirect(int">allocateDirect</a>) method.</p>
+
+<p>The allocateDirect method allocates memory of requested size (in bytes) on memory outside the JVM heap (off-heap) and provides the object reference to the application with the starting offset of 0. The application can then use the reference to store and retrieve data into the off-heap memory. When the garbage collection runs, it doesn&rsquo;t have to take into account the memory allocated off-heap to identify memory not being used or perform memory compaction which in turn reduce the time to complete GC.</p>
+
+<p>While the time to complete GC can be reduced when large memory is used in a Java process by using off-heap memory, there are other overheads which need to be taken into consideration before using it. Allocation of off-heap memory will take more time than the on-heap memory since the JVM need to make native calls to get the memory allocated. Also when the off-heap memory is not used anymore by the application, during GC process, the JVM need to make native calls to free the off-heap memory in addition to releasing the memory used by the object reference in on-heap memory. Also as per the API documentation, the JVM will make the best effort to not to use any on-heap memory as a intermediate step to store and retrieve data to/from the off-heap memory. In order to compensate these additional overheads and at the same time take advantage of using large memory without the penalty of increased GC time, it is best to use off-heap memory for large objects which doesn&rsquo;t get released often.</p>
+
+<p>When a JVM is brought up to run a Java process, the total memory which can be used for off-heap memory can be specified using the JVM parameter <code>-XX:MaxDirectMemorySize</code> parameter. If the parameter is not set explicitly, the value is set to the free memory available in the system at the start of the process using <a href="https://github.com/openjdk-mirror/jdk/blob/icedtea/jdk7/master/src/share/classes/sun/misc/VM.java#L193">VM.maxDirectMemory()</a> method call. When off-heap memory allocation is made, the JVM keeps track of the total memory used so far. When a new off-heap memory allocation request is made the JVM checks whether the sum of the requested memory size and the total memory allocated so far is greater than the available direct memory size set at the start of the Java process. If the sum exceeds the available memory, an explicit GC system call is made by the memory allocator and then the process thread sleeps for <a href="https://github.com/openjdk-mirror/jdk/blob/icedtea/jdk7/master/src/share/classes/java/nio/Bits.java#L651">100ms</a> for the GC call to complete. After 100ms the allocator checks again to see whether there is enough space to satisfy the new memory allocation request before raising an out of memory exception.</p>
+
+<p>Few things to note about this allocation process.</p>
+
+<ul>
+<li><p>For performance sensitive applications the explicit GC and the non-tunable sleep time in the allocation logic when there is not enough memory can be a large overhead.</p></li>
+<li><p>The second item to note is that a GC call means best effort will be made by the JVM to schedule one and doesn&rsquo;t guarantee that one will be run immediately. So there can be situations when the Java process will fail with OOM error even when there is enough memory to be freed to accommodate new memory allocation request since a GC is not run immediately.</p></li>
+<li><p>Third, the thread sleep time of 100ms may not be sufficient in certain situations for the GC to complete and release unused memory to satisfy new memory allocation request. If any one is surprised that the 100ms is more than sufficient for a GC to complete, we came across the situation where trying to allocate 1 GB chunks of off heap space using a simple for loop failing on Ubuntu 12.04 LTS with OOM while the same runs fine on Redhat Linux machine which had a relatively less powerful hardware. With the current API this sleep time can&rsquo;t be adjusted and hence the application may have to perform additional sleep to make sure that there is no memory to use.</p></li>
+<li><p>The last item of interest is the total memory available for use to allocate off-heap memory. This value is set at the start of the process either manually or by the VM. When set manually, the JVM doesn&rsquo;t verify whether there is enough free memory available on the system. Even if the value is set automatically by the JVM, the available memory on the system can be lower during the process execution since memory usage of other processes in the system can change as time goes by which can result in the Java process failing due to unexpected exception in memory allocation. So it is important to make sure that the memory of size set in <code>-XX:MaxDirectMemorySize</code> is available for the Java process to use so that the failures doesn&rsquo;t happen.</p></li>
+</ul>
+
+
+<p>There are few options the JVM can do to prevent allocation related exceptions which would require changes to the JVM code.</p>
+
+<ul>
+<li><p>Verify the system free memory to make sure that it is greater than or equal to what is set by the users when the JVM is brought up and also during the process execution. This will require native system calls and may have a pronounced impact on the performance of the Java process. One way to mitigate is to provide an JVM option for the users to set if they need this strict condition checking.</p></li>
+<li><p>Instead of invoking a GC call when all the memory is used, it would be better to have a configurable parameter to set direct memory used threshold to make the GC call. This should be a fairly simple change to the JVM code.</p></li>
+<li><p>Calculate the sleep time after the GC process taking into consideration all the factors which impacts GC time. This will be complex and will not be of less importance if the previous suggestion is implemented in the JDK code.</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[OO Programming Aspects of Python]]></title>
+    <link href="http://asquareb.github.io/blog/2014/09/19/oo-programming-aspects-of-python/"/>
+    <updated>2014-09-19T16:36:31-04:00</updated>
+    <id>http://asquareb.github.io/blog/2014/09/19/oo-programming-aspects-of-python</id>
+    <content type="html"><![CDATA[<p>For anyone familiar with Object Oriented programming this gives a quick run down on the OO aspects of Python language.</p>
+
+<p>A <strong>class</strong> can be created using the <code>class</code> keyword.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>class Shape(object):
+</span><span class='line'>&hellip;     &ldquo;&rdquo;&ldquo;This documents the details about the class Shape&rdquo;&ldquo;&rdquo;
+</span><span class='line'>&hellip;
+</span><span class='line'>Shape.&lt;strong>doc&lt;/strong>
+</span><span class='line'>&lsquo;This documents the details about the class Shape&rsquo;</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<!-- more -->
+
+
+<p><code>object</code> in the class definition specifies that the class Point inherits from the inbuilt class &ldquo;object&rdquo;. Some other OO languages like JAVA this is implicit and doesn&rsquo;t have to be mentioned during class definition. So if a class need to inherit from another class then &ldquo;object&rdquo; can be replaced with the required class name.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>class Square(Shape):
+</span><span class='line'>&hellip;     &ldquo;&rdquo;&ldquo; Square is a shape &rdquo;&ldquo;&rdquo;
+</span><span class='line'>&hellip;
+</span><span class='line'>Square.&lt;strong>doc&lt;/strong>
+</span><span class='line'>&lsquo; Square is a shape &rsquo;</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Initialization of class objects/instances is handled by the <code>__init__</code> method which is similar to the constructor in other languages.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>class Square(object):
+</span><span class='line'>&hellip;    &ldquo;&rdquo;&ldquo;Square is an object&rdquo;&ldquo;&rdquo;
+</span><span class='line'>&hellip;    totalSquares = 0
+</span><span class='line'>&hellip;    def &lt;strong>init&lt;/strong>(self,length):
+</span><span class='line'>&hellip;         self.len = length
+</span><span class='line'>&hellip;         if Square.totalSquares == 0:
+</span><span class='line'>&hellip;            Square.totalSquares = 1
+</span><span class='line'>&hellip;         else:
+</span><span class='line'>&hellip;            Square.totalSquares += 1
+</span><span class='line'>&hellip;
+</span><span class='line'>a = Square(10)
+</span><span class='line'>b = Square(20)
+</span><span class='line'>a.len
+</span><span class='line'>10
+</span><span class='line'>b.len
+</span><span class='line'>20
+</span><span class='line'>Square.totalSquares
+</span><span class='line'>2
+</span><span class='line'>a.totalSquares
+</span><span class='line'>2
+</span><span class='line'>b.totalSquares
+</span><span class='line'>2</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Note that <strong>init</strong> method attributes includes &ldquo;self&rdquo; as the first paramater which is a reserved word. This is applicable to all the method definitions in a class. But when a class object is created the first parameter starts with the second parameter in the <strong>init</strong> method definition. The first parameter &ldquo;self&rdquo; is taken care by the Python interpreter.</p>
+
+<p>The variable &ldquo;totalSquares&rdquo; which is defined outside all the methods in the class definition is a class variable and shared by all the instances. The variable &ldquo;self.len&rdquo; is an instance level variable and is accessible to all the methods in the class. Other variables defined in a method are local variables to the method and not accessible outside of the method. The following is an expanded example</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class Square(object):
+</span><span class='line'>    &ldquo;&rdquo;&ldquo;Square is an object&rdquo;&ldquo;&rdquo;
+</span><span class='line'>    totalSquares = 0                     # Class variable
+</span><span class='line'>    def &lt;strong>init&lt;/strong>(self,length):
+</span><span class='line'>         self.len = length               # Instance variable
+</span><span class='line'>         if Square.totalSquares == 0:
+</span><span class='line'>            Square.totalSquares = 1
+</span><span class='line'>         else:
+</span><span class='line'>            Square.totalSquares += 1&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>def area(self):
+</span><span class='line'>    a = self.len * self.len          # Local variable
+</span><span class='line'>    return a
+</span><span class='line'>
+</span><span class='line'>def printSquare(self):
+</span><span class='line'>    print "Length of square is %d" % self.len
+</span><span class='line'>    print "Area of square is %d" % self.area()
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
+
+<p>A class can inherit from multiple other classes. For e.g.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class Cube(Square, Point):
+</span><span class='line'>    &ldquo;&rdquo;&ldquo;Inherits square and point classes&rdquo;&ldquo;&rdquo;
+</span><span class='line'>&hellip;</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Similar to languages like Java, Python has a garbage collector (GC) to delete objects which are not referenced anymore. This prevents memory leaks by not releasing the ojects explicitly by programs as languages like C requires.</p>
+
+<p>Parent class methods can be <strong>overridden</strong> by an inherited class by defining the same method header in the child class as in the parent class. As seen before the <strong><strong>init</strong></strong> defined in all the class definitions earlier is overriding the method with same header in &ldquo;object&rdquo; class which is the inbuild base class. Other base class methods which can be overridden are</p>
+
+<p><code>def __del__(self):</code> destructor method which is called at the time of GC of the class object
+<code>def __repr__(self):</code> returns an evaluatable string represention of the class object
+<code>def __str__(self):</code>  returns a string representation of the object like &ldquo;toString&rdquo; method in Java</p>
+
+<p>If a method is overridden in a class but need to invoke the same method in the parent class, <strong>super</strong> can be used as in the following example. Calling super is bit different to that of other languaes.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class Song(object):
+</span><span class='line'>     def &lt;strong>init&lt;/strong>(self,name,lyrics):
+</span><span class='line'>         self.name = name
+</span><span class='line'>         self.lyrics = lyrics
+</span><span class='line'>     def write(self):
+</span><span class='line'>         print self.name, self.lyrics&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>class KSong(Song):
+</span><span class='line'>    def &lt;strong>init&lt;/strong>(self,name,lyrics,time):
+</span><span class='line'>         super(KSong, self).&lt;strong>init&lt;/strong>(name,lyrics)
+</span><span class='line'>         self.time = time</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Type of a class instance can be checked using the <code>isinstance</code> function. For e.g. assuming that the previous code is in a file song.py</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>import song
+</span><span class='line'>True
+</span><span class='line'>ks = song.KSong(&ldquo;Kel&rdquo;,&ldquo;Kan&rdquo;,10)
+</span><span class='line'>isinstance(ks, song.KSong)
+</span><span class='line'>True</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Operator <strong>overloading</strong> is accomplished by overriding the base class methods provided to overload operators.</p>
+
+<p><code>def __cmp__(self,other):</code> comparing two class objects and returns -ve int if self &lt; other, 0 if self == other and +ve int if self > other
+<code>def __add__(self,other):</code> to overload addition (+)
+<code>def __sub__(self,other):</code> to overload subtraction (-)</p>
+
+<p>&hellip;
+More details are available in <a href="https://docs.python.org/2/reference/datamodel.html">Python docs</a></p>
+
+<p>This is just the tip of the iceberg. You can explore more about Python <a href="https://docs.python.org/3/">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Python Basics for Programmers]]></title>
+    <link href="http://asquareb.github.io/blog/2014/09/14/python-basics-for-programmers/"/>
+    <updated>2014-09-14T07:10:17-04:00</updated>
+    <id>http://asquareb.github.io/blog/2014/09/14/python-basics-for-programmers</id>
+    <content type="html"><![CDATA[<p>Once we understand the common social norms of interacting with others, it is a matter of knowing how to express it in the particular language to the person we are interacting with. Similarly once we understand the fundamentals of computer programming, it is a matter of knowing the syntax of a particular language to express what needs to be accomplished. The following details the basic syntax of the Python language which will help get started with it and be able to build solutions for most of the programming tasks. The assumption is that the reader is familiar with fundamentals of programming and have been programming is another language.</p>
+
+<!-- more -->
+
+
+<p>Python programs are exectued through an interpreter called <code>python</code> and falls under the category of interpreted languages i.e. small chunks of code gets executed by an intrepreter program. So it is a pre-req to install the python interpreter. Python programs can be stored in a file with the extension <code>.py</code> normally referred as python script and passed as input to the python interpreter or python code can be executed through the python interpreter command prompt.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>python helloworld.py
+</span><span class='line'>Hello World!!</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Or the python interpreter can be invoked by the <code>python</code> command. Code can be developed and tested in the python interpreter command line.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>HW10478:python $ python
+</span><span class='line'>Python 2.7.2 (default, Oct 11 2012, 20:14:37)
+</span><span class='line'>[GCC 4.2.1 Compatible Apple Clang 4.0 (tags/Apple/clang-418.0.60)] on darwin
+</span><span class='line'>Type &ldquo;help&rdquo;, &ldquo;copyright&rdquo;, &ldquo;credits&rdquo; or &ldquo;license&rdquo; for more information.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a = &ldquo;Hello World&rdquo;
+</span><span class='line'>print a
+</span><span class='line'>Hello World&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<h3> Variables </h3>
+
+
+<p>Python is a dynamically typed language i.e. the type of the variables are determined during runtime based on what is stored and doesn&rsquo;t have to be specified when variables are defined. Variable names can be of arbitrary length, can contain letter, numbers and underscore. But variable name need to start with a letter and avoid reserved words (no surprises!!). We can find the type of the variable using the <code>type()</code> function.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a = &ldquo;Hello World&rdquo;
+</span><span class='line'>type(a)
+</span><span class='line'>&lt;type 'str'>
+</span><span class='line'>a = 10
+</span><span class='line'>type(a)
+</span><span class='line'>&lt;type 'int'></span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<h3> Operators and Expressions </h3>
+
+
+<p>All the arithmetic operators <code>+ - * / % **</code> are supported by Python and follows PEMDAS (Parentheses, Exponentiation, Multiplication, Division, Addition, Subtraction) order of execution. Python 3 has a new operator <code>//</code> which performs floor division i.e. <code>5/6</code> will produce a flot value of <code>0.8333333333333334</code> while it is zero in Python 2 and <code>5//6</code> will result in zero in Python 3. The <code>+ *</code> operators can be used on String data as in the following examples</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a = &lsquo;Hello &rsquo;
+</span><span class='line'>a * 3
+</span><span class='line'>&lsquo;Hello Hello Hello &rsquo;
+</span><span class='line'>a + &lsquo;World&rsquo;
+</span><span class='line'>&lsquo;Hello World&rsquo;</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Also all the standard relational operators <code>== != &lt; &lt;= &gt; &gt;=</code> and logical operators <code>and or not</code> are supported. Basic Python expressions are same as in any other language.</p>
+
+<h3> Data Structures </h3>
+
+
+<p>Python has inbuilt <code>list, tuple, dictionary</code> data structures.
+<strong>Lists</strong> are similar to arrays where the indexes are integers and are auto assigned. Lists can store objects of mixed types and they are mutable. Some of the list functions are <code>append</code> <code>extend</code> <code>insert(idx,val)</code> <code>pop</code> <code>count</code> <code>sort</code> <code>reverse</code></p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a = [1,2,3]
+</span><span class='line'>a.append([4,5])
+</span><span class='line'>a
+</span><span class='line'>[1, 2, 3, [4, 5]]
+</span><span class='line'>a.extend([6,7])
+</span><span class='line'>a
+</span><span class='line'>[1, 2, 3, [4, 5], 6, 7]
+</span><span class='line'>a.reverse()
+</span><span class='line'>a
+</span><span class='line'>[7, 6, [4, 5], 3, 2, 1]
+</span><span class='line'>a.sort()
+</span><span class='line'>a
+</span><span class='line'>[1, 2, 3, 6, 7, [4, 5]]
+</span><span class='line'>a.pop()
+</span><span class='line'>[4, 5]
+</span><span class='line'>a[1]
+</span><span class='line'>2
+</span><span class='line'>a[2:]
+</span><span class='line'>[3, 6, 7]
+</span><span class='line'>a[:2]
+</span><span class='line'>[1, 2]
+</span><span class='line'>a[0:2]
+</span><span class='line'>[1, 2]
+</span><span class='line'>del a[0]
+</span><span class='line'>a
+</span><span class='line'>[2, 3, 6, 7]</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p><strong>Tuples</strong> are similar to lists but are not mutable and are created by using <code>( )</code> instead of <code>[]</code> used for lists. All the functions which can be used to access elements in list can be used to access elements of tuples. Since tuples are not mutable functions which modifies list like <code>append pop del extend</code> are not supported by tuples.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>b = (1,2,3)
+</span><span class='line'>b[1:]
+</span><span class='line'>(2, 3)
+</span><span class='line'>b.count(3)
+</span><span class='line'>1
+</span><span class='line'>b[:2]
+</span><span class='line'>(1, 2)&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p><strong>Dictionaries</strong> are unordered set of key value pairs and indexed by the keys. <code>{ }</code> are used to create dictionaries and they are mutable. Elements in dictionaries are accessed using the key values. All datatypes including tuples which are not mutable can be used as key values for dictionaries.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a =  {&lsquo;a&rsquo;:1,&lsquo;b&rsquo;:2,&lsquo;c&rsquo;:3,&rsquo;d':4}
+</span><span class='line'>a
+</span><span class='line'>{&lsquo;a&rsquo;: 1, &lsquo;c&rsquo;: 3, &lsquo;b&rsquo;: 2, &rsquo;d': 4}
+</span><span class='line'>a[&lsquo;c&rsquo;]
+</span><span class='line'>3
+</span><span class='line'>a[&lsquo;e&rsquo;]=5
+</span><span class='line'>a
+</span><span class='line'>{&lsquo;a&rsquo;: 1, &lsquo;c&rsquo;: 3, &lsquo;b&rsquo;: 2, &lsquo;e&rsquo;: 5, &rsquo;d': 4}
+</span><span class='line'>a[(&lsquo;f&rsquo;,&lsquo;g&rsquo;)]=56
+</span><span class='line'>a
+</span><span class='line'>{&lsquo;a&rsquo;: 1, &lsquo;c&rsquo;: 3, &lsquo;b&rsquo;: 2, &lsquo;e&rsquo;: 5, &rsquo;d': 4, (&lsquo;f&rsquo;, &lsquo;g&rsquo;): 56}
+</span><span class='line'>del a[&lsquo;a&rsquo;]
+</span><span class='line'>a
+</span><span class='line'>{&lsquo;c&rsquo;: 3, &lsquo;b&rsquo;: 2, &lsquo;e&rsquo;: 5, &rsquo;d': 4, (&lsquo;f&rsquo;, &lsquo;g&rsquo;): 56}</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p><code>len</code> is a common function across all the three data structures which can be used to find the length i.e the number of elements stored in them.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>len(a)
+</span><span class='line'>5</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>All the three data structures have iterators which can be used to iterate through all the elements</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a
+</span><span class='line'>{&lsquo;c&rsquo;: 3, &lsquo;b&rsquo;: 2, &lsquo;e&rsquo;: 5, &rsquo;d': 4, (&lsquo;f&rsquo;, &lsquo;g&rsquo;): 56}
+</span><span class='line'>for i in a:
+</span><span class='line'>&hellip;   print i, a[i]
+</span><span class='line'>&hellip;
+</span><span class='line'>c 3
+</span><span class='line'>b 2
+</span><span class='line'>e 5
+</span><span class='line'>d 4
+</span><span class='line'>(&lsquo;f&rsquo;, &lsquo;g&rsquo;) 56</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>If you have a list, a tuple can be created using the <code>tuple</code> function</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a = [1,2,3]
+</span><span class='line'>c = tuple(a)
+</span><span class='line'>c
+</span><span class='line'>(1, 2, 3)</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>If you have a tuple, a list can be created using the <code>list</code> function.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>d = list&copy;
+</span><span class='line'>d
+</span><span class='line'>[1, 2, 3]</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>If you have two lists then a list of tuples can be created using the <code>zip</code> function.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a = [1,2,3]
+</span><span class='line'>d
+</span><span class='line'>[1, 2, 3]
+</span><span class='line'>f = zip(a,d)
+</span><span class='line'>f
+</span><span class='line'>[(1, 1), (2, 2), (3, 3)]</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>When you have a list of tuples as in the previous example, then a dictionary can be created using the <code>dict</code> function.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>g = dict(f)
+</span><span class='line'>g
+</span><span class='line'>{1: 1, 2: 2, 3: 3}</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Also when you have a dictionary a list of tuples can be created using the <code>items</code> dictionary function.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>h = g.items()
+</span><span class='line'>h
+</span><span class='line'>[(1, 1), (2, 2), (3, 3)]</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Note that <strong>strings</strong> are nothing but list of characters.</p>
+
+<h3> Functions and Modules </h3>
+
+
+<p>Sequence of related statements can be grouped in to a function so that it can be reused. Group of related functions can be saved in a file and it is called a <strong>module</strong>. For e.g. Pythons inbuilt module <strong>math</strong> stores mathematical functions like <code>sqrt cos sin</code> etc. To access a function in a module, the module need to be imported into the python script or in the interpreter command line. If you are someone who know <strong>C</strong> programing, this will be very familiar.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>import math
+</span><span class='line'>math.sqrt(25)
+</span><span class='line'>5.0</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>When the whole module is imported as above, then a specific function need to be called by qualifying it with the module name like in the code above <code>math.sqrt()</code>. If you are interested only in a certain function is a module, that particular module can be imported as in the following example.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>from math import sqrt
+</span><span class='line'>sqrt(36)
+</span><span class='line'>6.0</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Note that when a specific function is imported as above, it doesn&rsquo;t have to be qualified with the module name when the function is called.</p>
+
+<h4> Defining a function </h4>
+
+
+<p>Functions can be defined using a <code>def</code> keyword <code>def function_name(optional parameters):</code>. The statements which belong to the function is grouped by intendation using spaces. The end of the function is determined by a blank space after the function or begining of another function or end of the file storing the function.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>def farr(arrin):
+</span><span class='line'>  a = arrin
+</span><span class='line'>  print a</span></code></pre></td></tr></table></div></figure></p>
+
+<p>All parameters and variables defined in a function are all local to the function. Any changes made to the parameters passed to the function will not be reflected in the parent code calling the function i.e. all the parameters are passed by value and not by reference.</p>
+
+<p>When a group of related functions are stored in a file then it becomes a module and the file name is the module name. As with the inbuilt module like <code>math</code>, functions from user defined modules can be made available for use in python scripts using the <code>import</code> statement.</p>
+
+<h3> Comments </h3>
+
+
+<p>Documenting the code is key. <code>#</code> can be used to add comments to Python code and anything added after <code>#</code> until the end of line is considered comment. Also Python supports adding documentationusing <code>docstring</code> to modules and functions so that they can read by users using the <code>__doc__</code> function. <code>docstring</code> starts and ends with <code>"""</code> <em>triple quotes</em>.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>def coolfunc():
+</span><span class='line'>&hellip;   &ldquo;&rdquo;&ldquo; This is a cool function which does nothing !!! &rdquo;&ldquo;&rdquo;
+</span><span class='line'>&hellip;   print &ldquo;Cool function&rdquo;
+</span><span class='line'>&hellip;
+</span><span class='line'>coolfunc.&lt;strong>doc&lt;/strong>
+</span><span class='line'>&lsquo; This is a cool function which does nothing !!! &rsquo;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<h3> Execution Flow Control </h3>
+
+
+<p>Commonly found <code>if</code> <code>for</code> <code>while</code> statements are supported in Python. As in function definition, <code>:</code> is used to define the start of flow control  and the list of statments to be executed is grouped using proper intendation.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>a = [1,2,3]
+</span><span class='line'>for i in a:
+</span><span class='line'>&hellip;   print i
+</span><span class='line'>&hellip;   if i > 2:
+</span><span class='line'>&hellip;     print &ldquo;Got you!!&rdquo;
+</span><span class='line'>&hellip;
+</span><span class='line'>1
+</span><span class='line'>2
+</span><span class='line'>3
+</span><span class='line'>Got you!!</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Python <strong>for</strong> statement is different from other languages where users can define an initial value, end condition and an arithmetic expression which can be used to control the number of times the loop gets executed. In python <code>for</code> statement iterates over the items of any sequence in the order they appear in the sequence. In the previous example the for statement iterates over the list &ldquo;a&rdquo;. <code>range</code> function can create a number list which inturn can be used in <code>for</code> loops.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>for i in range(1,3):
+</span><span class='line'>&hellip;    print i
+</span><span class='line'>&hellip;
+</span><span class='line'>1
+</span><span class='line'>2</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p><code>if</code> statement supports <code>elif</code> which prevents deep code indendation and <code>else</code> clauses.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>n = 10
+</span><span class='line'>if n &lt; 5:
+</span><span class='line'>&hellip;   print &lsquo;Less than 5&rsquo;
+</span><span class='line'>&hellip; elif n >= 5:
+</span><span class='line'>&hellip;   print &lsquo;Greater than 5&rsquo;
+</span><span class='line'>&hellip; else:
+</span><span class='line'>&hellip;   print &lsquo;Unknown&rsquo;
+</span><span class='line'>&hellip;
+</span><span class='line'>Greater than 5</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p><code>while</code> statement is similar to other languages.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>n = 3
+</span><span class='line'>while n &lt; 5:
+</span><span class='line'>&hellip;   print n
+</span><span class='line'>&hellip;   n += 1
+</span><span class='line'>&hellip;
+</span><span class='line'>3
+</span><span class='line'>4</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p><code>break</code> and <code>continue</code> statements are available to control the <code>for</code> and <code>while</code> loops.</p>
+
+<h3> Console Input Output </h3>
+
+
+<p><code>raw_input()</code> function can be used to receive input from users through <strong>console</strong>. The function takes an optional String, which will be output on console and waits for user to input value.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>x = raw_input()
+</span><span class='line'>Test
+</span><span class='line'>x
+</span><span class='line'>&lsquo;Test&rsquo;
+</span><span class='line'>x = raw_input(&ldquo;Enter value :&rdquo;)
+</span><span class='line'>Enter value :Test
+</span><span class='line'>x
+</span><span class='line'>&lsquo;Test&rsquo;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Output to <strong>console</strong> can be done using <code>print</code> statement which takes in a string. If values need to be passed dynamically to the string to be displayed they can be done using the <code>%</code> operator.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>print &lsquo;Test %s %s&rsquo; % (&lsquo;Hello&rsquo;,&lsquo;world&rsquo;)
+</span><span class='line'>Test Hello world
+</span><span class='line'>print &lsquo;Test %s %s. Test Count %d&rsquo; % (&lsquo;Hello&rsquo;, &lsquo;world!&rsquo;, 2)
+</span><span class='line'>Test Hello world!. Test Count 2</span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<p>Note that the values passed should be elements if a tuple.</p>
+
+<h3> Files </h3>
+
+
+<p><code>open</code> and <code>close</code> functions can be used to (as you guessed) open and close files. <code>open</code> function takes in the file name including the path to the file and a character to indicate whether the file need to be opened for read or write. The returned value of <code>open</code> is a file handle which can be used for file processing and at the end of processing can be used to close the file.</p>
+
+<p><code>readline</code> function can be used to read a line from the file at a time and <code>read</code> can be used to read the complete file. <code>write</code> function can be used to write data into the file.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;blockquote>&lt;blockquote>&lt;p>fout = open(&lsquo;data.txt&rsquo;,&lsquo;w&rsquo;)
+</span><span class='line'>fout.write(&lsquo;This is test data 1&rsquo;)
+</span><span class='line'>fout.write(&lsquo;This is test data 2&rsquo;)
+</span><span class='line'>fout.close()
+</span><span class='line'>fin = open(&lsquo;data.txt&rsquo;,&lsquo;r&rsquo;)
+</span><span class='line'>data = fin.readline()
+</span><span class='line'>data
+</span><span class='line'>&lsquo;This is test data 1This is test data 2&rsquo;
+</span><span class='line'>fin.close()&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p></blockquote></blockquote></blockquote>
+
+<h3> Exception Handling </h3>
+
+
+<p>Similar to &ldquo;try&rdquo; &ldquo;catch&rdquo; block in JAVA for exception handling, Python uses <code>try</code> <code>except</code> clauses to handle exceptions.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>try:
+</span><span class='line'>  fout = open(&lsquo;invalid_file_name.txt&rsquo;,&lsquo;r&rsquo;)
+</span><span class='line'>except:
+</span><span class='line'>  print &lsquo;File open failed&rsquo;</span></code></pre></td></tr></table></div></figure></p>
+
+<h3> Executing Python Scripts </h3>
+
+
+<p>As you may have noticed all the code block shown so far is using the Python command line interpreter. If a Python script is created and stored in a file then the script can be executed using the <code>python filename</code> command.</p>
+
+<p>For e.g., if the following is the contend of the Python script file test.py
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>def double(i):
+</span><span class='line'>    i += 1
+</span><span class='line'>    return i&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>x = 1
+</span><span class='line'>x = double(x)
+</span><span class='line'>print &lsquo;Value of x is %d&rsquo; % x</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Then the script can be executed as below
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;p>python test.py
+</span><span class='line'>Value of x is 2</span></code></pre></td></tr></table></div></figure></p></blockquote>
+
+<p>If a file (module) is created with Python functions, the functions can be exected as in the following example. This will avoid the functions to be executed when the module is imported into another script.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;p>cat modu.py
+</span><span class='line'>def test1():
+</span><span class='line'>   print &ldquo;Test 1&rdquo;&lt;/p>&lt;/blockquote>
+</span><span class='line'>
+</span><span class='line'>&lt;p>def test2():
+</span><span class='line'>   print &ldquo;Test 2&rdquo;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>if &lt;strong>name&lt;/strong> == &ldquo;&lt;strong>main&lt;/strong>&rdquo; :
+</span><span class='line'>   test1()
+</span><span class='line'>   test2()</span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;p>python modu.py
+</span><span class='line'>Test 1
+</span><span class='line'>Test 2</span></code></pre></td></tr></table></div></figure></p></blockquote>
+
+<p>What is covered so far could be used to accomplish most of the fundamantal tasks. This is intended to give a quick start on Python so that scripts can be created and used by the reader.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Points to Remember While Designing for Concurrency]]></title>
+    <link href="http://asquareb.github.io/blog/2013/11/14/points-to-remember-while-designing-for-concurrency/"/>
+    <updated>2013-11-14T17:52:27-04:00</updated>
+    <id>http://asquareb.github.io/blog/2013/11/14/points-to-remember-while-designing-for-concurrency</id>
+    <content type="html"><![CDATA[<p>Following are some of the points to consider while designing and developing solutions involving concurrent processing.</p>
+
+<ul>
+<li>Identify independent computations using techniques like task partitioning and data partitioning.</li>
+</ul>
+
+
+<!-- more -->
+
+
+<ul>
+<li><p>Implement concurrency at the highest level possible.</p></li>
+<li><p>Don&rsquo;t make any assumptions on the number of cores available i.e the solution should be able to scale with the number of cores.</p></li>
+<li><p>Use the best processing model; multiple processes or multiple threads to solve the issue.</p></li>
+<li><p>If using multiple processes is found to be well suited, associate individual locks to variables which are shared.</p></li>
+<li><p>If threads are best suited for the solution, identify thread safe libraries that can be used. Also use thread local storage when ever possible.</p></li>
+<li><p>Never assume a particular execution order of the code which is one of the criteria for concurrent processing.</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Steps to Design and Develop Concurrent Processes]]></title>
+    <link href="http://asquareb.github.io/blog/2013/10/27/steps-to-design-and-develop-concurrent-processes/"/>
+    <updated>2013-10-27T18:07:21-04:00</updated>
+    <id>http://asquareb.github.io/blog/2013/10/27/steps-to-design-and-develop-concurrent-processes</id>
+    <content type="html"><![CDATA[<p>High level sequence of steps which can be followed to design/develop concurrent processes</p>
+
+<ul>
+<li>Start with a well tuned and fully functional serial processing design/code to solve the problem.</li>
+</ul>
+
+
+<!-- more -->
+
+
+<ul>
+<li><p>Come-up with a design to solve the problem using concurrency.</p></li>
+<li><p>Calculate the speedup and efficiency of the design for concurrency.</p></li>
+<li><p>If sufficient speedup can be expected from the calculation, develop the code to do concurrent processing.</p></li>
+<li><p>Test the code and verify the results for various scenarios. Care need to be taken to verify situations like  correctness for loop executions, rounding errors of numerical  values, etc.</p></li>
+<li><p>Tune the code for performance and to minimize hotspots by identifying it through tools like profilers.</p></li>
+<li><p>Compare the performance and elapsed time of the serial code against the code for concurrency.</p></li>
+<li><p>If the performance has significant improvement implement concurrent processing instead of the serial processing code.</p></li>
+</ul>
+
+
+<p>All these steps may not be applicable for a given situation, but following through them provides a good guideline.</p>
+]]></content>
+  </entry>
+  
+</feed>

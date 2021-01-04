@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>HBase Replication - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="HBase supports inter-cluster data replication which can be used to propagate data to a secondary cluster/data center that can be accessed when &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/11/21/hbase-replication/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">HBase Replication</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-11-21T11:53:57-04:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2015</span></span> <span class='time'>11:53 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>HBase supports inter-cluster data replication which can be used to propagate data to a secondary cluster/data center that can be accessed when primary cluster/data center is not available. The following are the high level steps to enable HBase inter-cluster replication. Note that HBase also supports region replication with in a cluster for read HA which is different from inter-cluster data replication.</p>
+
+<!--more-->
+
+
+<p>Set the <code>hbase.replication</code> property to <code>true</code> in hbase-site.xml of  the HBase cluster from which data need to be replicated from. This cluster is referred as the <code>master</code> going forward. By default the value of this property is &ldquo;true&rdquo;.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;property>
+</span><span class='line'>  &lt;name>hbase.replication&lt;/name>
+</span><span class='line'>  &lt;value>true&lt;/value>
+</span><span class='line'>&lt;/property></span></code></pre></td></tr></table></div></figure>
+
+
+<p>Create a HBase replication peer in the master HBase cluster using the information about the ZooKeeper quorum of the cluster to which data need to be replicated to. The cluster to which data will be replicated to will be referred as <code>slave</code> going forward.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'>15/09/23 10:35:52 INFO Configuration.deprecation: hadoop.native.lib is deprecated. Instead, use io.native.lib.available
+</span><span class='line'>HBase Shell; enter 'help&lt;RETURN>' for list of supported commands.
+</span><span class='line'>... 
+</span><span class='line'>hbase(main):001:0>add_peer 'HBASE_REPL_PEER','zk1,zk2,zk3:2181:/hbase'
+</span><span class='line'>0 row(s) in 0.3470 seconds
+</span><span class='line'> 
+</span><span class='line'>hbase(main):003:0> list_peers
+</span><span class='line'>PEER_ID CLUSTER_KEY STATE TABLE_CFS
+</span><span class='line'>HBASE_REPL_PEER zk1,zk2,zk3:2181:/hbase ENABLED
+</span><span class='line'>1 row(s) in 0.1520 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the replication peer is created and enabled, replication need to be enabled on HBase tables whose data need to be replicated from the master cluster by setting the &ldquo;REPLICATION_SCOPE&rdquo; attribute of the table to a non zero value. By default this value is set to &ldquo;0&rdquo;. If the table is an existing table, altering the table to set the &ldquo;REPLICATION_SCOPE&rdquo; to a non zero value requires disabling and enabling the table and the following is an example of the steps where the existing table&rsquo;s name is &ldquo;healthy&rdquo;. Note that a table with the same definition as the table being replicated (in this case &ldquo;healthy&rdquo;) should be created in the slave cluster before the replication is enabled on master.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):006:0> describe 'healthy'
+</span><span class='line'>DESCRIPTION ENABLED
+</span><span class='line'>'healthy', {NAME => 'cf1', DATA_BLOCK_ENCODING => 'NONE', BLOOMFILTER => 'ROW', REP true
+</span><span class='line'>LICATION_SCOPE => '0', VERSIONS => '1', COMPRESSION => 'NONE', MIN_VERSIONS => '0',
+</span><span class='line'>TTL => 'FOREVER', KEEP_DELETED_CELLS => 'false', BLOCKSIZE => '65536', IN_MEMORY =
+</span><span class='line'>> 'false', BLOCKCACHE => 'true'}
+</span><span class='line'>1 row(s) in 0.0430 seconds
+</span><span class='line'> 
+</span><span class='line'>hbase(main):007:0> disable 'healthy'
+</span><span class='line'>0 row(s) in 1.2940 seconds
+</span><span class='line'> 
+</span><span class='line'>hbase(main):015:0> alter 'healthy',{NAME => 'cf1', REPLICATION_SCOPE => '1'}
+</span><span class='line'>Updating all regions with the new schema...
+</span><span class='line'>1/1 regions updated.
+</span><span class='line'>Done.
+</span><span class='line'>0 row(s) in 1.1660 seconds
+</span><span class='line'>hbase(main):017:0> enable 'healthy'
+</span><span class='line'>0 row(s) in 0.2310 seconds
+</span><span class='line'> 
+</span><span class='line'>hbase(main):016:0> describe 'healthy'
+</span><span class='line'>DESCRIPTION ENABLED
+</span><span class='line'>'healthy', {NAME => 'cf1', DATA_BLOCK_ENCODING => 'NONE', BLOOMFILTER => 'ROW', REP false
+</span><span class='line'>LICATION_SCOPE => '1', VERSIONS => '1', COMPRESSION => 'NONE', MIN_VERSIONS => '0',
+</span><span class='line'>TTL => 'FOREVER', KEEP_DELETED_CELLS => 'false', BLOCKSIZE => '65536', IN_MEMORY =
+</span><span class='line'>> 'false', BLOCKCACHE => 'true'}
+</span><span class='line'>1 row(s) in 0.0450 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once replication is enabled replication related JMX stats are made available in all the region servers in the master cluster hosting the regions for which data replication is enabled.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>"source.shippedKBs" : 3388621,
+</span><span class='line'>"source.logEditsFiltered" : 428856845,
+</span><span class='line'>"source.sizeOfLogQueue" : 0,
+</span><span class='line'>"source.HBASE_REPL_PEER.logEditsFiltered" : 378778983,
+</span><span class='line'>"source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedBatches" : 24,
+</span><span class='line'>"source.logReadInBytes" : 108666586903,
+</span><span class='line'>"source.HBASE_REPL_PEER.shippedOps" : 2097152,
+</span><span class='line'>"source.HBASE_REPL_PEER.logReadInBytes" : 96312291957,
+</span><span class='line'>"source.shippedOps" : 3098060,
+</span><span class='line'>"source.HBASE_REPL_PEER.shippedBatches" : 51,
+</span><span class='line'>"source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedKBs" : 1094799,
+</span><span class='line'>"source.logEditsRead" : 428859535,
+</span><span class='line'>"source.shippedBatches" : 75,
+</span><span class='line'>"source.HBASE_REPL_PEER-rs1,60200,1441910792839.logReadInBytes" : 12354294946,
+</span><span class='line'>"source.HBASE_REPL_PEER.shippedKBs" : 2293822,
+</span><span class='line'>"source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedOps" : 1000908,
+</span><span class='line'>"source.ageOfLastShippedOp" : 51072,
+</span><span class='line'>"source.HBASE_REPL_PEER.sizeOfLogQueue" : 0,
+</span><span class='line'>"source.HBASE_REPL_PEER.ageOfLastShippedOp" : 51072,
+</span><span class='line'>"source.HBASE_REPL_PEER.logEditsRead" : 378780481</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that these are statistics available in HBase version 0.98. Later versions may have additional statistics which can help with replication monitoring.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-11-21T11:53:57-04:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2015</span></span> <span class='time'>11:53 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hbase/'>hbase</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/11/21/hbase-replication/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/11/21/hbase-replication/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/10/24/hbase-back-up/" title="Previous Post: HBase Back-up">&laquo; HBase Back-up</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction/" title="Next Post: Oozie job to schedule HBase major compaction">Oozie job to schedule HBase major compaction &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/11/21/hbase-replication/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/11/21/hbase-replication/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

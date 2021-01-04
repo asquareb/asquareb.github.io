@@ -1,0 +1,273 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Configuration Parameters That Can Influence HBase Performance - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Based on individual use case and HBase deployment the settings of the following parameter will vary. As with any performance improvement exercise all &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Configuration Parameters That Can Influence HBase Performance</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-01-01T18:10:24-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>1</span><span class='date-suffix'>st</span>, <span class='date-year'>2015</span></span> <span class='time'>6:10 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Based on individual use case and HBase deployment the settings of the following parameter will vary. As with any performance improvement exercise all changes should be systematically tested for benefits.</p>
+
+<!--more-->
+
+
+<p><strong>HBase properties</strong></p>
+
+<p><code>hbase.regionserver.handler.count</code> - controls the number of RPC listener threads on each region server. Increasing the listeners threads can improve performance but need to be balanced against the amount of resource available in the system since each thread consumes memory and CPU.</p>
+
+<p><code>hbase.ipc.server.callqueue.handler.factor</code> - Determines the number of call queues interms of regionserver handler count. Dedicated queues for each RPC listener thread reduces contention.</p>
+
+<p><code>hbase.ipc.server.callqueue.read.ratio</code> - Determines the number of call queues dedicated to read and write requests. If the work load is primarily read then increasing read queues to higher value value will help. By default there is no differentiation of queues as read or write.</p>
+
+<p><code>hbase.ipc.server.callqueue.scan.ratio</code> - Determines the number of call queues allocated for gets and scan requests. If the work load is primarily gets and not scans increasing the get queues will help. By default all the read queues are used for both get and scan requests.</p>
+
+<p><code>hbase.regionserver.global.memstore.size</code> - Ratio of JVM heap allocated for HBase memstore. The defaul is 40%. If the work load is primarily writes increasing this percentage will help and that means the percentage of heap allocated to blockcache need to be reduced since the total of the two can’t go beyond 80%.</p>
+
+<p><code>hbase.regionserver.region.split.policy</code> - Policy which determines when a region to be split. There are a few options available and each of them can make a difference for different scenarios.</p>
+
+<p><code>hbase.zookeeper.property.maxClientCnxns</code> - Number of concurrent connections which can be made to a single member of ZK ensemble from a single client and this value should match the value in zoo.cfg. This need to be adjusted taking into consideration the expected number of HBase client connections.</p>
+
+<p><code>hbase.client.write.buffer</code> - Size of write buffer at client and server. Increased buffering will help but need to be balanced against memory available on the server side.</p>
+
+<p><code>hbase.client.scanner.caching</code> - Number of rows fetched when calling next on a scanner if it is not served from client local memory.</p>
+
+<p><code>hbase.hregion.memstore.flush.size</code> - Size when exceeded flushes the memstore and is checked at hbase.server.thread.wakefrequency intervals. Higher the number the</p>
+
+<p><code>hbase.hregion.memstore.mslab.enabled</code> - enabled by default to prevent heap fragmentation and better not to disable it.</p>
+
+<p><code>hbase.hregion.max.filesize</code> - Sum of region HFiles when exceeded, region is split into two. It can help to have a higer value than the default 10 GB, if the workload is high volume/velocity write.</p>
+
+<p><code>hbase.hregion.majorcompaction</code> - time between major compaction and a value of 0 disables it. It would be good to disable it and schedule it on a regular maintenance window to prevent performance issues.</p>
+
+<p><code>hfile.block.cache.size</code> - percentage of JVM heap allocated for block cache. By default it is 40% but a higher percentage will help with read latencies if the primary workload is read. But any change need to be reflected in the memstore percentage.</p>
+
+<p>Set <code>hbase.ipc.client.tcpnodelay</code> to true and is the case by default.</p>
+
+<p>Setting <code>hbase.storescanner.parallel.seek.enable</code> to true can help with read latencies</p>
+
+<p>If data staleness is not a concern during reads for e.g. in stiuations where data is loaded nightly, enable <a href="https://issues.apache.org/jira/browse/HBASE-10070">MTTR</a> so that read failures due to region failures can be prevented by HBase servicing the request from a (stale) copy of the data.</p>
+
+<p>Enable <strong>HDFS short circuit read</strong> so that read latencies can be improved by reading data locally.</p>
+
+<ul>
+<li>Set <code>dfs.block.local-path-access.user</code> to hbase</li>
+<li>Set <code>dfs.client.read.shortcircuit</code> to true</li>
+<li>Set <code>hbase.regionserver.checksum.verify</code> to true</li>
+</ul>
+
+
+<p><strong>On Linux OS:</strong></p>
+
+<p>Set <code>vm.swappiness</code> to 0 or low value</p>
+
+<p>As with any database based application, Even with a well tuned cluster with the best hardware, an application will not get the best performance if it is not designed properly.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-01-01T18:10:24-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>1</span><span class='date-suffix'>st</span>, <span class='date-year'>2015</span></span> <span class='time'>6:10 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hbase/'>hbase</a>, <a class='category' href='/blog/categories/performance/'>performance</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/12/27/build-your-hadoop-cluster-unattended-almostls/" title="Previous Post: Build your Hadoop cluster unattended (almost!!)">&laquo; Build your Hadoop cluster unattended (almost!!)</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/02/07/optimal-hbase-based-applications/" title="Next Post: Design optimal HBase based applications">Design optimal HBase based applications &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

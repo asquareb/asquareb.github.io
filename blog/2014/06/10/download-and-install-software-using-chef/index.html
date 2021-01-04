@@ -1,0 +1,321 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Download and Install Software Using Chef - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="With open source software it is common to download and install software from the web. And with distributed computing plaftforms like hadoop software &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2014/06/10/download-and-install-software-using-chef/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Download and Install Software Using Chef</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-06-10T05:33:55-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>5:33 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>With open source software it is common to download and install software from the web. And with distributed computing plaftforms like hadoop software need to get installed on multiple servers. This can be automated using Chef. The following is an example of how zookeeper software can be downloaded and installed.</p>
+
+<ul>
+<li>Create a Chef cookbook. Assumed that Chef is already available for use.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>knife create cookbook zookeep</span></code></pre></td></tr></table></div></figure>
+
+
+<!-- more -->
+
+
+<ul>
+<li>Create default.rb under attributes folder with attributes for where the software need to be installed, version of software to be downloaded and the URL to download from</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>default[:zookeeper][:install_dir]="/opt"
+</span><span class='line'>default[:zookeeper][:version]="3.4.6"
+</span><span class='line'>default[:zookeeper][:download_url]="http://apache.claz.org/zookeeper/stable"</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Create a default recipe &ldquo;default.rb&rdquo; under the recipe folder in the cookbook with the following resources</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>tarball = "zookeeper-#{node[:zookeeper][:version]}.tar.gz"
+</span><span class='line'>download_file = "#{node[:zookeeper][:download_url]}/#{tarball}"
+</span><span class='line'>
+</span><span class='line'>remote_file "#{Chef::config[:file_cache_path]}/#{tarball}" do
+</span><span class='line'>  source download_file
+</span><span class='line'>  action :create_if_missing
+</span><span class='line'>  mode 00644
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p> The tarball variable will store the name of the zookeeper gzip file available for download from the apache mirror site
+ The download_file variable stores the complete URL including the gzip file name for download. Both these variables use values from the attribute values defined in attributes file.
+ &ldquo;remote_file&rdquo; resource is the chef resource which is used to retrieve remote files. The name passed to the remote_file resource is the destination where the remote file need to be stored and in this case is the temporary cache directory used by Chef. The download is defined to happen only if the tar file is not already available in the cache thus preventing unnecessary download.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>zk_install_dir=node[:zookeeper][:install_dir]
+</span><span class='line'>
+</span><span class='line'>execute "tar" do
+</span><span class='line'>  user "root"
+</span><span class='line'>  group "root"
+</span><span class='line'>  cwd zk_install_dir
+</span><span class='line'>  action :run
+</span><span class='line'>  command "tar xvzf #{Chef::config[:file_Cache_path]}/#{tarball}"
+</span><span class='line'>  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper")
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p> &ldquo;zk_install_dir&rdquo; variable will store the directory into which the zookeeper software need to be installed into and uses the value set to default[:zookeeper][:install] attribute in the attribute file.
+ The execute resource executes the tar command to untar/unzip the gzip file downloaded from the apache site into the folder store in the &ldquo;zk_install_dir&rdquo; variable. The tar command gets executed only if a &ldquo;zookeeper&rdquo; directory is not in the &ldquo;/opt&rdquo; directory which is the value set in &ldquo;zk_install_dir&rdquo;.</p>
+
+<ul>
+<li>Once untarred the directory created will include the version number of zookeeper downloaded. Inorder to remove the version number the following execute resource can be used.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>execute "move" do
+</span><span class='line'>  user "root"
+</span><span class='line'>  group "root"
+</span><span class='line'>  cwd zk_install_dir
+</span><span class='line'>  action :run
+</span><span class='line'>  command "mv zookeeper* zookeeper"
+</span><span class='line'>  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper")
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This recipe downloaded and installed software at the required location. Using Chef we can run the recipe in multiple nodes and automate the repeatable process. We will improve on this recipe next time.</p>
+
+<p>Until next time Happy computing!!</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-06-10T05:33:55-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>5:33 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/infrastructure-mgmt/'>infrastructure-mgmt</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2014/06/10/download-and-install-software-using-chef/" data-via="" data-counturl="http://asquareb.github.io/blog/2014/06/10/download-and-install-software-using-chef/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/06/09/enabling-java-plugin-for-collectd/" title="Previous Post: Enabling JAVA plugin for collectd">&laquo; Enabling JAVA plugin for collectd</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/06/19/making-a-git-pull-request-for-specific-commits/" title="Next Post: Making a git pull request for specific commits">Making a git pull request for specific commits &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2014/06/10/download-and-install-software-using-chef/';
+        var disqus_url = 'http://asquareb.github.io/blog/2014/06/10/download-and-install-software-using-chef/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

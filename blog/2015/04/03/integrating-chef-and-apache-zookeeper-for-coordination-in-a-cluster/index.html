@@ -1,0 +1,523 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Integrating Chef and Apache ZooKeeper for Coordination in a Cluster - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="In a cluster environment services on nodes may have to be coordinated for various reasons. For e.g., when a configuration change is made to a &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Integrating Chef and Apache ZooKeeper for Coordination in a Cluster</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-04-03T23:36:21-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>3</span><span class='date-suffix'>rd</span>, <span class='date-year'>2015</span></span> <span class='time'>11:36 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>In a cluster environment services on nodes may have to be coordinated for various reasons. For e.g., when a configuration change is made to a distributed computing component like <code>HDFS</code>, the <code>HDFS</code> service on all nodes shouldn&rsquo;t stop at the same time to restart so that the configuration takes in effect. Stopping of the service on all the nodes will end up in unavailability which is not desired to put it lightly.</p>
+
+<p>There are many options to perform orchestration/coordination with varied maturity when you manage a cluster using <code>Chef</code>. Here we look at how <code>Chef</code> and <code>ZooKeeper</code> can work together to perform coordination of services on cluster nodes. We will use the need to control and coordinate service restart so that the service in all nodes are not stopped at the same time as the example to explain the solution.</p>
+
+<!--more-->
+
+
+<p>Lets take the simple case of service restart where only one instance of the service can be restarted at any time. One of the ways to accomplish this is by forcing nodes to acquire a lock to perform service restarts. The following is the solution summary</p>
+
+<ul>
+<li>A lock need to be acquired by a node before it can take a restart action on the service instance running on the node.</li>
+<li>When a node tries to acquire a lock and if it fails since some other node is holding the lock or other reasons, the node waits and retries for a certain time.</li>
+<li>If the lock is acquired within the certain prescribed time, the node restarts the service.</li>
+<li>Once the restart is complete the node releases the lock so that other nodes can take a lock on it.</li>
+<li>If the lock is not acquired within the certain time, the node remembers that the restart was not successful and hence will try to restart the service next time chef client runs on the node.</li>
+</ul>
+
+
+<p>If there are any misconfigurations which triggered the restart, the service will not be successfully restarted due to the misconfiguration on the node which acquired the lock first. Since the restart process failed, lock will not be released resulting in other nodes not being able to able to acquire it. This prevents misconfiguration being propagated to other nodes preventing unavailability. Also until the misconfiguration is corrected the service will not be restarted in all the nodes.</p>
+
+<p>Now the key is to be able to implement lock primitive in a distributed environment and this is where <a href="https://zookeeper.apache.org/">Apache ZooKeeper</a> comes into play. <code>ZooKeeper</code> is a high-performance coordination service which among many things provides synchronization for distributed applications. <code>ZooKeeper</code> is used by many Apache projects like <code>HBase</code> which is a distributed scalable data store. <code>ZooKeeper</code> is also a distributed system which means failover is handled automatically preventing unavailability.</p>
+
+<p>For the use case of allowing only one node to restart a service, we can use ZooKeeper “znode” as the lock. For a service “X”, if a node is able to create a znode “X” in ZooKeeper then the service can be restarted by the node. If a node is not able to create znode “X” since the znode is already created by another node in the cluster or other reasons, then the node need to wait until the znode is removed.</p>
+
+<p>The following is a Chef <a href="https://github.com/bijugs/chef-bach/blob/master_rolling_restart/cookbooks/bcpc-hadoop/definitions/hadoop_service.rb"><code>definition</code></a> which implements the restart coordination logic. It is implemented as a <code>definition</code> so that it can be used to coordinate the restart of multiple services in a cluster. The inline comments in the code explains the logic and any reference to hadoop can be discarded since this can be used for any service. Currently this is implemented and used for a hadoop cluster.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#
+</span><span class='line'># Definition takes three parameters
+</span><span class='line'># service_name: Name of the service
+</span><span class='line'># dependencies: Resources typically template resources for which the service need to be restarted
+</span><span class='line'># process_identifier: String which identifies the process of the service
+</span><span class='line'>#
+</span><span class='line'>define :hadoop_service, :service_name => nil, :dependencies => nil, :process_identifier => nil do
+</span><span class='line'>
+</span><span class='line'>  params[:service_name] ||= params[:name]
+</span><span class='line'>  #
+</span><span class='line'>  # Service resource defined using the parameters passed
+</span><span class='line'>  #
+</span><span class='line'>  service "#{params[:service_name]}" do
+</span><span class='line'>    supports :status => true, :restart => true, :reload => false
+</span><span class='line'>    action [:enable, :start]
+</span><span class='line'>  end
+</span><span class='line'>  #
+</span><span class='line'>  # Checking to see whether user requested to not to use restart coordination
+</span><span class='line'>  #
+</span><span class='line'>  if node["bcpc"]["hadoop"]["skip_restart_coordination"]
+</span><span class='line'>    Chef::Log.info "Coordination of #{params[:service_name]} restart will be skipped as per user request."
+</span><span class='line'>    begin
+</span><span class='line'>      res = resources(service: "#{params[:service_name]}")
+</span><span class='line'>      if params[:dependencies]
+</span><span class='line'>        params[:dependencies].each do |dep|
+</span><span class='line'>          res.subscribes(:restart, "#{dep}", :delayed)
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>    rescue Chef::Exceptions::ResourceNotFound
+</span><span class='line'>      Chef::Log.info("Resource service #{params[:service_name]} not found")
+</span><span class='line'>    end
+</span><span class='line'>  else
+</span><span class='line'>    if !params[:process_identifier]
+</span><span class='line'>      Chef::Application.fatal!("hadoop_service for #{params[:service_name]} need to specify a valid value for the parameter :process_identifier")
+</span><span class='line'>    end
+</span><span class='line'>    #
+</span><span class='line'>    # When there is a need to restart a hadoop service, a lock need to be taken so that the restart is sequenced preventing all nodes being down at the sametime
+</span><span class='line'>    # If there is a failure in acquiring a lock with in a certian period, the restart is scheduled for the next run on chef-client on the node.
+</span><span class='line'>    # To determine whether the prev restart failed is the node attribute node[:bcpc][:hadoop][:service_name][:restart_failed] is set to true
+</span><span class='line'>    # This ruby block is to check whether this node attribute is set to true and if it is set then gets the hadoop service restart process in motion.
+</span><span class='line'>    #
+</span><span class='line'>    ruby_block "handle_prev_#{params[:service_name].gsub('-','_')}_restart_failure" do
+</span><span class='line'>      block do
+</span><span class='line'>        Chef::Log.info "Need to restart #{params[:service_name]} since it failed during the previous run. Another node's restart process failure is a possible reason"
+</span><span class='line'>      end
+</span><span class='line'>      action :create
+</span><span class='line'>      only_if { node[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed] and 
+</span><span class='line'>              !process_restarted_after_failure?(node[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed_time],"#{params[:process_identifier]}")}
+</span><span class='line'>    end
+</span><span class='line'>    #
+</span><span class='line'>    # Since string with all the zookeeper nodes is used multiple times this variable is populated once and reused reducing calls to Chef server
+</span><span class='line'>    #
+</span><span class='line'>    zk_hosts = (get_node_attributes(MGMT_IP_ATTR_SRCH_KEYS,"zookeeper_server","bcpc-hadoop").map{|zkhost| "#{zkhost['mgmt_ip']}:#{node[:bcpc][:hadoop][:zookeeper][:port]}"}).join(",")
+</span><span class='line'>    #
+</span><span class='line'>    # znode is used as the locking mechnism to control restart of services. The following code is to build the path
+</span><span class='line'>    # to create the znode before initiating the restart of hadoop service 
+</span><span class='line'>    #
+</span><span class='line'>    lock_znode_path = format_restart_lock_path(node[:bcpc][:hadoop][:restart_lock][:root],"#{params[:service_name]}")
+</span><span class='line'>    #
+</span><span class='line'>    # All hadoop service restart situations like changes in config files or restart due to previous failures invokes this ruby_block
+</span><span class='line'>    # This ruby block tries to acquire a lock and if not able to acquire the lock, sets the restart_failed node attribute to true
+</span><span class='line'>    #
+</span><span class='line'>    ruby_block "acquire_lock_to_restart_#{params[:service_name].gsub('-','_')}" do
+</span><span class='line'>      require 'time'
+</span><span class='line'>      block do
+</span><span class='line'>        tries = 0
+</span><span class='line'>        Chef::Log.info("#{node[:hostname]}: Acquring lock at #{lock_znode_path}")
+</span><span class='line'>        while true 
+</span><span class='line'>          lock = acquire_restart_lock(lock_znode_path, zk_hosts, node[:fqdn])
+</span><span class='line'>          if lock
+</span><span class='line'>            break
+</span><span class='line'>          else
+</span><span class='line'>            tries += 1
+</span><span class='line'>            if tries >= node[:bcpc][:hadoop][:restart_lock_acquire][:max_tries]
+</span><span class='line'>              failure_time = Time.now().to_s
+</span><span class='line'>              Chef::Log.info("Couldn't acquire lock to restart ")
+</span><span class='line'>              node.set[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed] = true
+</span><span class='line'>              node.set[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed_time] = failure_time
+</span><span class='line'>              node.save
+</span><span class='line'>              break
+</span><span class='line'>            end
+</span><span class='line'>            sleep(node[:bcpc][:hadoop][:restart_lock_acquire][:sleep_time])
+</span><span class='line'>          end
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>      action :nothing
+</span><span class='line'>      if params[:dependencies]
+</span><span class='line'>        params[:dependencies].each do |dep|
+</span><span class='line'>          subscribes :create, "#{dep}", :immediate
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>      subscribes :create, "ruby_block[handle_prev_#{params[:service_name].gsub('-','_')}_restart_failure]", :immediate
+</span><span class='line'>    end
+</span><span class='line'>    #
+</span><span class='line'>    # If lock is acquired by the node, ruby_block executes which is to notify service to restart
+</span><span class='line'>    #
+</span><span class='line'>    ruby_block "coordinate_#{params[:service_name].gsub('-','_')}_restart" do
+</span><span class='line'>      block do
+</span><span class='line'>        Chef::Log.info("Data node will be restarted in node #{node[:fqdn]}")
+</span><span class='line'>      end
+</span><span class='line'>      action :create
+</span><span class='line'>      only_if { my_restart_lock?(lock_znode_path, zk_hosts, node[:fqdn]) }
+</span><span class='line'>    end
+</span><span class='line'>
+</span><span class='line'>    begin
+</span><span class='line'>      res = resources(service: "#{params[:service_name]}")
+</span><span class='line'>      res.subscribes(:restart, "ruby_block[coordinate_#{params[:service_name].gsub('-','_')}_restart]", :immediate)
+</span><span class='line'>    rescue Chef::Exceptions::ResourceNotFound
+</span><span class='line'>      Chef::Log.info("Resource service #{params[:service_name]} not found")
+</span><span class='line'>    end
+</span><span class='line'>    #
+</span><span class='line'>    # Once the service restart is complete, the following block releases the lock 
+</span><span class='line'>    #
+</span><span class='line'>    ruby_block "release_#{params[:service_name].gsub('-','_')}_restart_lock" do
+</span><span class='line'>      block do
+</span><span class='line'>        Chef::Log.info("#{node[:hostname]}: Releasing lock at #{lock_znode_path}")
+</span><span class='line'>        lock_rel = rel_restart_lock(lock_znode_path, zk_hosts, node[:fqdn])
+</span><span class='line'>        if lock_rel
+</span><span class='line'>          node.set[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed] = false
+</span><span class='line'>          node.save
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>      action :create
+</span><span class='line'>      only_if { my_restart_lock?(lock_znode_path, zk_hosts, node[:fqdn]) }
+</span><span class='line'>    end
+</span><span class='line'>  end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The following code snippet is how it is used in recipes instead of the default Chef <code>service</code> resource.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>dep = ["template[/etc/hadoop/conf/hdfs-site.xml]",
+</span><span class='line'>       "template[/etc/hadoop/conf/hadoop-env.sh]"]
+</span><span class='line'>
+</span><span class='line'>hadoop_service "hadoop-hdfs-datanode" do
+</span><span class='line'>  dependencies dep
+</span><span class='line'>  process_identifier "org.apache.hadoop.hdfs.server.datanode.DataNode"
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Given this framework it is easier to implement complex logic to determine restart eligibility like rack awareness, restart greater than one node or a set percentage of nodes, restart based on the state of other services in the cluster etc. Also this can be used to implement rolling upgrades of software on cluster nodes. In short there are many options and use cases which can leverage this solution.</p>
+
+<p>Quick word on handling failure during lock acquisition. When the node tries to acquire the lock and fails, the whole chef-client run process could have been stopped or waited for the lock to become available. Both of the options are not desirable as one could understand the implications. That being the reason for choosing the approach of waiting for sometime for the lock to become available and if not remember that the restart need to happen in the next chef-client run. This has the advantage of chef-client run further steps and be successful even when the particular service is not restarted and also automatically restart the service in the next chef-client run which seems like a balanced approach.</p>
+
+<p>Note this solution uses the <code>zookeeper</code> ruby gem and the complete code can be found in the <a href="https://github.com/bloomberg/chef-bach/tree/master/cookbooks/bcpc-hadoop">chef-bach bcpc-hadoop cookbook</a>.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-04-03T23:36:21-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>3</span><span class='date-suffix'>rd</span>, <span class='date-year'>2015</span></span> <span class='time'>11:36 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/chef-patterns/'>chef-patterns</a>, <a class='category' href='/blog/categories/infrastructure-mgmt/'>infrastructure-mgmt</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/" title="Previous Post: Restart of a service which is dependent on multiple services through Chef">&laquo; Restart of a service which is dependent on multiple services through Chef</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/" title="Next Post: Chef LWRP using HDFS directory as an example">Chef LWRP using HDFS directory as an example &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

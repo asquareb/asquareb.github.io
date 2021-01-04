@@ -1,0 +1,249 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Java Direct ByteBuffer Performance Advantages and Considerations - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="During execution, objects/variables created by Java programs gets their space allocated in the JVM heap memory. The total amount of heap memory &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Java Direct ByteBuffer Performance Advantages and Considerations</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-06-05T21:38:40-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>9:38 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>During execution, objects/variables created by Java programs gets their space allocated in the JVM heap memory. The total amount of heap memory available for a JVM is determined by the value set to -Xmx parameter when starting the Java process. When object allocated is released by the Java program, the corresponding memory is made available for later use by the JVM garbage collection (GC) process.</p>
+
+<p>The GC process gets invoked typically when the amount of free memory in the JVM falls below a certain threshold. At a very high level, the GC process involves identification of objects which are not used any more i.e. not referenced anymore, releasing the memory and compacting the memory to reduce memory fragmentation. Readers who are interested in understanding the details of GC process can find it <a href="http://blog.asquareb.com/blog/2014/12/13/jvm-gc-settings-and-hbase">here</a>. As one can imagine, the time it takes to complete the GC process will increase with the increase in size of the Java heap memory since it takes more time to identify the objects which can be released and also to perform compaction.</p>
+
+<!--more-->
+
+
+<p>If a Java application requires large memory (in GBs), the time it takes to complete the GC process will be detrimental to its performance. If the application is performance sensitive, then large heap memory size can adversely impact its performance. In order to mitigate this, one can try to use memory outside Java heap and hence reduce the Java heap memory use and its size. This can be done using the Java <a href="http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html">ByteBuffer</a> class which provides the option to allocate ByteBuffers outside JVM heap using <a href="http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html#allocateDirect(int">allocateDirect</a>) method.</p>
+
+<p>The allocateDirect method allocates memory of requested size (in bytes) on memory outside the JVM heap (off-heap) and provides the object reference to the application with the starting offset of 0. The application can then use the reference to store and retrieve data into the off-heap memory. When the garbage collection runs, it doesn&rsquo;t have to take into account the memory allocated off-heap to identify memory not being used or perform memory compaction which in turn reduce the time to complete GC.</p>
+
+<p>While the time to complete GC can be reduced when large memory is used in a Java process by using off-heap memory, there are other overheads which need to be taken into consideration before using it. Allocation of off-heap memory will take more time than the on-heap memory since the JVM need to make native calls to get the memory allocated. Also when the off-heap memory is not used anymore by the application, during GC process, the JVM need to make native calls to free the off-heap memory in addition to releasing the memory used by the object reference in on-heap memory. Also as per the API documentation, the JVM will make the best effort to not to use any on-heap memory as a intermediate step to store and retrieve data to/from the off-heap memory. In order to compensate these additional overheads and at the same time take advantage of using large memory without the penalty of increased GC time, it is best to use off-heap memory for large objects which doesn&rsquo;t get released often.</p>
+
+<p>When a JVM is brought up to run a Java process, the total memory which can be used for off-heap memory can be specified using the JVM parameter <code>-XX:MaxDirectMemorySize</code> parameter. If the parameter is not set explicitly, the value is set to the free memory available in the system at the start of the process using <a href="https://github.com/openjdk-mirror/jdk/blob/icedtea/jdk7/master/src/share/classes/sun/misc/VM.java#L193">VM.maxDirectMemory()</a> method call. When off-heap memory allocation is made, the JVM keeps track of the total memory used so far. When a new off-heap memory allocation request is made the JVM checks whether the sum of the requested memory size and the total memory allocated so far is greater than the available direct memory size set at the start of the Java process. If the sum exceeds the available memory, an explicit GC system call is made by the memory allocator and then the process thread sleeps for <a href="https://github.com/openjdk-mirror/jdk/blob/icedtea/jdk7/master/src/share/classes/java/nio/Bits.java#L651">100ms</a> for the GC call to complete. After 100ms the allocator checks again to see whether there is enough space to satisfy the new memory allocation request before raising an out of memory exception.</p>
+
+<p>Few things to note about this allocation process.</p>
+
+<ul>
+<li><p>For performance sensitive applications the explicit GC and the non-tunable sleep time in the allocation logic when there is not enough memory can be a large overhead.</p></li>
+<li><p>The second item to note is that a GC call means best effort will be made by the JVM to schedule one and doesn&rsquo;t guarantee that one will be run immediately. So there can be situations when the Java process will fail with OOM error even when there is enough memory to be freed to accommodate new memory allocation request since a GC is not run immediately.</p></li>
+<li><p>Third, the thread sleep time of 100ms may not be sufficient in certain situations for the GC to complete and release unused memory to satisfy new memory allocation request. If any one is surprised that the 100ms is more than sufficient for a GC to complete, we came across the situation where trying to allocate 1 GB chunks of off heap space using a simple for loop failing on Ubuntu 12.04 LTS with OOM while the same runs fine on Redhat Linux machine which had a relatively less powerful hardware. With the current API this sleep time can&rsquo;t be adjusted and hence the application may have to perform additional sleep to make sure that there is no memory to use.</p></li>
+<li><p>The last item of interest is the total memory available for use to allocate off-heap memory. This value is set at the start of the process either manually or by the VM. When set manually, the JVM doesn&rsquo;t verify whether there is enough free memory available on the system. Even if the value is set automatically by the JVM, the available memory on the system can be lower during the process execution since memory usage of other processes in the system can change as time goes by which can result in the Java process failing due to unexpected exception in memory allocation. So it is important to make sure that the memory of size set in <code>-XX:MaxDirectMemorySize</code> is available for the Java process to use so that the failures doesn&rsquo;t happen.</p></li>
+</ul>
+
+
+<p>There are few options the JVM can do to prevent allocation related exceptions which would require changes to the JVM code.</p>
+
+<ul>
+<li><p>Verify the system free memory to make sure that it is greater than or equal to what is set by the users when the JVM is brought up and also during the process execution. This will require native system calls and may have a pronounced impact on the performance of the Java process. One way to mitigate is to provide an JVM option for the users to set if they need this strict condition checking.</p></li>
+<li><p>Instead of invoking a GC call when all the memory is used, it would be better to have a configurable parameter to set direct memory used threshold to make the GC call. This should be a fairly simple change to the JVM code.</p></li>
+<li><p>Calculate the sleep time after the GC process taking into consideration all the factors which impacts GC time. This will be complex and will not be of less importance if the previous suggestion is implemented in the JDK code.</p></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-06-05T21:38:40-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>9:38 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/performance/'>performance</a>, <a class='category' href='/blog/categories/programming/'>programming</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/30/secure-all-applications-please/" title="Previous Post: Secure all applications please">&laquo; Secure all applications please</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/07/05/hbase-shell/" title="Next Post: HBase Shell">HBase Shell &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

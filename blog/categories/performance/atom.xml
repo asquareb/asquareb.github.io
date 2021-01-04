@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Performance | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/performance/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[HBase 1.0 - Offheap Cache Configuration]]></title>
+    <link href="http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration/"/>
+    <updated>2016-03-12T10:55:14-05:00</updated>
+    <id>http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration</id>
+    <content type="html"><![CDATA[<p>If you have been using HBase off-heap bucketcache, you may agree that configuration it is a <a href="http://blog.asquareb.com/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/">bit cumbersome</a> to say the least. In version 1.0, the HBase development team <a href="https://issues.apache.org/jira/browse/HBASE-11520">simplified the offheap cache configuration process</a>. With the changes, the following are the steps to configure bucketCache for e.g. of size n GB.</p>
+
+<!--more-->
+
+
+<ul>
+<li>Set the total off-heap memory size to be used by HBase to the environment variable <code>HBASE_OFFHEAPSIZE</code>. One way to do this is to set it in <code>hbase-env.sh</code>
+<code>
+export HBASE_OFFHEAPSIZE=(n+x)G
+</code>
+<em>Note</em> The &ldquo;G&rdquo; is for gigabytes. The value for x should be 1 to 2 GB and the value should be at the higher end for clusters handling high volume of transactions.</li>
+<li>The other option to configure the total off-heap memory size is tp set the <code>-XX:MaxDirectMemorySize</code> JVM property. Again this value can be set in <code>hbase-env.sh</code>
+<code>
+export HBASE_OPTS="$HBASE_OPTS -XX:MaxDirectMemorySize=(n+x)G"
+</code>
+If you are wondering what x GB is for, it is for Java direct memory used by hdfs client used by hbase to interact with the underlying hdfs filesystem.</li>
+<li>Set the HBase property <code>hbase.bucketcache.combinedcache.enabled</code> to <code>true</code> so that on-heap cache will be used for index and bloomfilter blocks along with <code>bucketcache</code> for data blocks.
+<code>
+&lt;property&gt;
+  &lt;name&gt;hbase.bucketcache.combinedcache.enabled&lt;/name&gt;
+  &lt;value&gt;true&lt;/value&gt;
+&lt;/property&gt;
+</code></li>
+<li>Set the HBase property <code>hbase.bucketcache.ioengine</code> to <code>offheap</code>.
+<code>
+&lt;property&gt;
+  &lt;name&gt;hbase.bucketcache.ioengine&lt;/name&gt;
+  &lt;value&gt;offheap&lt;/value&gt;
+&lt;/property&gt;
+</code></li>
+<li>Set the HBase property <code>hbase.bucketcache.size</code> to the size of memory which is allocated for bucket cache in mb.
+<code>
+&lt;property&gt;
+  &lt;name&gt;hbase.bucketcache.size&lt;/name&gt;
+  &lt;value&gt;n*1024&lt;/value&gt;
+&lt;/property&gt;
+</code></li>
+<li>Restart HBase server processess so that these changes can take in effect.
+```</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Java Direct ByteBuffer Performance Advantages and Considerations]]></title>
+    <link href="http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/"/>
+    <updated>2015-06-05T21:38:40-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations</id>
+    <content type="html"><![CDATA[<p>During execution, objects/variables created by Java programs gets their space allocated in the JVM heap memory. The total amount of heap memory available for a JVM is determined by the value set to -Xmx parameter when starting the Java process. When object allocated is released by the Java program, the corresponding memory is made available for later use by the JVM garbage collection (GC) process.</p>
+
+<p>The GC process gets invoked typically when the amount of free memory in the JVM falls below a certain threshold. At a very high level, the GC process involves identification of objects which are not used any more i.e. not referenced anymore, releasing the memory and compacting the memory to reduce memory fragmentation. Readers who are interested in understanding the details of GC process can find it <a href="http://blog.asquareb.com/blog/2014/12/13/jvm-gc-settings-and-hbase">here</a>. As one can imagine, the time it takes to complete the GC process will increase with the increase in size of the Java heap memory since it takes more time to identify the objects which can be released and also to perform compaction.</p>
+
+<!--more-->
+
+
+<p>If a Java application requires large memory (in GBs), the time it takes to complete the GC process will be detrimental to its performance. If the application is performance sensitive, then large heap memory size can adversely impact its performance. In order to mitigate this, one can try to use memory outside Java heap and hence reduce the Java heap memory use and its size. This can be done using the Java <a href="http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html">ByteBuffer</a> class which provides the option to allocate ByteBuffers outside JVM heap using <a href="http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html#allocateDirect(int">allocateDirect</a>) method.</p>
+
+<p>The allocateDirect method allocates memory of requested size (in bytes) on memory outside the JVM heap (off-heap) and provides the object reference to the application with the starting offset of 0. The application can then use the reference to store and retrieve data into the off-heap memory. When the garbage collection runs, it doesn&rsquo;t have to take into account the memory allocated off-heap to identify memory not being used or perform memory compaction which in turn reduce the time to complete GC.</p>
+
+<p>While the time to complete GC can be reduced when large memory is used in a Java process by using off-heap memory, there are other overheads which need to be taken into consideration before using it. Allocation of off-heap memory will take more time than the on-heap memory since the JVM need to make native calls to get the memory allocated. Also when the off-heap memory is not used anymore by the application, during GC process, the JVM need to make native calls to free the off-heap memory in addition to releasing the memory used by the object reference in on-heap memory. Also as per the API documentation, the JVM will make the best effort to not to use any on-heap memory as a intermediate step to store and retrieve data to/from the off-heap memory. In order to compensate these additional overheads and at the same time take advantage of using large memory without the penalty of increased GC time, it is best to use off-heap memory for large objects which doesn&rsquo;t get released often.</p>
+
+<p>When a JVM is brought up to run a Java process, the total memory which can be used for off-heap memory can be specified using the JVM parameter <code>-XX:MaxDirectMemorySize</code> parameter. If the parameter is not set explicitly, the value is set to the free memory available in the system at the start of the process using <a href="https://github.com/openjdk-mirror/jdk/blob/icedtea/jdk7/master/src/share/classes/sun/misc/VM.java#L193">VM.maxDirectMemory()</a> method call. When off-heap memory allocation is made, the JVM keeps track of the total memory used so far. When a new off-heap memory allocation request is made the JVM checks whether the sum of the requested memory size and the total memory allocated so far is greater than the available direct memory size set at the start of the Java process. If the sum exceeds the available memory, an explicit GC system call is made by the memory allocator and then the process thread sleeps for <a href="https://github.com/openjdk-mirror/jdk/blob/icedtea/jdk7/master/src/share/classes/java/nio/Bits.java#L651">100ms</a> for the GC call to complete. After 100ms the allocator checks again to see whether there is enough space to satisfy the new memory allocation request before raising an out of memory exception.</p>
+
+<p>Few things to note about this allocation process.</p>
+
+<ul>
+<li><p>For performance sensitive applications the explicit GC and the non-tunable sleep time in the allocation logic when there is not enough memory can be a large overhead.</p></li>
+<li><p>The second item to note is that a GC call means best effort will be made by the JVM to schedule one and doesn&rsquo;t guarantee that one will be run immediately. So there can be situations when the Java process will fail with OOM error even when there is enough memory to be freed to accommodate new memory allocation request since a GC is not run immediately.</p></li>
+<li><p>Third, the thread sleep time of 100ms may not be sufficient in certain situations for the GC to complete and release unused memory to satisfy new memory allocation request. If any one is surprised that the 100ms is more than sufficient for a GC to complete, we came across the situation where trying to allocate 1 GB chunks of off heap space using a simple for loop failing on Ubuntu 12.04 LTS with OOM while the same runs fine on Redhat Linux machine which had a relatively less powerful hardware. With the current API this sleep time can&rsquo;t be adjusted and hence the application may have to perform additional sleep to make sure that there is no memory to use.</p></li>
+<li><p>The last item of interest is the total memory available for use to allocate off-heap memory. This value is set at the start of the process either manually or by the VM. When set manually, the JVM doesn&rsquo;t verify whether there is enough free memory available on the system. Even if the value is set automatically by the JVM, the available memory on the system can be lower during the process execution since memory usage of other processes in the system can change as time goes by which can result in the Java process failing due to unexpected exception in memory allocation. So it is important to make sure that the memory of size set in <code>-XX:MaxDirectMemorySize</code> is available for the Java process to use so that the failures doesn&rsquo;t happen.</p></li>
+</ul>
+
+
+<p>There are few options the JVM can do to prevent allocation related exceptions which would require changes to the JVM code.</p>
+
+<ul>
+<li><p>Verify the system free memory to make sure that it is greater than or equal to what is set by the users when the JVM is brought up and also during the process execution. This will require native system calls and may have a pronounced impact on the performance of the Java process. One way to mitigate is to provide an JVM option for the users to set if they need this strict condition checking.</p></li>
+<li><p>Instead of invoking a GC call when all the memory is used, it would be better to have a configurable parameter to set direct memory used threshold to make the GC call. This should be a fairly simple change to the JVM code.</p></li>
+<li><p>Calculate the sleep time after the GC process taking into consideration all the factors which impacts GC time. This will be complex and will not be of less importance if the previous suggestion is implemented in the JDK code.</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Design Optimal HBase Based Applications]]></title>
+    <link href="http://asquareb.github.io/blog/2015/02/07/optimal-hbase-based-applications/"/>
+    <updated>2015-02-07T21:53:29-05:00</updated>
+    <id>http://asquareb.github.io/blog/2015/02/07/optimal-hbase-based-applications</id>
+    <content type="html"><![CDATA[<p>Leveraging the architecture of any data management system used in an application will yield the best performance and is the case with HBase. So before listing the key points to remember while designing HBase based applications, lets briefly look at the relevant architecture of HBase which will provide the required context.</p>
+
+<!-- more -->
+
+
+
+
+<h2>Key value store</h2>
+
+
+<p>HBase at its core is a key value store that provides row and table abstractions for users. Some may wonder what that means and here is a quick high level explanation</p>
+
+<ul>
+<li>When a user writes a row to a table in HBase, value of columns are written separately in storage with a <a href="https://github.com/apache/hbase/blob/master/hbase-common/src/main/java/org/apache/hadoop/hbase/Cell.java">key value</a> of row identifier, column family name, column name, timestamp and version number combined</li>
+<li>The key value pairs are stored in sorted order and that means columns which are part of a row in a HBase table are stored in a sequence in storage</li>
+<li>When a row is read by a HBase client, all the columns values are read individually and stitched together to present it back to the client as a single row</li>
+</ul>
+
+
+<h2>Write path</h2>
+
+
+<p>When a write action is taken on a HBase table row, the data is written first to a log (WAL) on disk for recovery. Then the data is written to in memory storage called <code>memstore</code>.</p>
+
+<p>Data from each column family in a table utilizes separate memory area of memstore storage and when memstore thresholds are reached the memstores are flushed which creates immutable files on disk. Note that as with separate memory in memstore for different column families in a table, separate files are created in disk for each column family in a table.</p>
+
+<p>Since the disk files created are immutable, when an update request is made, data will be written with the latest timestamp which will be used by read requests to identify the latest data. Also for delete requests,a new row entry will be stored with a delete marker so that reads will be able to identify that the row is deleted.</p>
+
+<h2>Read path</h2>
+
+
+<p>When a read request is made, HBase identifies the files which stores the rows meeting the request criteria from the metadata it maintains. Each file includes a block index which will identify the block inside the file where the row can be found. HBase performs a scan of the block to retrieve all the key value pairs corresponding to the request and a copy gets stored in the <code>block cache</code> in memory before the row is returned back to the client. BlockCache stores the data in memory for further reads and the data in cache gets dropped using LRU algorithm when the cache gets filled.</p>
+
+<p>While scanning the file block, there is a possibility that there can be no data available which satisfies the read request. Also if a row spans multiple blocks HBase will scan multiple blocks to satisfy the read request.</p>
+
+<p>Note that if there are more than one column family in a table and the read request involves data from more than one column family, HBase need to go through the process against multiple files on disk to retrieve data to satisfy the request. Also if the latest data for the row is available in memstore due to recent writes, HBase will merge data from the files in disk with the data in memstore before returning it to the client as request response.</p>
+
+<h2>Processing and storage maintenance</h2>
+
+
+<p>From HBase process perspective, table data is stored in <code>regions</code> which includes <code>memstore</code> and files on disk (<code>store files</code>). Regions are managed by region servers which handles all user requests. HBase master allocates <code>regions</code> to <code>region servers</code> during start up and it also maintains the table metadata.</p>
+
+<p>In order to reduce the number of on-disk files which will also improve read performance, HBase performs regular minor compactions based on <a href="/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/">configured thresholds</a> which will combine small files created by memstore flushes into a single large file. When the size of store (memstore + store file for a column family) grows beyond a certain limit, HBase by default will split the region into two and this automatic splitting process continues as more data is written to the table. The newly created region gets assigned to a new region server and hence the processing is distributed to additional node which improves performance and scalability.</p>
+
+<p>HBase by default also performs major compactions on all disk files in a region related to a table column family to create a single store file on disk which again improves read requests. During major compaction HBase also removes data for rows marked as deleted. But as one could guess there will be impact an on performance when major compaction occurs.</p>
+
+<h2>Application design considerations</h2>
+
+
+<p>Given this high level understanding of HBase which are relevant to anyone performing application design, the following are some of the points to take into account while designing an application using HBase to get optimal performance.</p>
+
+<ul>
+<li>Unlike traditional DBMS which can use data structures like indexes, HBase solely relies on table keys. So understanding the queries which are required to satisfy the user case and creating tables with the appropriate key is important.</li>
+<li>Table keys should also prevent data skew and processing skew i.e key should distribute data storage and processing to all region servers so that design can scale and perform well utilizing all the resources in the HBase cluster.</li>
+<li>While blocks storing data relevant to a query is quickly identified ( ~O(3) ), scanning through the block to retrieve the data takes longer time ( O(n) n being the number of key values stored in a block) along with the time it takes to bring the block from disk into memory. It is important to create tables with optimal block size which will also help utilize cache optimally.</li>
+<li>If queries often retrieve data from more than one column family in a table which means HBase needs to deal with two sets for store files, it would be good to have related columns in a single column family which will reduce the number of disk files to deal with during reads.</li>
+<li>Denormalize data since HBase doesn’t support multi-table joins. This will also help with data consistency since row level actions are atomic and HBase doesn’t support transactions where multiple actions can be committed or rolled back.</li>
+<li>Pre-split the tables so that data is distributed to multiple region servers from the get go instead of starting with one region server and getting hammered. Also look at using other auto splitting options other than the default size based splitting of regions.</li>
+<li>Leverage versioning and TTL features to prune the amount of relevant data stored in the cluster.</li>
+<li>Unlike traditional databases, column names can be used to store the column values with dummy data for the actual value which will reduce the amount of data stored in the table and inturn also reduces block/cache usage.</li>
+<li>If there is a pre-defined maintenance window available to perform major compaction, disable major compactions so that spikes in low performance can be avoided.</li>
+<li>Enable bloom filters on all tables which will reduce the number of blocks read. There is storage overhead to enable bloom filter which may be a worthy price to pay for the performance gain.</li>
+</ul>
+
+
+<p>These along with <a href="/blog/2014/12/13/jvm-gc-settings-and-hbase/">JVM</a>, <a href="/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/">cache</a> and HBase <a href="/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/">configuration parameters</a> looked at earlier will help someone to get the best out of a HBase cluster. Also if HBase fits a use case and want to vet other options before making a decision Redis, Accumulo, Cassandra are some of the options to look into.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Configuration Parameters That Can Influence HBase Performance]]></title>
+    <link href="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/"/>
+    <updated>2015-01-01T18:10:24-05:00</updated>
+    <id>http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance</id>
+    <content type="html"><![CDATA[<p>Based on individual use case and HBase deployment the settings of the following parameter will vary. As with any performance improvement exercise all changes should be systematically tested for benefits.</p>
+
+<!--more-->
+
+
+<p><strong>HBase properties</strong></p>
+
+<p><code>hbase.regionserver.handler.count</code> - controls the number of RPC listener threads on each region server. Increasing the listeners threads can improve performance but need to be balanced against the amount of resource available in the system since each thread consumes memory and CPU.</p>
+
+<p><code>hbase.ipc.server.callqueue.handler.factor</code> - Determines the number of call queues interms of regionserver handler count. Dedicated queues for each RPC listener thread reduces contention.</p>
+
+<p><code>hbase.ipc.server.callqueue.read.ratio</code> - Determines the number of call queues dedicated to read and write requests. If the work load is primarily read then increasing read queues to higher value value will help. By default there is no differentiation of queues as read or write.</p>
+
+<p><code>hbase.ipc.server.callqueue.scan.ratio</code> - Determines the number of call queues allocated for gets and scan requests. If the work load is primarily gets and not scans increasing the get queues will help. By default all the read queues are used for both get and scan requests.</p>
+
+<p><code>hbase.regionserver.global.memstore.size</code> - Ratio of JVM heap allocated for HBase memstore. The defaul is 40%. If the work load is primarily writes increasing this percentage will help and that means the percentage of heap allocated to blockcache need to be reduced since the total of the two can’t go beyond 80%.</p>
+
+<p><code>hbase.regionserver.region.split.policy</code> - Policy which determines when a region to be split. There are a few options available and each of them can make a difference for different scenarios.</p>
+
+<p><code>hbase.zookeeper.property.maxClientCnxns</code> - Number of concurrent connections which can be made to a single member of ZK ensemble from a single client and this value should match the value in zoo.cfg. This need to be adjusted taking into consideration the expected number of HBase client connections.</p>
+
+<p><code>hbase.client.write.buffer</code> - Size of write buffer at client and server. Increased buffering will help but need to be balanced against memory available on the server side.</p>
+
+<p><code>hbase.client.scanner.caching</code> - Number of rows fetched when calling next on a scanner if it is not served from client local memory.</p>
+
+<p><code>hbase.hregion.memstore.flush.size</code> - Size when exceeded flushes the memstore and is checked at hbase.server.thread.wakefrequency intervals. Higher the number the</p>
+
+<p><code>hbase.hregion.memstore.mslab.enabled</code> - enabled by default to prevent heap fragmentation and better not to disable it.</p>
+
+<p><code>hbase.hregion.max.filesize</code> - Sum of region HFiles when exceeded, region is split into two. It can help to have a higer value than the default 10 GB, if the workload is high volume/velocity write.</p>
+
+<p><code>hbase.hregion.majorcompaction</code> - time between major compaction and a value of 0 disables it. It would be good to disable it and schedule it on a regular maintenance window to prevent performance issues.</p>
+
+<p><code>hfile.block.cache.size</code> - percentage of JVM heap allocated for block cache. By default it is 40% but a higher percentage will help with read latencies if the primary workload is read. But any change need to be reflected in the memstore percentage.</p>
+
+<p>Set <code>hbase.ipc.client.tcpnodelay</code> to true and is the case by default.</p>
+
+<p>Setting <code>hbase.storescanner.parallel.seek.enable</code> to true can help with read latencies</p>
+
+<p>If data staleness is not a concern during reads for e.g. in stiuations where data is loaded nightly, enable <a href="https://issues.apache.org/jira/browse/HBASE-10070">MTTR</a> so that read failures due to region failures can be prevented by HBase servicing the request from a (stale) copy of the data.</p>
+
+<p>Enable <strong>HDFS short circuit read</strong> so that read latencies can be improved by reading data locally.</p>
+
+<ul>
+<li>Set <code>dfs.block.local-path-access.user</code> to hbase</li>
+<li>Set <code>dfs.client.read.shortcircuit</code> to true</li>
+<li>Set <code>hbase.regionserver.checksum.verify</code> to true</li>
+</ul>
+
+
+<p><strong>On Linux OS:</strong></p>
+
+<p>Set <code>vm.swappiness</code> to 0 or low value</p>
+
+<p>As with any database based application, Even with a well tuned cluster with the best hardware, an application will not get the best performance if it is not designed properly.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Garbage First (G1) GC and HBase]]></title>
+    <link href="http://asquareb.github.io/blog/2014/12/18/garbage-first-g1-gc-and-hbase/"/>
+    <updated>2014-12-18T22:31:37-05:00</updated>
+    <id>http://asquareb.github.io/blog/2014/12/18/garbage-first-g1-gc-and-hbase</id>
+    <content type="html"><![CDATA[<p>G1 the lastest Java garbage collector is a generational collector like <a href="/blog/2014/12/13/jvm-gc-settings-and-hbase/">CMS</a>. The key differences between G1 and CMS collectors are</p>
+
+<ul>
+<li>In CMS the young and old generation heap space are physically differentiated. But in the case of G1 they are logical. This is achieved by dividing the total heap space into number of <code>regions</code> (2000) and the regions are identified whether they belong to young or old space.</li>
+<li>Compaction of the heap space is done as part of the collection process which was not the case in CMS.</li>
+<li>G1 collector tries to meet user specified target for application pause time during the collection process.</li>
+</ul>
+
+
+<!-- more -->
+
+
+<p>As with <a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/G1GettingStarted/index.html">CMS</a>, heap objects are created in eden space first. Then objects are copied to survivor space and objects which survive the aging threshold during minor GC gets moved into old gen space.</p>
+
+<p>When GC gets triggered, G1 can identify liveliness of objects in the various <code>regions</code> in a particular space (young or old). In order to fully utilize heap space and at the same time meet the acceptable application pause threshold, G1 collects the regions with lowest liveliness (hence more garbage) since it will be fast in releasing more heap space. Also during GC, live objects remaining in a <code>region</code> gets copied to another region with enough space to accomodate the objects. Freeing up regions results due to this copy process results in better compaction of heap space. Since GC pause times are a major component to HBase latency and latency fluctuations, any reduction in the pause time as with G1 collector will improve HBase latency.</p>
+
+<p>One interesting question which pops up is whether the compaction step in the G1 process is necessary for a system like HBase. Compaction which involves copying of objects between regions which requires resetting of references will be the costliest operation in the G1 collection process.</p>
+
+<p>In the case of HBase most of the objects which will survive and get moved to old gen heap space will be memstore or blockcache objects. They are of fixed sizes (2K and 64K respectively) and hence any new objects which gets moved to old space will be able to fit into a slot which got released earlier by HBase. So the only advantage of compaction of heap for a system like HBase is to be able to free GC regions quickly. But the time to perform G1 GC that meets user specified threshold includes compaction and freeing of regions, it is hard to imagine the advantage of G1 GC over CMS where there is no compaction.</p>
+
+<p>While G1 collector is set to replace CMS in the future and will be improved upon to better the performance of Java based systems in general, for systems like HBase which has a prescribed heap usage and operational pattern the improvements may not always be beneficial. One of the options to reduce the impact of GC on HBase subsystems, is to use more of offheap memory like <a href="/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/">BucketCache</a> since objects in offheap memory is not managed by GC and it is left to applications to manage it. This sounds more like the earlier database systems where services were inbuilt instead of relying on the <a href="http://www.eecs.berkeley.edu/~prabal/resources/osprelim/Sto81.pdf">OS based services which are general purpose</a>.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a>.</p>
+]]></content>
+  </entry>
+  
+</feed>

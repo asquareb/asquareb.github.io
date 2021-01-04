@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>JVM GC Settings and HBase Performance - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="HBase being Java based and uses JVM heap differently than a typical Java process, Java garbage collection impacts the performance of HBase. The &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2014/12/13/jvm-gc-settings-and-hbase/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">JVM GC Settings and HBase Performance</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-12-13T19:13:31-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>13</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>7:13 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>HBase being Java based and uses JVM heap differently than a typical Java process, Java garbage collection impacts the performance of HBase. The performance impact will be noticeable if JVM GC parameters are not set properly.
+Inorder to come up with optimal GC settings, it is good to understand GC process which will provide the required context. The following is a quick summary of GC process and the relevant parameters which influences its behavior. For anyone who likes to venture into the details of GC there is enough literature available on the net.</p>
+
+<!-- more -->
+
+
+<ul>
+<li><p>When JVM allocates heap it divides it into young and old generation space. The max heap space size can be set by the parameter <code>-Xmx</code> and the initial memory allocation for heap can be controlled using the parameter <code>-Xms</code>.</p></li>
+<li><p>All new java objects are allocated in the young generation space and the size is controlled by the parameter <code>-Xmn</code> which sets the initial and max size of young gen heap size.</p>
+
+<ul>
+<li>If someone likes to have fine grained control over the initial allocation and the max size of young generation space, the <code>-Xmns</code> and <code>-Xmnx</code> parameters can be used.</li>
+</ul>
+</li>
+<li><p>As the young gen space gets full, JVM performs a minor (young gen) GC and any object which survives the minor GC gets moved to the heap space allocated for older gen.</p>
+
+<ul>
+<li>The size of heap for old gen will be the total heap size (<code>-Xmx</code>) minus the size allocated for young gen (<code>-Xmn</code>).</li>
+</ul>
+</li>
+<li><p>When the old gen heap space usage reaches a threshold, JVM performs major GC to recover space and depending on the collector used for GC performs compaction to reduce fragmentation. Major GC takes longer time relative to minor GC and JVM need to stop the application to complete it. Stopping of the application will show up as performance degradation of the application.</p></li>
+</ul>
+
+
+<p>The generational approach (i.e. young gen and old gen objects) to heap allocation and GC is based on the observation that most of the objects allocated by Java applications die quickly. Hence if the young gen is kept small, the minor GC will be quicker and the old gen heap space will not get polluted with transient objects. This will help efficient old gen GC and the overall stop time of the application required for GC. Inorder to determine which objects are non transient and can be promoted to old gen heap space JVM follows the following process.</p>
+
+<ul>
+<li><p>The young gen heap space is divided into <code>eden space</code> and 2 <code>survivor spaces</code>. The space allocation is controlled by the parameter <code>-XX:SurvivorRatio</code> and if it set to 6, the <code>eden space</code> will be of size <code>Xmn * 6/8</code> and each <code>survivor space</code> will be of size <code>Xmn * 1/8</code>.</p></li>
+<li><p>All new objects get created in <code>eden space</code>. When a minor GC happens objects which are still alive gets moved into one of the survivor space leaving the <code>eden space</code> second <code>survivor space</code> empty. When the next minor GC happens, objects alive in eden space along with the ones in survivor space gets copied to the second survivor space leaving the first survivor space empty. This process of copying live objects between the two survivor spaces happens until a threshold which determines that the objects are not transient since they survivied the number of minor GCs. The objects which survived are copied to old gen heap space. This process will reduce the number of objects copied to old gen space since many objects will get released during the process and the real survivors get copied to old gen space.</p></li>
+<li><p>Different garbage collectors are available to choose from based on the use case.</p>
+
+<ul>
+<li>Serial GC enabled by the parameter <code>-XX:+UseSerialGC</code> uses single thread to perform GC and requires long application pause time to complete GC</li>
+<li>Parallel GC enabled by the parameter <code>-XX:+UseParallelGC</code> runs multiple threads to perform GC which reduces application pause time relative to serial GC but requires more CPU</li>
+<li>Concurrent mark and sweep (CMS) enabled by the parameter <code>-XX:+UseConcMarkSweepGC</code> runs some of the steps in the GC process (specifically marking the objects as garbage for collection) in parallel to running the application which reduces the application stop time</li>
+<li>Garbage First enabed by the parameter<code>–XX:+UseG1GC</code> which is similar to CMS but the memory allocation model and the algoritm is focussed on minimizing the number of old gen GC.</li>
+</ul>
+</li>
+</ul>
+
+
+<p>As you can guess there is more than what is written here about the collectors and there is enough literature to understand them in detail.</p>
+
+<ul>
+<li><p>Setting aside <code>Garbage First</code> collector for the time being, for HBase which is deployed mostly for low latency, CMS is the best option for the old gen GC and parallel GC of the young gen GC assuming that there are more than one CPU cores are available.</p>
+
+<ul>
+<li>Use <code>-XX:+UseConcMarkSweepGC</code> to use CMS</li>
+<li>Use <code>-XX:+UseParNewGC</code> to use parallel GC for young gen GC and <code>-XX:ParallelGCThreads=nm</code> to define the number of parallel threads and the value should be less than the number of CPU cores available.</li>
+</ul>
+</li>
+<li><p>Since young GCs are frequent relative to old gen GCs, requires the application to stop and the GC time depends on the size of the young gen space irrespective of the collector used, the young gen space need to be kept small so that the application stop time is minimal. A rough estimation on the size of young gen (<code>-Xmn</code>) can be 100 m * number of cores or number of parallel GC threads allocated for young gen GC.</p></li>
+<li><p>Apart from creating typical Java objects, HBase also uses the heap to explicitly allocate and service queries. During read operation HBase creates <code>blockcache</code> objects of size 64K and on write creates <code>memstore</code> objects of size  2K. Most of these objects will be survivor objects since HBase determines when they get release to become garbage. In the case of <code>blockcache</code> it is the LRU algorithm used to release objects and in case of <code>memstore</code> objects are released during flushes. What this means is that these object can be moved to old gen from young gen quickly instead of JVM determining the threshold by copying these objects between the two survivor spaces before moving the objects to the old gen space. This can be controlled by setting the parameter <code>-XX:MaxTenuringThreshold=n</code>. In tests setting it to 3 or 4 has provided good balance. But it can be fine tuned by printing the tenuring distribution on existing deployments by setting the parameter <code>-XX:+PrintTenuringDistribution</code> which will provide details about the number of times JVM copied objects between the survivor spaces before moving the objects to old gen space.</p></li>
+<li><p>Since HBase creates many survivor objects (<code>blockcache</code> and <code>memstore</code> objects) it would help if the ratio of survivor space is increased relative to the eden space. By default eden space is 6/8 of young gen space leaving each survivor space 1/8th of young space. This can be changed by setting <code> -XX:SurvivorRatio</code> and a value of 4 will increase the survivor space to 1/6 of young space. By increasing survivor space and reducing the tenuring threshold more <code>blockcache</code> and <code>memstore</code> objects will be moved to old gen space during minor (young gen) GC.</p></li>
+<li><p>The threshold which triggers the CMS GC on old gen heap is determined by the parameter <code>-XX:CMSInitiatingOccupancyFraction=nn</code>. By default it is set to 69 which is the percentage of the old gen space when gets occupied the CMS GC gets triggered. After the initial GC, JVM determines automatically when to trigger the GC based on its observation. But <code>-XX:CMSInitiatingOccupancyFraction</code> plays a significant role i.e. even if there are no dead objects GC gets triggered if the old gen objects occupies more than the occupation fraction. This is key parameter since <code>blockcache</code> and <code>memstore</code> objects which are live objects can trigger old gen GC if the occupation fraction is not set a value higher than <code>higher of ( blockcache size / size of old gen space and memstore size / size of old gen space)</code>. Also we want the occupation fraction to be the only factor to be used to trigger all old gen GC instead of JVM determining it dynamicallyand this can be controlled by using the parameter <code> -XX:UseCMSInitiatingOccupancyOnly</code>.</p></li>
+<li><p><a href="http://blog.ragozin.info/2012/03/secret-hotspot-option-improving-gc.html">Young gen GC time also depends on the total heap size</a> since it need to determine the live objects in young space which also involves looking for references from the objects from the old gen to the objects in young gen space. The <code>-XX:ParGCCardsPerStrideChunk</code> parameter controls the amount of old gen space allocated to GC threads to identify the dirty pages and by default it is set to 512 byte pages which is too small for large heap sizes typically used in HBase installations. Setting a higher value of 16 or 32 K will reduce the young gen GC time considerably.</p></li>
+<li><p>In order to understand the current GC behavior which will help with fine tuning the GC settings, use the options <code>-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationStoppedTime  -Xloggc:/var/log/hbase/gc/gc.log-$$-$(hostname)-$(date +'%Y%m%d%H%M').log</code> which will generate information which can be used for tuning..</p></li>
+</ul>
+
+
+<p>G1 collector is similar to CMS collector but raises a <a href="/blog/2014/12/18/garbage-first-g1-gc-and-hbase/">question about collector improvements for general Java based applications and specialized systems like HBase using Java</a>.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-12-13T19:13:31-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>13</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>7:13 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hbase/'>hbase</a>, <a class='category' href='/blog/categories/performance/'>performance</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2014/12/13/jvm-gc-settings-and-hbase/" data-via="" data-counturl="http://asquareb.github.io/blog/2014/12/13/jvm-gc-settings-and-hbase/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/" title="Previous Post: Leverage large physical memory to improve HBase read performance">&laquo; Leverage large physical memory to improve HBase read performance</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/12/16/copy-distributed-log-files-into-hdfs/" title="Next Post: Copy distributed log files into HDFS">Copy distributed log files into HDFS &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2014/12/13/jvm-gc-settings-and-hbase/';
+        var disqus_url = 'http://asquareb.github.io/blog/2014/12/13/jvm-gc-settings-and-hbase/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

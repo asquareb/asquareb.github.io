@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Distributed Systems | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/distributed-systems/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[End-to-end Arguments in System Design]]></title>
+    <link href="http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design/"/>
+    <updated>2016-02-07T18:41:26-05:00</updated>
+    <id>http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design</id>
+    <content type="html"><![CDATA[<p><a href="http://web.mit.edu/Saltzer/www/publications/endtoend/endtoend.pdf">This paper</a> presents the design principle regarding placement of functions in computer system design called &ldquo;end-to-end argument&rdquo;.  The argument of the principle is that any application functions implemented at lower levels of a system may be redundant or of little value when compared with the cost of providing them at lower level.  The paper articulates the argument through requirements and examples in distributed systems like reliable data transmission, encryption, duplicate message detection, message sequencing, detecting host crashes, delivery receipts etc.</p>
+
+<!--more-->
+
+
+<p>Reliable Data Transmission</p>
+
+<ul>
+<li>Even if the communication network provides aid in coping with issues in data transmission like data buffering issues, processor or memory issues, loss of packet, host crashes through duplicate copies, timeout and retry, redundancy for error detection, crash recovery etc, at the end the data transfer application need to perform the check of the data transferred to claim it to be successful</li>
+<li>This makes the functions in the network layer for reliable data transfer redundant. More over these functions will impact other applications which will be using the network layer but doesn&rsquo;t require all the functions</li>
+</ul>
+
+
+<p>Lower layers can implement function which can improve the performance of the application using it. For e.g. in the case of reliable data transmission</p>
+
+<ul>
+<li>The application need to make sure that the data transferred matches the source for e.g. by using checksums. If the checksum at the source and target don&rsquo;t match the data transfer need to be redone</li>
+<li>If functions can be included which will cost less but enhances the end to end reliability this will reduce the retries required to have the data data transferred reliably and hence improves the performance</li>
+</ul>
+
+
+<p>Decisions to include functions in lower layers</p>
+
+<ul>
+<li>Need to take into account the cost of implementing it at the lower layer and the impact on other applications which may be using it</li>
+<li>Need to be made with the understanding that the higher level layers will have much more information than the lower level layers to guarantee a feature/functionality</li>
+</ul>
+
+
+<p>In order to make these decisions i.e. whether to include functions in lower layers or let the application handle it at the end, application requirements of what need to be accomplished need to be well understood.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Scale in Distributed Systems]]></title>
+    <link href="http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems/"/>
+    <updated>2016-01-10T18:51:35-05:00</updated>
+    <id>http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems</id>
+    <content type="html"><![CDATA[<p><a href="http://clifford.neuman.name/papers/pdf/94--_scale-dist-sys-neuman-readings-dcs.pdf">This paper</a> looks at scale and how it affects distributed systems including highlights of how how scale is addressed in existing systems.
+A system is said to be <strong>scalable</strong> if it can handle addition of resources and users without suffering noticeable loss in performance or increase in administrative complexity. Scale also affects the way users perceive the systems. For e.g. as the number of objects accessible grows it becomes increasingly difficult to locate the objects of interest.</p>
+
+<!--more-->
+
+
+<ul>
+<li>Definitions
+
+<ul>
+<li>A <strong>distributed system</strong> is a collection of computers, connected by a computer network, working together to collectively implement some minimal set of services.</li>
+<li>A service or resource is <strong>replicated</strong> when it has multiple logically identical instances appearing on different nodes in a system</li>
+<li>A service is <strong>distributed</strong> when it is provided by multiple nodes each capable of handling a subset of the requests for service. A distribution function maps requests to the subset of the nodes that can handle it</li>
+<li><strong>Caching</strong> is a temporary form of replication used to save and reuse of query results on nodes. Caching need to use validation techniques to make sure that the data saved are current</li>
+</ul>
+</li>
+<li>Effects of Scale
+
+<ul>
+<li>Reliability
+
+<ul>
+<li>Systems should not cease to operate just because nodes are unavailable</li>
+<li>Reliability can be improved by increasing the autonomy of the nodes and replication</li>
+</ul>
+</li>
+<li>System Load
+
+<ul>
+<li>System query load increases with increase in amount of data, nodes, services</li>
+<li>Replication, distribution and caching can be used to reduce the number of requests that need to be handled by each node</li>
+</ul>
+</li>
+<li>Administration
+
+<ul>
+<li>With increase in number of nodes, administration of users, services and systems becomes complex</li>
+<li>Complexity in administration can be reduced by maintaining common information centrally</li>
+</ul>
+</li>
+<li>Heterogeneity
+
+<ul>
+<li>With scale nodes part of the system can not only of different hardware but can also run different OS and different versions of OS</li>
+<li><strong>Coherence</strong> an approach which expects nodes in a system support a common interface is one which is used to deal with heterogeneity
+
+<ul>
+<li>Common instruction set</li>
+<li>Common execution abstraction</li>
+<li>Support a common set of protocols</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Distributed system components affected by scale
+
+<ul>
+<li>Naming and directory services</li>
+<li>Authentication</li>
+<li>Authorization</li>
+<li>Accounting</li>
+<li>Communication</li>
+<li>Remote Resources</li>
+</ul>
+</li>
+</ul>
+
+
+<p><em>Scaling of all the components can be improved by replication, distribution and caching</em></p>
+
+<p>Key points to remember while building scalable systems</p>
+
+<ul>
+<li>Replication
+
+<ul>
+<li>Replication important resources</li>
+<li>Distribute the replicas</li>
+<li>Use loose consistency</li>
+</ul>
+</li>
+<li>Distribution
+
+<ul>
+<li>Distribute across multiple servers</li>
+<li>Distribute evenly</li>
+<li>Exploit locality</li>
+<li>Avoid upper level of hierarchies</li>
+</ul>
+</li>
+<li>Caching
+
+<ul>
+<li>Cache frequently accessed data</li>
+<li>Consider access patterns when caching
+
+<ul>
+<li>amount of data accessed together, read to write ratio, likelihood of conflicts, number of simultaneous users</li>
+</ul>
+</li>
+<li>Cache timeouts</li>
+<li>Caching at multiple levels</li>
+<li>Look first locally</li>
+<li>Data cached extensively must be changed less frequently</li>
+</ul>
+</li>
+<li>Avoid global broadcast</li>
+<li>Shed load but not too much: perform computation where it suits better</li>
+<li>Support multiple access mechanisms</li>
+<li>Keep users in mind</li>
+</ul>
+
+
+<p>Evaluating distributed systems</p>
+
+<ul>
+<li>Use of the system
+
+<ul>
+<li>Growth of queries as the system grows</li>
+<li>Central servers in the system and issues with replication</li>
+</ul>
+</li>
+<li>Data
+
+<ul>
+<li>Increase in data and how it increases data maintained in each node in the system</li>
+<li>Increase in query time with increase in data size</li>
+<li>Data update process and how it scales</li>
+<li>Cache data invalidation and query performance</li>
+</ul>
+</li>
+<li>Administration
+
+<ul>
+<li>Does the system require a centralized admin system?</li>
+<li>Is it practical in the environment in which the system is used?</li>
+</ul>
+</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

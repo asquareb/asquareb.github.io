@@ -1,0 +1,2769 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Quick Notes]]></title>
+  <link href="http://asquareb.github.io/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[JDBC Connection to Apache Phoenix]]></title>
+    <link href="http://asquareb.github.io/blog/2016/03/31/jdbc-connection-to-apache-phoenix/"/>
+    <updated>2016-03-31T12:27:36-04:00</updated>
+    <id>http://asquareb.github.io/blog/2016/03/31/jdbc-connection-to-apache-phoenix</id>
+    <content type="html"><![CDATA[<p>Phoenix provides a JDBC driver for Java client and hence can be connected to Phoenix by following the steps required to get a JDBC connection. As with JDBC drivers for other DBMS, there are are some Phoenix specific requirements to get a JDBC connection. For a non secure HBase cluster the Phoenix JDBC connection string should be of the form <code>jdbc:phoenix:&lt;ZK-QUORUM&gt;:&lt;ZK-PORT&gt;:&lt;ZK-HBASE-NODE&gt;</code>. The following is the code snippet to get a Phoenix JDBC connection object for a non secure HBase cluster.</p>
+
+<!--more-->
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Connection con = DriverManager.getConnection("jdbc:phoenix:nodea,nodeb,nodec:2181:/hbase");</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To connect to a secure HBase cluster using a Kerberos user principal and keytab, the Phoenix JDBC connection string should be of the form <code>jdbc:phoenix:&lt;ZK-QUORUM&gt;:&lt;ZK-PORT&gt;:&lt;ZK-HBASE-NODE&gt;:principal_name@REALM:/path/to/keytab</code>. The following is the code snippet to get a Phoenix JDBC connection object for a secure HBase cluster.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>con = DriverManager.getConnection("jdbc:phoenix:node1,node2,node3:2181:/hbase:peace@REALM.COM:/home/peace/peace.keytab);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If Kerberos principal and keytab is not used to connect to a secured HBase cluster, then the user running the code to make the connection should be defined in the Kerberos KDC and should have a valid TGT. The user running the code can verify whether they are in the correct KDC and have a valid TGT by running <code>klist</code> command . One key item to note is that to access a secure HBase cluster, the hbase-site.xml and core-site.xml of the target HBase cluster should be available in the classpath of the application.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase 1.0 - Offheap Cache Configuration]]></title>
+    <link href="http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration/"/>
+    <updated>2016-03-12T10:55:14-05:00</updated>
+    <id>http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration</id>
+    <content type="html"><![CDATA[<p>If you have been using HBase off-heap bucketcache, you may agree that configuration it is a <a href="http://blog.asquareb.com/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/">bit cumbersome</a> to say the least. In version 1.0, the HBase development team <a href="https://issues.apache.org/jira/browse/HBASE-11520">simplified the offheap cache configuration process</a>. With the changes, the following are the steps to configure bucketCache for e.g. of size n GB.</p>
+
+<!--more-->
+
+
+<ul>
+<li>Set the total off-heap memory size to be used by HBase to the environment variable <code>HBASE_OFFHEAPSIZE</code>. One way to do this is to set it in <code>hbase-env.sh</code></li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>export HBASE_OFFHEAPSIZE=(n+x)G</span></code></pre></td></tr></table></div></figure>
+
+
+<p><em>Note</em> The &ldquo;G&rdquo; is for gigabytes. The value for x should be 1 to 2 GB and the value should be at the higher end for clusters handling high volume of transactions.
+- The other option to configure the total off-heap memory size is tp set the <code>-XX:MaxDirectMemorySize</code> JVM property. Again this value can be set in <code>hbase-env.sh</code></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>export HBASE_OPTS="$HBASE_OPTS -XX:MaxDirectMemorySize=(n+x)G"</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you are wondering what x GB is for, it is for Java direct memory used by hdfs client used by hbase to interact with the underlying hdfs filesystem.
+- Set the HBase property <code>hbase.bucketcache.combinedcache.enabled</code> to <code>true</code> so that on-heap cache will be used for index and bloomfilter blocks along with <code>bucketcache</code> for data blocks.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  &lt;property&gt;
+</span><span class='line'>    &lt;name&gt;hbase.bucketcache.combinedcache.enabled&lt;/name&gt;
+</span><span class='line'>    &lt;value&gt;true&lt;/value&gt;
+</span><span class='line'>  &lt;/property&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Set the HBase property <code>hbase.bucketcache.ioengine</code> to <code>offheap</code>.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  &lt;property&gt;
+</span><span class='line'>    &lt;name&gt;hbase.bucketcache.ioengine&lt;/name&gt;
+</span><span class='line'>    &lt;value&gt;offheap&lt;/value&gt;
+</span><span class='line'>  &lt;/property&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Set the HBase property <code>hbase.bucketcache.size</code> to the size of memory which is allocated for bucket cache in mb.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  &lt;property&gt;
+</span><span class='line'>    &lt;name&gt;hbase.bucketcache.size&lt;/name&gt;
+</span><span class='line'>    &lt;value&gt;n*1024&lt;/value&gt;
+</span><span class='line'>  &lt;/property&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Restart HBase server processess so that these changes can take in effect.
+```</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[A Note on Distributed Computing]]></title>
+    <link href="http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/"/>
+    <updated>2016-03-06T16:18:22-05:00</updated>
+    <id>http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing</id>
+    <content type="html"><![CDATA[<p>A distributed system is a collection of independent computers that appears to its users as a single coherent system. <a href="http://theory.stanford.edu/people/jcm/cs358-96/spring-os.ps">This paper</a> argues that the objects in a distributed object oriented system form a single ontological class where all entities can be described by the specification of the set of interfaces of the objects and the semantics of operation is mistaken. This vision of unified objects for distributed systems is centered around the principles that</p>
+
+<!-- more -->
+
+
+<ul>
+<li>There is a single natural object oriented design for a given application, irrespective of context in which the application will be deployed</li>
+<li>Failure and performance issues are tied to the implementation of the components of the application and can be left out of initial design</li>
+<li>The interface of an object is independent of the context in which the object is used</li>
+</ul>
+
+
+<p>While this view is a natural extension of object oriented design, it doesn&rsquo;t take into account the important issues in distributed systems namely</p>
+
+<ul>
+<li>Latency
+
+<ul>
+<li>Ignoring the difference between the performance of local and remote invocations can lead to designs whose implementations will have performance problems because of large amount of communication between components that are in different address spaces and on different machines.</li>
+</ul>
+</li>
+<li>Memory access
+
+<ul>
+<li>Disparate address spaces both local and remote makes accessing memory locations/objects a bigger challenge</li>
+<li>This would require a common component like DSM which would translate memory pointer/object locations</li>
+<li>The other option is that the programmer is aware of the local and remote access which breaks transparency</li>
+</ul>
+</li>
+<li>Partial failure and concurrency due to lack of common agent
+
+<ul>
+<li>Interfaces of components can be designed as if all are local resulting in unhandled catastrophic failures</li>
+<li>Or design the interfaces as if all objects are remote resulting in the undesirable overhead on components which are local</li>
+<li>Partial failure also brings up the challenge of bringing back to an acceptable state which is not there in non distributed systems</li>
+</ul>
+</li>
+</ul>
+
+
+<p>Historically there is a desire to merge programming and computational models of local and remote computing. For e.g. communications protocol development has followed</p>
+
+<ul>
+<li>A path where integration with the current programming language is emphasized</li>
+<li>The other path where solving the inherent problems in distributed computing is emphasized</li>
+</ul>
+
+
+<p>These two approaches can be used in distributed object oriented systems by accepting the fact that there are irreconcilable differences in local and distributed computing</p>
+
+<ul>
+<li>Using IDLs which can be used to define local and remote objects and the IDL compilers which can vary its output based on object location</li>
+<li>Objects which are local but on a different address space can be considered as a separate category of object by the IDL compilers</li>
+<li>Developing tools like the ones which can identify the interaction between objects so that they can be designed to be local or remote</li>
+<li>Programmers being aware of the location of the objects so that they can think about the problems differently</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[End-to-end Arguments in System Design]]></title>
+    <link href="http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design/"/>
+    <updated>2016-02-07T18:41:26-05:00</updated>
+    <id>http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design</id>
+    <content type="html"><![CDATA[<p><a href="http://web.mit.edu/Saltzer/www/publications/endtoend/endtoend.pdf">This paper</a> presents the design principle regarding placement of functions in computer system design called &ldquo;end-to-end argument&rdquo;.  The argument of the principle is that any application functions implemented at lower levels of a system may be redundant or of little value when compared with the cost of providing them at lower level.  The paper articulates the argument through requirements and examples in distributed systems like reliable data transmission, encryption, duplicate message detection, message sequencing, detecting host crashes, delivery receipts etc.</p>
+
+<!--more-->
+
+
+<p>Reliable Data Transmission</p>
+
+<ul>
+<li>Even if the communication network provides aid in coping with issues in data transmission like data buffering issues, processor or memory issues, loss of packet, host crashes through duplicate copies, timeout and retry, redundancy for error detection, crash recovery etc, at the end the data transfer application need to perform the check of the data transferred to claim it to be successful</li>
+<li>This makes the functions in the network layer for reliable data transfer redundant. More over these functions will impact other applications which will be using the network layer but doesn&rsquo;t require all the functions</li>
+</ul>
+
+
+<p>Lower layers can implement function which can improve the performance of the application using it. For e.g. in the case of reliable data transmission</p>
+
+<ul>
+<li>The application need to make sure that the data transferred matches the source for e.g. by using checksums. If the checksum at the source and target don&rsquo;t match the data transfer need to be redone</li>
+<li>If functions can be included which will cost less but enhances the end to end reliability this will reduce the retries required to have the data data transferred reliably and hence improves the performance</li>
+</ul>
+
+
+<p>Decisions to include functions in lower layers</p>
+
+<ul>
+<li>Need to take into account the cost of implementing it at the lower layer and the impact on other applications which may be using it</li>
+<li>Need to be made with the understanding that the higher level layers will have much more information than the lower level layers to guarantee a feature/functionality</li>
+</ul>
+
+
+<p>In order to make these decisions i.e. whether to include functions in lower layers or let the application handle it at the end, application requirements of what need to be accomplished need to be well understood.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Scale in Distributed Systems]]></title>
+    <link href="http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems/"/>
+    <updated>2016-01-10T18:51:35-05:00</updated>
+    <id>http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems</id>
+    <content type="html"><![CDATA[<p><a href="http://clifford.neuman.name/papers/pdf/94--_scale-dist-sys-neuman-readings-dcs.pdf">This paper</a> looks at scale and how it affects distributed systems including highlights of how how scale is addressed in existing systems.
+A system is said to be <strong>scalable</strong> if it can handle addition of resources and users without suffering noticeable loss in performance or increase in administrative complexity. Scale also affects the way users perceive the systems. For e.g. as the number of objects accessible grows it becomes increasingly difficult to locate the objects of interest.</p>
+
+<!--more-->
+
+
+<ul>
+<li>Definitions
+
+<ul>
+<li>A <strong>distributed system</strong> is a collection of computers, connected by a computer network, working together to collectively implement some minimal set of services.</li>
+<li>A service or resource is <strong>replicated</strong> when it has multiple logically identical instances appearing on different nodes in a system</li>
+<li>A service is <strong>distributed</strong> when it is provided by multiple nodes each capable of handling a subset of the requests for service. A distribution function maps requests to the subset of the nodes that can handle it</li>
+<li><strong>Caching</strong> is a temporary form of replication used to save and reuse of query results on nodes. Caching need to use validation techniques to make sure that the data saved are current</li>
+</ul>
+</li>
+<li>Effects of Scale
+
+<ul>
+<li>Reliability
+
+<ul>
+<li>Systems should not cease to operate just because nodes are unavailable</li>
+<li>Reliability can be improved by increasing the autonomy of the nodes and replication</li>
+</ul>
+</li>
+<li>System Load
+
+<ul>
+<li>System query load increases with increase in amount of data, nodes, services</li>
+<li>Replication, distribution and caching can be used to reduce the number of requests that need to be handled by each node</li>
+</ul>
+</li>
+<li>Administration
+
+<ul>
+<li>With increase in number of nodes, administration of users, services and systems becomes complex</li>
+<li>Complexity in administration can be reduced by maintaining common information centrally</li>
+</ul>
+</li>
+<li>Heterogeneity
+
+<ul>
+<li>With scale nodes part of the system can not only of different hardware but can also run different OS and different versions of OS</li>
+<li><strong>Coherence</strong> an approach which expects nodes in a system support a common interface is one which is used to deal with heterogeneity
+
+<ul>
+<li>Common instruction set</li>
+<li>Common execution abstraction</li>
+<li>Support a common set of protocols</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Distributed system components affected by scale
+
+<ul>
+<li>Naming and directory services</li>
+<li>Authentication</li>
+<li>Authorization</li>
+<li>Accounting</li>
+<li>Communication</li>
+<li>Remote Resources</li>
+</ul>
+</li>
+</ul>
+
+
+<p><em>Scaling of all the components can be improved by replication, distribution and caching</em></p>
+
+<p>Key points to remember while building scalable systems</p>
+
+<ul>
+<li>Replication
+
+<ul>
+<li>Replication important resources</li>
+<li>Distribute the replicas</li>
+<li>Use loose consistency</li>
+</ul>
+</li>
+<li>Distribution
+
+<ul>
+<li>Distribute across multiple servers</li>
+<li>Distribute evenly</li>
+<li>Exploit locality</li>
+<li>Avoid upper level of hierarchies</li>
+</ul>
+</li>
+<li>Caching
+
+<ul>
+<li>Cache frequently accessed data</li>
+<li>Consider access patterns when caching
+
+<ul>
+<li>amount of data accessed together, read to write ratio, likelihood of conflicts, number of simultaneous users</li>
+</ul>
+</li>
+<li>Cache timeouts</li>
+<li>Caching at multiple levels</li>
+<li>Look first locally</li>
+<li>Data cached extensively must be changed less frequently</li>
+</ul>
+</li>
+<li>Avoid global broadcast</li>
+<li>Shed load but not too much: perform computation where it suits better</li>
+<li>Support multiple access mechanisms</li>
+<li>Keep users in mind</li>
+</ul>
+
+
+<p>Evaluating distributed systems</p>
+
+<ul>
+<li>Use of the system
+
+<ul>
+<li>Growth of queries as the system grows</li>
+<li>Central servers in the system and issues with replication</li>
+</ul>
+</li>
+<li>Data
+
+<ul>
+<li>Increase in data and how it increases data maintained in each node in the system</li>
+<li>Increase in query time with increase in data size</li>
+<li>Data update process and how it scales</li>
+<li>Cache data invalidation and query performance</li>
+</ul>
+</li>
+<li>Administration
+
+<ul>
+<li>Does the system require a centralized admin system?</li>
+<li>Is it practical in the environment in which the system is used?</li>
+</ul>
+</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Oozie Job to Schedule HBase Major Compaction]]></title>
+    <link href="http://asquareb.github.io/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction/"/>
+    <updated>2015-12-20T12:10:23-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction</id>
+    <content type="html"><![CDATA[<p>HBase performs time based major compaction and in-order to prevent this resource intensive process interfere performance sensitive applications, this can be disabled. Once disabled, in order to keep the HBase store files in optimal condition, application team need to schedule regular compaction. The following details the steps which need to be followed to schedule daily compaction through Oozie.</p>
+
+<!--more-->
+
+
+<p><strong>Non Kerberized Cluster</strong>
+Create the following files with the content shown in a local directory. In this example the files are created in hbasecompact under the users local home directory. Please note that the files are under different directories.
+Shell script to start HBase compaction on a table and copy the output of the command to a HDFS directory. The command output can be checked for any issues.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/scripts/hbaseCompact.sh
+</span><span class='line'>#!/bin/ksh
+</span><span class='line'>echo "Starting HBase major compaction on table $1 - $3" > majorcompact.log
+</span><span class='line'>echo "major_compact \"$1\"" | /usr/bin/hbase shell 2>&1 >> majorcompact.log
+</span><span class='line'>echo "HBase major compaction request complete on table $1" >> majorcompact.log
+</span><span class='line'>hdfs dfs -moveFromLocal -f majorcompact.log $2</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Shell script to copy the Oozie job id into a HDFS directory. The job id can be used to check any issues.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/scripts/logOozieId.sh
+</span><span class='line'>echo $1 > oozieId.log
+</span><span class='line'>hdfs dfs -moveFromLocal -f oozieId.log $2</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Oozie workflow definition to perform HBase compaction. The first step  major_compact runs the script hbaseCompact.sh. The next step logOozieId runs the script logOozieId.sh to copy the Oozie workflow id onto HDFS.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/workflow/workflow.xml
+</span><span class='line'>&lt;workflow-app xmlns='uri:oozie:workflow:0.5' name="major_compact_wf">
+</span><span class='line'>   &lt;global>
+</span><span class='line'>      &lt;job-tracker>${jobTracker}&lt;/job-tracker>
+</span><span class='line'>      &lt;name-node>${nameNode}&lt;/name-node>
+</span><span class='line'>      &lt;configuration>
+</span><span class='line'>         &lt;property>
+</span><span class='line'>            &lt;name>mapred.job.queue.name&lt;/name>
+</span><span class='line'>            &lt;value>${queueName}&lt;/value>
+</span><span class='line'>         &lt;/property>
+</span><span class='line'>      &lt;/configuration>
+</span><span class='line'>   &lt;/global>
+</span><span class='line'>   &lt;start to="major_compact"/>
+</span><span class='line'>   &lt;action name="major_compact">
+</span><span class='line'>      &lt;shell xmlns="uri:oozie:shell-action:0.3">
+</span><span class='line'>         &lt;configuration>
+</span><span class='line'>            &lt;property>
+</span><span class='line'>              &lt;name>oozie.launcher.mapreduce.map.memory.mb&lt;/name>
+</span><span class='line'>              &lt;value>${mapMemoryMB}&lt;/value>
+</span><span class='line'>            &lt;/property>
+</span><span class='line'>         &lt;/configuration>
+</span><span class='line'>         &lt;exec>${majorCompactScriptPath}/${majorCompactScriptName}&lt;/exec>
+</span><span class='line'>         &lt;argument>${tableName}&lt;/argument>
+</span><span class='line'>         &lt;argument>${hdfsLogDir}&lt;/argument>
+</span><span class='line'>         &lt;argument>${timestamp()}&lt;/argument>
+</span><span class='line'>         &lt;file>${majorCompactScriptPath}/${majorCompactScriptName}#${majorCompactScriptName}&lt;/file>
+</span><span class='line'>         &lt;capture-output/>
+</span><span class='line'>      &lt;/shell>
+</span><span class='line'>      &lt;ok to="logOozieId"/>
+</span><span class='line'>      &lt;error to="logOozieId"/>
+</span><span class='line'>   &lt;/action>
+</span><span class='line'>   &lt;action name="logOozieId">
+</span><span class='line'>      &lt;shell xmlns="uri:oozie:shell-action:0.3">
+</span><span class='line'>         &lt;exec>${majorCompactScriptPath}/${logOozieIdScriptName}&lt;/exec>
+</span><span class='line'>         &lt;argument>${wf:id()}&lt;/argument>
+</span><span class='line'>         &lt;argument>${hdfsLogDir}&lt;/argument>
+</span><span class='line'>         &lt;file>${majorCompactScriptPath}/${logOozieIdScriptName}#${logOozieIdScriptName}&lt;/file>
+</span><span class='line'>      &lt;/shell>
+</span><span class='line'>      &lt;ok to="end"/>
+</span><span class='line'>      &lt;error to="fail"/>
+</span><span class='line'>   &lt;/action>
+</span><span class='line'>   &lt;kill name="fail">
+</span><span class='line'>      &lt;message>Major compaction failed [${wf:errorMessage(wf:lastErrorNode())}]&lt;/message>
+</span><span class='line'>   &lt;/kill>
+</span><span class='line'>   &lt;end name="end"/>
+</span><span class='line'>&lt;/workflow-app></span></code></pre></td></tr></table></div></figure>
+
+
+<p>Oozie coordinator.xml definition to run the major_compact_wf workflow defined in the previous step.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/coordinator/coordinator.xml
+</span><span class='line'>&lt;coordinator-app name="major_compact"
+</span><span class='line'>   frequency="${coord:days(1)}"
+</span><span class='line'>   start="${starttime}" end="${endtime}" timezone="${timezone}"
+</span><span class='line'>   xmlns="uri:oozie:coordinator:0.1">
+</span><span class='line'>    &lt;controls>
+</span><span class='line'>      &lt;concurrency>1&lt;/concurrency>
+</span><span class='line'>      &lt;execution>FIFO&lt;/execution>
+</span><span class='line'>    &lt;/controls>
+</span><span class='line'>    &lt;action>
+</span><span class='line'>      &lt;workflow>
+</span><span class='line'>         &lt;app-path>${nameNode}${rootDir}/workflow&lt;/app-path>
+</span><span class='line'>         &lt;configuration>
+</span><span class='line'>            &lt;property>
+</span><span class='line'>               &lt;name>HBaseMajorCompact&lt;/name>
+</span><span class='line'>               &lt;value>'${coord:user()}: Kicking off HBase Major Compact WF'&lt;/value>
+</span><span class='line'>            &lt;/property>
+</span><span class='line'>         &lt;/configuration>
+</span><span class='line'>      &lt;/workflow>
+</span><span class='line'>   &lt;/action>
+</span><span class='line'>&lt;/coordinator-app></span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Note:</strong> Do not use 1440 minutes as frequency in workflow.xml if the expectation is to run compaction everyday at a certain time since this will cause change in job run time when system time gets changed for day light savings. The starttime and endtime should be specified in UTC/GMT. The timezone is required for Oozie to invoke the logic to handle the time changes due to day light savings.
+Properties which need to be substituted in the place of the parameters defined in the workflow and coordinator xml files. If this example is used, this is the only file which need to be changed. Inline comments will help in making the changes.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/coordinator/coordinator.properties
+</span><span class='line'>//
+</span><span class='line'>//HDFS Namenode URL: You can find it in hdfs-site.xml
+</span><span class='line'>//If HDFS HA is enabled use the value of dfs.nameservices
+</span><span class='line'>//
+</span><span class='line'>nameNode=hdfs://NN-HA
+</span><span class='line'>//
+</span><span class='line'>//URL of jobTracker for MR1
+</span><span class='line'>//If MR2/YARN is used, use the YARN RM URL : YARN-RM:8032
+</span><span class='line'>//If YARN HA is enabled use the YARN cluster-id which is specified in 
+</span><span class='line'>//yarn.resourcemanager.cluster-id property of yarn-site.xml
+</span><span class='line'>//
+</span><span class='line'>jobTracker=YARN-RM-CLUSTER-ID
+</span><span class='line'>//
+</span><span class='line'>// YARN queue to which the workflow MR jobs need to be submitted
+</span><span class='line'>//
+</span><span class='line'>queueName=default
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where the oozie application is stored
+</span><span class='line'>//
+</span><span class='line'>rootDir=/user/userid/hbasecompact
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where workflow.xml is stored
+</span><span class='line'>//
+</span><span class='line'>wf.application.path=${nameNode}${rootDir}/workflow
+</span><span class='line'>oozie.wf.rerun.failnodes=true
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where scripts in the workflow are located
+</span><span class='line'>//
+</span><span class='line'>majorCompactScriptPath=${nameNode}${rootDir}/scripts
+</span><span class='line'>majorCompactScriptName=hbaseCompact.sh
+</span><span class='line'>logOozieIdScriptName=logOozieId.sh
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where the script output need to be stored
+</span><span class='line'>//
+</span><span class='line'>hdfsLogDir=/user/userid/compact
+</span><span class='line'>//
+</span><span class='line'>// Table name which need to be compacted
+</span><span class='line'>//
+</span><span class='line'>tableName=t
+</span><span class='line'>mapMemoryMB=8192
+</span><span class='line'>//
+</span><span class='line'>// Date time to start and stop the workflow 
+</span><span class='line'>//
+</span><span class='line'>starttime=2015-10-22T10:24Z
+</span><span class='line'>endtime=2020-10-22T10:26Z
+</span><span class='line'>
+</span><span class='line'>timezone=America/New_York
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where the coordinator.xml is stored
+</span><span class='line'>//
+</span><span class='line'>oozie.coord.application.path=${nameNode}${rootDir}/coordinator
+</span><span class='line'>oozie.use.system.libpath=true
+</span><span class='line'>oozie.libpath=${nameNode}/user/oozie/share/lib</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you list the local directory where these file are stored it will look like this</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ ls -ls -R hbasecompact/
+</span><span class='line'>hbasecompact/:
+</span><span class='line'>total 12
+</span><span class='line'>4 drwxr-xr-x 2 userid users 4096 Oct 22 14:46 coordinator
+</span><span class='line'>4 drwxr-xr-x 2 userid users 4096 Oct 22 14:15 scripts
+</span><span class='line'>4 drwxr-xr-x 2 userid users 4096 Oct 22 14:05 workflow
+</span><span class='line'>
+</span><span class='line'>hbasecompact/coordinator:
+</span><span class='line'>total 8
+</span><span class='line'>4 -rw-r--r-- 1 userid users 1197 Oct 22 14:46 coordinator.properties
+</span><span class='line'>4 -rw-r--r-- 1 userid users  640 Oct 22 12:35 coordinator.xml
+</span><span class='line'>
+</span><span class='line'>hbasecompact/scripts:
+</span><span class='line'>total 8
+</span><span class='line'>4 -rwxr-xr-x 1 userid users 243 Oct 22 12:02 hbaseCompact.sh
+</span><span class='line'>4 -rwxr-xr-x 1 userid users  65 Oct 22 12:23 logOozieId.sh
+</span><span class='line'>
+</span><span class='line'>hbasecompact/workflow:
+</span><span class='line'>total 4
+</span><span class='line'>4 -rw-r--r-- 1 userid users 1853 Oct 22 14:05 workflow.xml</span></code></pre></td></tr></table></div></figure>
+
+
+<p>copy them into to a HDFS directory</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hdfs dfs -copyFromLocal ./hbasecompact /user/userid</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you list the HDFS directory which was used as the target location in the previous step, the output should be similar to the following.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ hdfs dfs -ls -R /user/userid/hbasecompact
+</span><span class='line'>drwxr-xr-x   - userid supergroup          0 2015-10-22 12:58 /user/userid/hbasecompact/coordinator
+</span><span class='line'>-rw-r--r--   3 userid supergroup        513 2015-10-22 12:58 /user/userid/hbasecompact/coordinator/coordinator.properties
+</span><span class='line'>-rw-r--r--   3 userid supergroup        640 2015-10-22 12:58 /user/userid/hbasecompact/coordinator/coordinator.xml
+</span><span class='line'>drwxr-xr-x   - userid supergroup          0 2015-10-22 12:58 /user/userid/hbasecompact/scripts
+</span><span class='line'>-rw-r--r--   3 userid supergroup        243 2015-10-22 12:58 /user/userid/hbasecompact/scripts/hbaseCompact.sh
+</span><span class='line'>-rw-r--r--   3 userid supergroup         65 2015-10-22 12:58 /user/userid/hbasecompact/scripts/logOozieId.sh
+</span><span class='line'>drwxr-xr-x   - userid supergroup          0 2015-10-22 12:58 /user/userid/hbasecompact/workflow
+</span><span class='line'>-rw-r--r--   3 userid supergroup       1751 2015-10-22 12:58 /user/userid/hbasecompact/workflow/workflow.xml</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If the execute permissions in the two shell scripts are not set, do a chmod to set the executable permission.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hdfs dfs -chmod 755 /user/userid/hbasecompact/scripts/hbaseCompact.sh
+</span><span class='line'>hdfs dfs -chmod 755 /user/userid/hbasecompact/scripts/logOozieId.sh</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Schedule the Oozie job using the following command. Note that the properties file in this example /home/userid/hbasecompact/coordinator/coordinator.properties should be on the local disk from where this command is executed.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ oozie job -oozie http://oozie-host:11000/oozie -config /home/userid/hbasecompact/coordinator/coordinator.properties -run
+</span><span class='line'>job: 0000000-150821155141136-oozie-oozi-C</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The status of the job submitted can be verified through the Oozie UI which should be normally accessible through *<a href="http://oozie-host:11000/oozie/*.">http://oozie-host:11000/oozie/*.</a> Also status of MapRed jobs can be viewed through the YARN RM/NM URLS.
+Also the id of the last Oozie workflow which was executed and the output from the HBase major_compact command which was executed in the last run can be found from the HDFS files which got created by the job.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ hdfs dfs -cat /user/userid/compact/majorcompact.log
+</span><span class='line'>HBase Shell; enter 'help&lt;RETURN>' for list of supported commands.
+</span><span class='line'>Type "exit&lt;RETURN>" to leave the HBase Shell
+</span><span class='line'>Version 0.98.4.2.2.8.0-2928-hadoop2, r87e9f77a121be2dae41c9ef8964d254fdc4c23a3, Fri Aug 21 13:29:40 PDT 2015
+</span><span class='line'>
+</span><span class='line'>major_compact "t"
+</span><span class='line'>0 row(s) in 5.0410 seconds
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>~$ hdfs dfs -cat /user/userid/compact/oozieId.log
+</span><span class='line'>0000009-150821155141136-oozie-oozi-W</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase Replication]]></title>
+    <link href="http://asquareb.github.io/blog/2015/11/21/hbase-replication/"/>
+    <updated>2015-11-21T11:53:57-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/11/21/hbase-replication</id>
+    <content type="html"><![CDATA[<p>HBase supports inter-cluster data replication which can be used to propagate data to a secondary cluster/data center that can be accessed when primary cluster/data center is not available. The following are the high level steps to enable HBase inter-cluster replication. Note that HBase also supports region replication with in a cluster for read HA which is different from inter-cluster data replication.</p>
+
+<!--more-->
+
+
+<p>Set the <code>hbase.replication</code> property to <code>true</code> in hbase-site.xml of  the HBase cluster from which data need to be replicated from. This cluster is referred as the <code>master</code> going forward. By default the value of this property is &ldquo;true&rdquo;.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;property>
+</span><span class='line'>  &lt;name>hbase.replication&lt;/name>
+</span><span class='line'>  &lt;value>true&lt;/value>
+</span><span class='line'>&lt;/property></span></code></pre></td></tr></table></div></figure>
+
+
+<p>Create a HBase replication peer in the master HBase cluster using the information about the ZooKeeper quorum of the cluster to which data need to be replicated to. The cluster to which data will be replicated to will be referred as <code>slave</code> going forward.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'>15/09/23 10:35:52 INFO Configuration.deprecation: hadoop.native.lib is deprecated. Instead, use io.native.lib.available
+</span><span class='line'>HBase Shell; enter 'help&lt;RETURN>' for list of supported commands.
+</span><span class='line'>... 
+</span><span class='line'>hbase(main):001:0>add_peer 'HBASE_REPL_PEER','zk1,zk2,zk3:2181:/hbase'
+</span><span class='line'>0 row(s) in 0.3470 seconds
+</span><span class='line'> 
+</span><span class='line'>hbase(main):003:0> list_peers
+</span><span class='line'>PEER_ID CLUSTER_KEY STATE TABLE_CFS
+</span><span class='line'>HBASE_REPL_PEER zk1,zk2,zk3:2181:/hbase ENABLED
+</span><span class='line'>1 row(s) in 0.1520 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the replication peer is created and enabled, replication need to be enabled on HBase tables whose data need to be replicated from the master cluster by setting the &ldquo;REPLICATION_SCOPE&rdquo; attribute of the table to a non zero value. By default this value is set to &ldquo;0&rdquo;. If the table is an existing table, altering the table to set the &ldquo;REPLICATION_SCOPE&rdquo; to a non zero value requires disabling and enabling the table and the following is an example of the steps where the existing table&rsquo;s name is &ldquo;healthy&rdquo;. Note that a table with the same definition as the table being replicated (in this case &ldquo;healthy&rdquo;) should be created in the slave cluster before the replication is enabled on master.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):006:0> describe 'healthy'
+</span><span class='line'>DESCRIPTION ENABLED
+</span><span class='line'>'healthy', {NAME => 'cf1', DATA_BLOCK_ENCODING => 'NONE', BLOOMFILTER => 'ROW', REP true
+</span><span class='line'>LICATION_SCOPE => '0', VERSIONS => '1', COMPRESSION => 'NONE', MIN_VERSIONS => '0',
+</span><span class='line'>TTL => 'FOREVER', KEEP_DELETED_CELLS => 'false', BLOCKSIZE => '65536', IN_MEMORY =
+</span><span class='line'>> 'false', BLOCKCACHE => 'true'}
+</span><span class='line'>1 row(s) in 0.0430 seconds
+</span><span class='line'> 
+</span><span class='line'>hbase(main):007:0> disable 'healthy'
+</span><span class='line'>0 row(s) in 1.2940 seconds
+</span><span class='line'> 
+</span><span class='line'>hbase(main):015:0> alter 'healthy',{NAME => 'cf1', REPLICATION_SCOPE => '1'}
+</span><span class='line'>Updating all regions with the new schema...
+</span><span class='line'>1/1 regions updated.
+</span><span class='line'>Done.
+</span><span class='line'>0 row(s) in 1.1660 seconds
+</span><span class='line'>hbase(main):017:0> enable 'healthy'
+</span><span class='line'>0 row(s) in 0.2310 seconds
+</span><span class='line'> 
+</span><span class='line'>hbase(main):016:0> describe 'healthy'
+</span><span class='line'>DESCRIPTION ENABLED
+</span><span class='line'>'healthy', {NAME => 'cf1', DATA_BLOCK_ENCODING => 'NONE', BLOOMFILTER => 'ROW', REP false
+</span><span class='line'>LICATION_SCOPE => '1', VERSIONS => '1', COMPRESSION => 'NONE', MIN_VERSIONS => '0',
+</span><span class='line'>TTL => 'FOREVER', KEEP_DELETED_CELLS => 'false', BLOCKSIZE => '65536', IN_MEMORY =
+</span><span class='line'>> 'false', BLOCKCACHE => 'true'}
+</span><span class='line'>1 row(s) in 0.0450 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once replication is enabled replication related JMX stats are made available in all the region servers in the master cluster hosting the regions for which data replication is enabled.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>"source.shippedKBs" : 3388621,
+</span><span class='line'>"source.logEditsFiltered" : 428856845,
+</span><span class='line'>"source.sizeOfLogQueue" : 0,
+</span><span class='line'>"source.HBASE_REPL_PEER.logEditsFiltered" : 378778983,
+</span><span class='line'>"source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedBatches" : 24,
+</span><span class='line'>"source.logReadInBytes" : 108666586903,
+</span><span class='line'>"source.HBASE_REPL_PEER.shippedOps" : 2097152,
+</span><span class='line'>"source.HBASE_REPL_PEER.logReadInBytes" : 96312291957,
+</span><span class='line'>"source.shippedOps" : 3098060,
+</span><span class='line'>"source.HBASE_REPL_PEER.shippedBatches" : 51,
+</span><span class='line'>"source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedKBs" : 1094799,
+</span><span class='line'>"source.logEditsRead" : 428859535,
+</span><span class='line'>"source.shippedBatches" : 75,
+</span><span class='line'>"source.HBASE_REPL_PEER-rs1,60200,1441910792839.logReadInBytes" : 12354294946,
+</span><span class='line'>"source.HBASE_REPL_PEER.shippedKBs" : 2293822,
+</span><span class='line'>"source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedOps" : 1000908,
+</span><span class='line'>"source.ageOfLastShippedOp" : 51072,
+</span><span class='line'>"source.HBASE_REPL_PEER.sizeOfLogQueue" : 0,
+</span><span class='line'>"source.HBASE_REPL_PEER.ageOfLastShippedOp" : 51072,
+</span><span class='line'>"source.HBASE_REPL_PEER.logEditsRead" : 378780481</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that these are statistics available in HBase version 0.98. Later versions may have additional statistics which can help with replication monitoring.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase Back-up]]></title>
+    <link href="http://asquareb.github.io/blog/2015/10/24/hbase-back-up/"/>
+    <updated>2015-10-24T11:02:17-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/10/24/hbase-back-up</id>
+    <content type="html"><![CDATA[<p>Often during development and sometimes in production backup of a HBase table need to be made, for e.g., to run a test code against a table during development and being able to restore the original data if some thing went wrong or create a clone of the existing table or move table data to a new development cluster. HBase provides the option of taking snapshot of tables which can be used in such scenarios. The following are the various hbase shell commands to accomplish some of the common requirements.</p>
+
+<!--more-->
+
+
+<p><strong>Create a snapshot of HBase table</strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'>... 
+</span><span class='line'>hbase(main):001:0> snapshot 'tableName', 'table-snapshotname'
+</span><span class='line'>0 row(s) in 1.1060 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For easier identification it is a good practice to create snapshot with table name, creation date, creation time in the snapshot name.</p>
+
+<p><strong>Restore data from snapshot</strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'> 
+</span><span class='line'>hbase(main):001:0> disable 'tableName'
+</span><span class='line'>0 row(s) in 1.1000 seconds
+</span><span class='line'>hbase(main):001:0> restore_snapshot 'table-snapshotname'
+</span><span class='line'>0 row(s) in 2.1060 seconds
+</span><span class='line'>hbase(main):001:0> enable 'tableName'
+</span><span class='line'>0 row(s) in 1.0000 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that the table need to be disabled to restore the table data from snapshot. Also note that any updates to the table data after the snapshot will be lost once the restoration is complete.</p>
+
+<p><strong>Clone table from snapshot</strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'>... 
+</span><span class='line'>hbase(main):001:0> clone_snapshot 'table-snapshotname', 'newTableName'
+</span><span class='line'>0 row(s) in 2.1060 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A new table will be created with the attributes of the original table from which the snap shot was made and the data from the point in time of the snapshot will be restored.</p>
+
+<p><strong>List all the available snapshots for a table</strong>
+If multiple snapshots were made on tables and would like to see the list of available snapshots</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'> 
+</span><span class='line'>hbase(main):001:0> list_snapshots
+</span><span class='line'>SNAPSHOT                                     TABLE + CREATION TIME
+</span><span class='line'>  emp-snapshot-073115                        emp (Fri Jul 31 16:07:14 -0400 2015)
+</span><span class='line'> 
+</span><span class='line'>1 row(s) in 2.1060 seconds</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase - Best Practices]]></title>
+    <link href="http://asquareb.github.io/blog/2015/09/26/hbase-best-practices/"/>
+    <updated>2015-09-26T19:06:10-05:00</updated>
+    <id>http://asquareb.github.io/blog/2015/09/26/hbase-best-practices</id>
+    <content type="html"><![CDATA[<p><strong>Application Development</strong></p>
+
+<p><strong>Connection Object Reuse</strong></p>
+
+<p>Creating connections to a server component from an application is a heavy weight operation and it is much pronounced when connecting to a database server. That being the reason database connection pooling is used to reuse connection objects and HBase is no exception. In HBase, data from meta table that stores details about region servers that can serve data for specific key ranges gets cached at the individual connection level that makes HBase connections much heavier. So if there are region movements for balancing or if a region server fails, the meta data need to be refreshed for each connection object which is a performance overhead. For these reasons, applications need to try to reuse connection objects created.</p>
+
+<!--more-->
+
+
+<p>The following code snippet shows how to create a HBase connection object in a Java application using HBase.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Configuration conf = HBaseConfiguration.create();
+</span><span class='line'>conf.set("hbase.zookeeper.quorum", "localhost");
+</span><span class='line'>HConnection conn = HConnectionManager.createConnection(conf);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If the application is multi-threaded, then it need to reuse the connection object to perform any data manipulation operations on tables. This can be achieved by individual threads creating the HTable object using the getTable(TableName) method of the HConnection object.
+Once the data manipulation operations are complete each thread should close corresponding HTable but not the HConnection object so that it can be reused by other threads.</p>
+
+<p><strong>Pre-split Table</strong></p>
+
+<p>In order to prevent skews in processing of queries and to distribute query processing work load across all the nodes in the cluster, it is a good practice to create tables which is pre-split. The key is to identify the split point so that the data will be distributed across all the nodes in the cluster. Once the split point is identified the table can be created pre-split using HBase shell and the following is an example of a table with 3 split points.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):001:0&gt; create 'split_table', 'cf1', {SPLITS =&gt; ['a','g','o']}
+</span><span class='line'>0 row(s) in 2.5540 seconds
+</span><span class='line'>=&gt; Hbase::Table - split_table</span></code></pre></td></tr></table></div></figure>
+
+
+<p>During start of development, when the split points in the data are not clear but if some one still want to pre-split the table, HBase provides a utility program which can split the table and uniformly distribute the data. The following is an example which creates a table with 10 splits and columnfamily &lsquo;cf1&rsquo;.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase org.apache.hadoop.hbase.util.RegionSplitter 'split_table2' UniformSplit -c 10 -f 'cf1'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you are creating tables programmatically using Java APIs, the following code snippet shows how to pre-split the table during creation</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>// Instantiating configuration class
+</span><span class='line'>Configuration conf = HBaseConfiguration.create();
+</span><span class='line'>System.out.println(conf.get("hbase.zookeeper.quorum"));
+</span><span class='line'>conf.set("hbase.zookeeper.quorum", "localhost");
+</span><span class='line'>conf.setInt("hbase.zookeeper.property.clientPort",2181);
+</span><span class='line'>// Creating a connection
+</span><span class='line'>Connection conn = ConnectionFactory.createConnection(conf);
+</span><span class='line'>// Instantiating admin class
+</span><span class='line'>Admin admin = conn.getAdmin();
+</span><span class='line'>// Instantiating table descriptor class
+</span><span class='line'>HTableDescriptor tableDescriptor = new
+</span><span class='line'>HTableDescriptor(TableName.valueOf("emp5"));
+</span><span class='line'>byte[][] splitKeys = ...;
+</span><span class='line'>// Adding column families to table descriptor
+</span><span class='line'>tableDescriptor.addFamily(new HColumnDescriptor("market"));
+</span><span class='line'>tableDescriptor.addFamily(new HColumnDescriptor("corp"));
+</span><span class='line'>// Create and pre-split the table through admin
+</span><span class='line'>admin.createTable(tableDescriptor, splitKeys);
+</span><span class='line'>System.out.println(" Table created ");
+</span><span class='line'>admin.close();
+</span><span class='line'>conn.close();</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For further reading and understanding the details about HBase table splitting and merging refer <a href="http://hortonworks.com/blog/apache-hbase-region-splitting-and-merging">this blog post</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase - Data Load]]></title>
+    <link href="http://asquareb.github.io/blog/2015/08/16/hbase-data-load/"/>
+    <updated>2015-08-16T20:56:33-05:00</updated>
+    <id>http://asquareb.github.io/blog/2015/08/16/hbase-data-load</id>
+    <content type="html"><![CDATA[<p>Often during development  and in production data need to be loaded into HBase tables. This can be for testing application code or migrating data from existing database among many other scenarios. One obvious option is to read data from a source and use HBase put client API to write data into tables. This works fine for small amount of data for unit testing or PoC. In order to load data of large size running into GBs or TBs, using put to write data to HBase tables will be time consuming if the source data is already available. In order to mitigate this, HBase provides an option to create hfiles which are HBase specific file formats used to store table data in the underlying filesystem and load them into HBase tables. For HDFS, these files can be created using a map reduce job and the following are the high level steps.</p>
+
+<!--more-->
+
+
+<ul>
+<li>Copy the source data in HDFS using tools like distcp</li>
+<li>Define the target table in HBase using HBase shell or programatically using HBase client admin APIs</li>
+<li>Create and run a map-reduce job to create HFiles for the source data on HDFS</li>
+<li>Load the HFiles into HBase using org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles program shipped with HBase
+The following code example shows how to go about with the creation of the map reduce job to generate the HFiles.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>import org.apache.hadoop.conf.Configuration;
+</span><span class='line'>import org.apache.hadoop.fs.Path;
+</span><span class='line'>import org.apache.hadoop.hbase.client.HTable;
+</span><span class='line'>import org.apache.hadoop.hbase.client.Put;
+</span><span class='line'>import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+</span><span class='line'>import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
+</span><span class='line'>import org.apache.hadoop.mapreduce.Job;
+</span><span class='line'>import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+</span><span class='line'>import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+</span><span class='line'> 
+</span><span class='line'>public class Driver {
+</span><span class='line'>  public static void main(String[] args) throws Exception {
+</span><span class='line'>      Configuration conf = new Configuration();
+</span><span class='line'>      conf.clear();
+</span><span class='line'>      conf.set("hbase.zookeeper.quorum","zk1:2181,zk2:2181,zk3:2181");
+</span><span class='line'>      Job job = new Job(conf, "HBase Bulk Import Example");
+</span><span class='line'>      job.setJarByClass(HFileMapper.class);
+</span><span class='line'>      job.setMapperClass(HFileMapper.class);
+</span><span class='line'>      job.setMapOutputKeyClass(ImmutableBytesWritable.class);
+</span><span class='line'>      job.setMapOutputValueClass(Put.class);
+</span><span class='line'>      job.setInputFormatClass(TextInputFormat.class);
+</span><span class='line'>      HTable hTable = new HTable(conf, args[2]);
+</span><span class='line'>      HFileOutputFormat.configureIncrementalLoad(job, hTable);
+</span><span class='line'>      FileInputFormat.addInputPath(job, new Path(args[0]));
+</span><span class='line'>      FileOutputFormat.setOutputPath(job, new Path(args[1]));
+</span><span class='line'>      job.waitForCompletion(true);
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The driver program takes in three parameters table name, HDFS directory where the source data is stored, the HDFS output directory where HFiles need to be created for loading into HBase
+It sets the out format to HBase org.apache.hadoop.hbase.client.Put which represents a single row in a HBase table
+The input format is set Text to read source data from a text file
+In the configuration object, the only parameter which need to be set iis the ZooKeeper (ZK) quorum and the value should be set to the ZK quorum corresponding to the HBase cluster on which the target table is defined
+No reducers are required to be set to create HFiles using map reduce
+The following is the code snippet for the HFileMapper class used by the Driver program</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>import java.util.Random;
+</span><span class='line'>import org.apache.hadoop.hbase.client.Put;
+</span><span class='line'>import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+</span><span class='line'>import org.apache.hadoop.io.LongWritable;
+</span><span class='line'>import org.apache.hadoop.io.Text;
+</span><span class='line'> public class HFileMapper extends Mapper&lt;LongWritable, Text, ImmutableBytesWritable, Put> {
+</span><span class='line'>     @Override
+</span><span class='line'>  protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException  {
+</span><span class='line'>      String rowkey = new Random().nextInt() + "";
+</span><span class='line'>      Put put = new Put(rowkey.getBytes());
+</span><span class='line'>      put.add(Constants.COL_FAMILY, "col".getBytes(), "v".getBytes());
+</span><span class='line'>      ImmutableBytesWritable hkey = new ImmutableBytesWritable(rowkey.getBytes());
+</span><span class='line'>      context.write(hkey, put);
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that this is a dummy mapper in which the key and values are generated dynamically in the code. Based on what the source data source file stores and what need to be stored in the HBase table, the mapper need to be modified. The key aspect to note is how the Put object is created.
+Once the driver and mapper code is compiled, packaged in a Java jar file (e.g. happy-hbase-sample.jar) and made available on all the nodes in the HBase/HDFS cluster, the HFiles can be generated by running the map-reduce job on the cluster.
+run mapred job</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hadoop jar happy-hbase-sample.jar com.happy.hbase.sample.Driver healthyTable /user/happy/data/input /user/hbase/healthytable/output</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When the map reduce job completes, it creates number of files in the output directory on HDFS and it can be used to load data into target HBase table and in this case healthyTable</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles /user/hbase/healthytable/output healthyTable</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase Shell]]></title>
+    <link href="http://asquareb.github.io/blog/2015/07/05/hbase-shell/"/>
+    <updated>2015-07-05T18:05:25-05:00</updated>
+    <id>http://asquareb.github.io/blog/2015/07/05/hbase-shell</id>
+    <content type="html"><![CDATA[<p>HBase shell is a Ruby based shell which can be used to interact with HBase cluster and perform data definition and data manipulation tasks. The shell is made available as part of the HBase code base and by default gets installed on all the nodes of the HBase cluster. In order to access the shell, HBase software need to be installed on the machine from where the shell is invoked and the PATH environment variable updated with the directory where the hbase shell program is stored. Commonly users and administrators access the shell through one of the nodes in the HBase cluster. Following is a quick introduction to frequently used hbase shell commands.
+HBase shell is invoked using the hbase shell command which in turn provides the user with a command prompt to enter the commands supported by the particular version of HBase.</p>
+
+<!--more-->
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>$ hbase shell
+</span><span class='line'>...
+</span><span class='line'>hbase(main):001:0&gt; help
+</span><span class='line'>...
+</span><span class='line'>
+</span><span class='line'>COMMAND GROUPS:
+</span><span class='line'>   Group name: general
+</span><span class='line'>   Commands: status, table_help, version, whoami
+</span><span class='line'>   Group name: ddl
+</span><span class='line'>   Commands: alter, alter_async, alter_status, create, describe, disable, disable_all, drop, drop_all, enable, enable_all, exists, get_table, is_disabled, is_enabled, list, show_filters</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Further details on a particular command can be found using help &lsquo;command-of-interest&rsquo;. The following is the partial output from help on create command help create</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):002:0&gt; help 'create'
+</span><span class='line'>Creates a table. Pass a table name, and a set of column family
+</span><span class='line'>specifications (at least one), and, optionally, table configuration.
+</span><span class='line'>Column specification can be a simple string (name), or a dictionary
+</span><span class='line'>(dictionaries are described below in main help output), necessarily
+</span><span class='line'>including NAME attribute.
+</span><span class='line'>Examples:
+</span><span class='line'>Create a table with namespace=ns1 and table qualifier=t1
+</span><span class='line'>   hbase&gt; create 'ns1:t1', {NAME =&gt; 'f1', VERSIONS =&gt; 5}
+</span><span class='line'>Create a table with namespace=default and table qualifier=t1
+</span><span class='line'>   hbase&gt; create 't1', {NAME =&gt; 'f1'}, {NAME =&gt; 'f2'}, {NAME =&gt; 'f3'}
+</span><span class='line'>   hbase&gt; # The above in shorthand would be the following:
+</span><span class='line'>As one would expect creating a table is using create command. The following is an example of creating a table TestTable with column family cf. The column family is of BLOCKSIZE 16K, uses SNAPPY COMPRESSION and the BLOOMFILTER attribute set to ROWCOL. 
+</span><span class='line'>create Table
+</span><span class='line'>hbase(main):014:0&gt; create 'TestTable', {NAME =&gt; 'cf', BLOCKSIZE =&gt; 16384, BLOOMFILTER =&gt; 'ROWCOL', COMPRESSION =&gt; 'SNAPPY'}
+</span><span class='line'>0 row(s) in 0.5020 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that by default a table is created in the default namespace if the namespace is not specified during table creation. If a namespace is specified during table creation, the namespace should already exist and it can be created using create namespace command.
+To view the properties of a table describe command can be used.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):017:0&gt; describe 'TestTable'
+</span><span class='line'>DESCRIPTION                                                                                                   ENABLED
+</span><span class='line'>  'TestTable1', {NAME =&gt; 'cf', DATA_BLOCK_ENCODING =&gt; 'NONE', BLOOMFILTER =&gt; 'ROWCOL', REPLICATION_SCOPE =&gt; '0 true
+</span><span class='line'>  ', VERSIONS =&gt; '1', COMPRESSION =&gt; 'SNAPPY', MIN_VERSIONS =&gt; '0', TTL =&gt; 'FOREVER', KEEP_DELETED_CELLS =&gt; 'f
+</span><span class='line'>  alse', BLOCKSIZE =&gt; '16384', IN_MEMORY =&gt; 'false', BLOCKCACHE =&gt; 'true'}
+</span><span class='line'>1 row(s) in 0.0730 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that there are two columns in the output DESCRIPTION and ENABLED. The value true displayed on the console is for the ENABLED column which informs the user whether the table is enabled or not. To see whether a table is defined in the cluster, use list command which lists all the tables in the HBase cluster and the following is a sample output.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):018:0&gt; list
+</span><span class='line'>TABLE
+</span><span class='line'>TestTable
+</span><span class='line'>TestTable1
+</span><span class='line'>TestTableRpl3
+</span><span class='line'>3 row(s) in 0.0600 seconds
+</span><span class='line'>=&gt; ["TestTable", "TestTable1", "TestTableRpl3"]</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To drop a table, the table need to be disabled first using the disable command before dropping using the drop command. If drop is attempted before the disable the shell will prompt with the message that the table is enabled.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):019:0&gt; drop 'TestTable'
+</span><span class='line'>ERROR: Table TestTable1 is enabled. Disable it first.'
+</span><span class='line'> 
+</span><span class='line'>hbase(main):020:0&gt; disable 'TestTable'
+</span><span class='line'>0 row(s) in 1.3510 seconds
+</span><span class='line'> hbase(main):021:0&gt; drop 'TestTable'
+</span><span class='line'>0 row(s) in 0.2470 seconds
+</span><span class='line'>To alter a table, use alter command. The alter command can be used to make changes at table level and at the columnfamily level and it can also operate on multiple columnfamilies at the same time. Use the help 'alter' command to get more details. The following is an example of altering the number of versions that need to be stored for a particular columnfamily in a table.
+</span><span class='line'>alter table
+</span><span class='line'>hbase(main):025:0&gt; alter 'TestTable',{NAME =&gt; 'cf', VERSIONS =&gt; 3}
+</span><span class='line'>Updating all regions with the new schema...
+</span><span class='line'>0/1 regions updated.
+</span><span class='line'>1/1 regions updated.
+</span><span class='line'>Done.
+</span><span class='line'>0 row(s) in 2.2800 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that changes to some of the attributes require other actions. For e.g. changing the BLOCKSIZE will require a major compaction of the table if the change need to take effect immediately. Other changes like modifying the REGION_REPLICATION property requires the table to be disabled before altering the table and then enabling it
+For basic data manipulations, the put, get, scan, delete commands can be used. The following puts two rows to a table, does a get a scan and a delete.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>put get scan delete
+</span><span class='line'>hbase(main):036:0&gt; put 'TestTable','r1','cf:c1','v1'
+</span><span class='line'>0 row(s) in 0.0300 seconds
+</span><span class='line'>hbase(main):037:0&gt; put 'TestTable','r2','cf:c1','v2'
+</span><span class='line'>0 row(s) in 0.0060 seconds
+</span><span class='line'>hbase(main):038:0&gt; get 'TestTable','r1'
+</span><span class='line'>COLUMN                                    CELL
+</span><span class='line'>  cf:c1                                   timestamp=1437492679670, value=v1
+</span><span class='line'>1 row(s) in 0.0340 seconds
+</span><span class='line'>hbase(main):039:0&gt; scan 'TestTable'
+</span><span class='line'>ROW                                       COLUMN+CELL
+</span><span class='line'>  r1                                      column=cf:c1, timestamp=1437492679670, value=v1
+</span><span class='line'>  r2                                      column=cf:c1, timestamp=1437492691520, value=v2
+</span><span class='line'>2 row(s) in 0.0620 seconds
+</span><span class='line'>hbase(main):041:0&gt; delete 'TestTable','r1','cf:c1'
+</span><span class='line'>0 row(s) in 0.0630 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>During development if minor compaction need to be performed explicitly on table regions, the compact command can be used. Note: since compaction process will have performance impact use caution on when you invoke compaction in a production environment.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):043:0&gt; compact 'TestTable', 'cf'
+</span><span class='line'>0 row(s) in 3.5630 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Also to improve data locality and performance major compaction of a table may have to be run and the following is an example. Again, major compaction is a resource intensive (CPU, IO, Memory and Network) process and should not be run in production without proper scheduling to minimize business impact.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):044:0&gt; major_compact 'TestTable'
+</span><span class='line'>0 row(s) in 1.1430 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Balancing the region distribution of a table may help improving performance and it is a best practice to balance the regions before running major compaction explicitly to improve its performance. Be cautious on when you run balancer in production environment since it will impact performance.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):045:0&gt; balancer
+</span><span class='line'>true
+</span><span class='line'>0 row(s) in 59.1120 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>During development there may be a need to disable running of HBase balancer so that regions can be moved manually. Enabling and disabling of balancer can be accomplished using balance_switch command which takes in the value true|false as input.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):048:0&gt; balance_switch false
+</span><span class='line'>true
+</span><span class='line'>0 row(s) in 0.0300 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that balance_switch command will return the previous value of whether the balancer is enabled or not. In the previous example the balancer was enabled and hence the return value of true.</p>
+
+<p>To check the status of the HBase cluster, the status command can be used. The command can generate detailed, simple or summary status based on whether detailed|simple|summary parameter is passed.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):052:0&gt; status 'summary'
+</span><span class='line'>13 servers, 0 dead, 478.1538 average load</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Java Direct ByteBuffer Performance Advantages and Considerations]]></title>
+    <link href="http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/"/>
+    <updated>2015-06-05T21:38:40-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations</id>
+    <content type="html"><![CDATA[<p>During execution, objects/variables created by Java programs gets their space allocated in the JVM heap memory. The total amount of heap memory available for a JVM is determined by the value set to -Xmx parameter when starting the Java process. When object allocated is released by the Java program, the corresponding memory is made available for later use by the JVM garbage collection (GC) process.</p>
+
+<p>The GC process gets invoked typically when the amount of free memory in the JVM falls below a certain threshold. At a very high level, the GC process involves identification of objects which are not used any more i.e. not referenced anymore, releasing the memory and compacting the memory to reduce memory fragmentation. Readers who are interested in understanding the details of GC process can find it <a href="http://blog.asquareb.com/blog/2014/12/13/jvm-gc-settings-and-hbase">here</a>. As one can imagine, the time it takes to complete the GC process will increase with the increase in size of the Java heap memory since it takes more time to identify the objects which can be released and also to perform compaction.</p>
+
+<!--more-->
+
+
+<p>If a Java application requires large memory (in GBs), the time it takes to complete the GC process will be detrimental to its performance. If the application is performance sensitive, then large heap memory size can adversely impact its performance. In order to mitigate this, one can try to use memory outside Java heap and hence reduce the Java heap memory use and its size. This can be done using the Java <a href="http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html">ByteBuffer</a> class which provides the option to allocate ByteBuffers outside JVM heap using <a href="http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html#allocateDirect(int">allocateDirect</a>) method.</p>
+
+<p>The allocateDirect method allocates memory of requested size (in bytes) on memory outside the JVM heap (off-heap) and provides the object reference to the application with the starting offset of 0. The application can then use the reference to store and retrieve data into the off-heap memory. When the garbage collection runs, it doesn&rsquo;t have to take into account the memory allocated off-heap to identify memory not being used or perform memory compaction which in turn reduce the time to complete GC.</p>
+
+<p>While the time to complete GC can be reduced when large memory is used in a Java process by using off-heap memory, there are other overheads which need to be taken into consideration before using it. Allocation of off-heap memory will take more time than the on-heap memory since the JVM need to make native calls to get the memory allocated. Also when the off-heap memory is not used anymore by the application, during GC process, the JVM need to make native calls to free the off-heap memory in addition to releasing the memory used by the object reference in on-heap memory. Also as per the API documentation, the JVM will make the best effort to not to use any on-heap memory as a intermediate step to store and retrieve data to/from the off-heap memory. In order to compensate these additional overheads and at the same time take advantage of using large memory without the penalty of increased GC time, it is best to use off-heap memory for large objects which doesn&rsquo;t get released often.</p>
+
+<p>When a JVM is brought up to run a Java process, the total memory which can be used for off-heap memory can be specified using the JVM parameter <code>-XX:MaxDirectMemorySize</code> parameter. If the parameter is not set explicitly, the value is set to the free memory available in the system at the start of the process using <a href="https://github.com/openjdk-mirror/jdk/blob/icedtea/jdk7/master/src/share/classes/sun/misc/VM.java#L193">VM.maxDirectMemory()</a> method call. When off-heap memory allocation is made, the JVM keeps track of the total memory used so far. When a new off-heap memory allocation request is made the JVM checks whether the sum of the requested memory size and the total memory allocated so far is greater than the available direct memory size set at the start of the Java process. If the sum exceeds the available memory, an explicit GC system call is made by the memory allocator and then the process thread sleeps for <a href="https://github.com/openjdk-mirror/jdk/blob/icedtea/jdk7/master/src/share/classes/java/nio/Bits.java#L651">100ms</a> for the GC call to complete. After 100ms the allocator checks again to see whether there is enough space to satisfy the new memory allocation request before raising an out of memory exception.</p>
+
+<p>Few things to note about this allocation process.</p>
+
+<ul>
+<li><p>For performance sensitive applications the explicit GC and the non-tunable sleep time in the allocation logic when there is not enough memory can be a large overhead.</p></li>
+<li><p>The second item to note is that a GC call means best effort will be made by the JVM to schedule one and doesn&rsquo;t guarantee that one will be run immediately. So there can be situations when the Java process will fail with OOM error even when there is enough memory to be freed to accommodate new memory allocation request since a GC is not run immediately.</p></li>
+<li><p>Third, the thread sleep time of 100ms may not be sufficient in certain situations for the GC to complete and release unused memory to satisfy new memory allocation request. If any one is surprised that the 100ms is more than sufficient for a GC to complete, we came across the situation where trying to allocate 1 GB chunks of off heap space using a simple for loop failing on Ubuntu 12.04 LTS with OOM while the same runs fine on Redhat Linux machine which had a relatively less powerful hardware. With the current API this sleep time can&rsquo;t be adjusted and hence the application may have to perform additional sleep to make sure that there is no memory to use.</p></li>
+<li><p>The last item of interest is the total memory available for use to allocate off-heap memory. This value is set at the start of the process either manually or by the VM. When set manually, the JVM doesn&rsquo;t verify whether there is enough free memory available on the system. Even if the value is set automatically by the JVM, the available memory on the system can be lower during the process execution since memory usage of other processes in the system can change as time goes by which can result in the Java process failing due to unexpected exception in memory allocation. So it is important to make sure that the memory of size set in <code>-XX:MaxDirectMemorySize</code> is available for the Java process to use so that the failures doesn&rsquo;t happen.</p></li>
+</ul>
+
+
+<p>There are few options the JVM can do to prevent allocation related exceptions which would require changes to the JVM code.</p>
+
+<ul>
+<li><p>Verify the system free memory to make sure that it is greater than or equal to what is set by the users when the JVM is brought up and also during the process execution. This will require native system calls and may have a pronounced impact on the performance of the Java process. One way to mitigate is to provide an JVM option for the users to set if they need this strict condition checking.</p></li>
+<li><p>Instead of invoking a GC call when all the memory is used, it would be better to have a configurable parameter to set direct memory used threshold to make the GC call. This should be a fairly simple change to the JVM code.</p></li>
+<li><p>Calculate the sleep time after the GC process taking into consideration all the factors which impacts GC time. This will be complex and will not be of less importance if the previous suggestion is implemented in the JDK code.</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Secure All Applications Please]]></title>
+    <link href="http://asquareb.github.io/blog/2015/04/30/secure-all-applications-please/"/>
+    <updated>2015-04-30T22:46:43-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/04/30/secure-all-applications-please</id>
+    <content type="html"><![CDATA[<p>When you work with enterprises often you get to see batch applications storing credentials to login to systems like databases or messaging infrastructure or other enterprise applications in config files as plain text. Also these batch applications don’t get the same attention as customer facing applications when it comes to security. If you have similar application configurations and the thought is that these batch applications are behind the firewall in a DMZ and hence pose less risk, think again. As anyone who work in computer forensics/security can attest, most often data breach is perpetrated by an insider and these instances never get reported or get media attention. If you are looking for numbers here is a <a href="http://blogs.forrester.com/heidi_shey/13-01-07-a_2012_security_incident_recap_by_the_numbers">summary of 2012 security incident report from Forrester</a>.</p>
+
+<p>To de-risk scenarios like these, the solution doesn&rsquo;t have to be too complex. It can be a matter of following a simple process similar to the following across the enterprise,</p>
+
+<!--more-->
+
+
+<ul>
+<li>Generate an application specific key for the particular machine on which an application will be scheduled to run.</li>
+<li>Store the key in a location which is accessible only to the service id (headless user id) which will run the application.</li>
+<li>Encrypt the password of credentials which will be used by the application to authenticate with critical systems using the key generated.</li>
+<li>Store the encrypted password and the location of the key in the application configuration file.</li>
+<li>In the application code, when required decrypt the password using the key. Once the decrypted password is used for authentication, destroy the decrypted password value so that application process memory dump doesn&rsquo;t expose the decrypted value.</li>
+<li>And have the application owner or sys admin own the responsibility for key generation, storage and encryption of passwords for the application.</li>
+</ul>
+
+
+<p>Some may say that this is too simplistic and they may be correct. But here is something to think about. Have you wondered the use of a lock when road side assistance comes and opens your car when you loose your key? Locks are not for the small percentage of the population who will always find a way to break it, it is there to act as a barrier to the temptations of the vast majority of us. So even if this approach is simplistic it still acts as a barrier in a situation where there is nothing in place. If there are other solutions which can be put in place that you are comfortable with, it is even better, but please secure all applications. It can save someones life savings, identity, medical records or other critical data and the someone can be your friend, family, neighbor or even yourself!! With so much at stake on data, any vulnearabilty to breach is not an option anymore.</p>
+
+<p>Note: A simple utility to create a barrier is available <a href="https://github.com/bijugs/kaaval">here</a> for Java based applications.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Chef HWRP Using an Example]]></title>
+    <link href="http://asquareb.github.io/blog/2015/04/23/chef-hwrp-using-an-example/"/>
+    <updated>2015-04-23T23:34:17-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/04/23/chef-hwrp-using-an-example</id>
+    <content type="html"><![CDATA[<p>Heavy Weight Resource Provider (HWRP) is one of the options Chef offers to create custom resources and the other being <a href="http://blog.asquareb.com/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">LWRP</a>. It would be good to read the notes on <a href="http://blog.asquareb.com/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">LWRP</a> to understand the context and the difference between <code>LWRP</code> and <code>HWRP</code>.</p>
+
+<p>Similar to LWRP, HWRP requires a resource definition and the corresponding provider. The key difference is that there are no DSL in the HWRP as in LWRP and everything is coded in <code>Ruby</code> code. So taking the same example of HDFS directory resource used in the notes on LWRP, the following is the skeleton of the resource definition.</p>
+
+<!-- more -->
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class Chef
+</span><span class='line'>  class Resource
+</span><span class='line'>    class HdfsDir &lt; Chef::Resource
+</span><span class='line'>
+</span><span class='line'>      #
+</span><span class='line'>      # What provider this resource provides
+</span><span class='line'>      #
+</span><span class='line'>      provides :hdfsdir
+</span><span class='line'>
+</span><span class='line'>      def initialize(name, run_context=nil)
+</span><span class='line'>        super
+</span><span class='line'>
+</span><span class='line'>        #
+</span><span class='line'>        # Set the resource name
+</span><span class='line'>        #
+</span><span class='line'>        @resource_name = :hdfsdir
+</span><span class='line'>
+</span><span class='line'>        #
+</span><span class='line'>        # Allowed actions in this resource
+</span><span class='line'>        #
+</span><span class='line'>        @allowed_actions = [:create, :delete, :chown, :chmod, :rename, :chgrp, :nothing]
+</span><span class='line'>
+</span><span class='line'>        #
+</span><span class='line'>        # Default action if none specified when using the resource
+</span><span class='line'>        #
+</span><span class='line'>        @action = :create
+</span><span class='line'>
+</span><span class='line'>        #
+</span><span class='line'>        # Set default values for resource attributes
+</span><span class='line'>        #
+</span><span class='line'>        @path = name
+</span><span class='line'>        @namenode = nil
+</span><span class='line'>        ...
+</span><span class='line'>      end
+</span><span class='line'>      
+</span><span class='line'>      #
+</span><span class='line'>      # Methods to get/set attributes and define additional characteristics
+</span><span class='line'>      #
+</span><span class='line'>      def path(arg=nil)
+</span><span class='line'>        set_or_return(:path, arg, :kind_of => String, :required => true)
+</span><span class='line'>      end
+</span><span class='line'>
+</span><span class='line'>      def namenode(arg=nil)
+</span><span class='line'>        set_or_return(:namenode, arg, :kind_of => String, :required => true)
+</span><span class='line'>      end
+</span><span class='line'>
+</span><span class='line'>      ...
+</span><span class='line'>
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The HWRP is a <code>Ruby</code> class in this case <code>HdfsDir</code> which is a subclass of <code>Chef::Resource</code> class. The <code>provides</code> method specifies the resource provider for this resource and in this case it is <code>hdfsdir</code>.</p>
+
+<p>As in any <code>Ruby</code> class, the <code>initialize</code> method is used perform initializations like setting initial values of variables. In this case the pre-defined instance variable <code>resource_name</code> is set to a name which can be used to create a resource block in recipes using this HWRP. An array of symbols specifying the supported <code>actions</code> supported by this HWRP is assigned to the instance variable <code>allowed_actions</code>. A default action which will be taken if an <code>action</code> is not set for while creating a resource using this HWRP (in this case <code>create</code>) is set to the instance variable <code>action</code>.</p>
+
+<p>The remaining section in the skeleton is to define the characteristics of all the attributes of this resource which is similar to the attribute definition in LWRP. The key difference is that they are all defined as <code>Ruby</code> methods and the <code>set_or_return</code> is similar to <code>Ruby</code> <code>attr_accessor</code> method which creates the getters and setters for the attributes.</p>
+
+<p>Unlike LWRP, the HWRP resource and provider code is stored in files under the <code>libraries</code> directory of the cookbook. Also there is no strict rules about the file naming conventions since these are <code>Ruby</code> classes and they get loaded first during the <code>Chef client</code> run.</p>
+
+<p>Now lets turn to the corresponding provider definition and the following is the skeleton. It is more or less similar to the LWRP provider code we had seen earlier with some differences.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>require 'chef/log'
+</span><span class='line'>
+</span><span class='line'>class Chef
+</span><span class='line'>  class Provider
+</span><span class='line'>    class HdfsDir &lt; Chef::Provider
+</span><span class='line'>
+</span><span class='line'>      #
+</span><span class='line'>      # To enable -W/--why-run option of chef-client
+</span><span class='line'>      #
+</span><span class='line'>      def whyrun_supported?
+</span><span class='line'>         true
+</span><span class='line'>      end
+</span><span class='line'>
+</span><span class='line'>      #
+</span><span class='line'>      # Method automatically called by Chef during the client execution phase
+</span><span class='line'>      # Can be used to initialize variables and also verify the current state
+</span><span class='line'>      #
+</span><span class='line'>      def load_current_resource
+</span><span class='line'>        require 'webhdfs'
+</span><span class='line'>
+</span><span class='line'>        new_resource.user == nil ? @user = ENV['USER'] : @user = new_resource.user
+</span><span class='line'>        nnaddress = new_resource.namenode
+</span><span class='line'>        nnport = new_resource.nnport
+</span><span class='line'>        @client = WebHDFS::Client.new(nnaddress,nnport,@user)
+</span><span class='line'>        if (!validnn?())
+</span><span class='line'>          raise RuntimeError, "Invalid namenode provided or HDFS not available"
+</span><span class='line'>        end
+</span><span class='line'>        @omode = new_resource.mode
+</span><span class='line'>        new_resource.mode == nil ? @mode = "0750" : @mode = new_resource.mode
+</span><span class='line'>        @path = new_resource.path
+</span><span class='line'>        @tpath = new_resource.tpath
+</span><span class='line'>        @tgroup = new_resource.tgroup
+</span><span class='line'>        @tuser = new_resource.tuser
+</span><span class='line'>      end
+</span><span class='line'>
+</span><span class='line'>      ...
+</span><span class='line'>      #
+</span><span class='line'>      # Action to create a directory in HDFS
+</span><span class='line'>      #
+</span><span class='line'>      def action_create
+</span><span class='line'>        if (dir_exists?(@path))
+</span><span class='line'>          Chef::Log::info("Directory #{ @path } exits; create action not taken")
+</span><span class='line'>        else
+</span><span class='line'>          converge_by("Create #{ @new_resource }") do
+</span><span class='line'>            @client.mkdir(@path,'permission' => @mode)
+</span><span class='line'>          end
+</span><span class='line'>          new_resource.updated_by_last_action(true)
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>    …
+</span><span class='line'>      #
+</span><span class='line'>      # Method to check whether the namenode provided is valid
+</span><span class='line'>      #
+</span><span class='line'>      def validnn?()
+</span><span class='line'>        return dir_exists?("/") ? true : false
+</span><span class='line'>      end
+</span><span class='line'>      ...
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As with the resource definition, the provider is also a <code>Ruby</code> class which is a subclass of <code>Chef::Provider</code> class. The method <code>whyrun_supported</code> is to specify whether the resource supports the <code>chef client</code> run with <code>why-run</code> option. If this method is set to return <code>true</code>, then the strings provided in the <code>converge_by</code> statement of the <code>action</code> requested in the recipe will be logged instead of performing the actual convergence of the resource.</p>
+
+<p><code>load_current_resource</code> method need to be overwritten in an HWRP which is optional in as LWRP. As discussed in the LWRP note, this method can be used to check the current state of the resource.</p>
+
+<p>The methods for the <code>actions</code> supported are defined using the naming convention <code>action_name</code>. For e.g. for the <code>create</code> action the method name is <code>action_create</code>. Supporting methods can be defined as in any <code>Ruby</code> class for e.g. in this case `validnn??`` method.</p>
+
+<p>The method <code>new_resource.updated_by_last_action</code> is called with a value of <code>true</code> so that <code>Chef</code> is notified that the resource got updated by that particular <code>action</code>.</p>
+
+<p>More notes in this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Chef LWRP Using HDFS Directory as an Example]]></title>
+    <link href="http://asquareb.github.io/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/"/>
+    <updated>2015-04-19T22:48:58-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example</id>
+    <content type="html"><![CDATA[<p><code>Chef</code> provides a large set of <code>resources</code> to work with. But there are situations where  resources provided by <code>Chef</code> may not be sufficient. For e.g, distributed file systems can’t be handled by the file system related resources (<code>file</code>, <code>directory</code> etc) which comes out of the box with <code>Chef</code>. Being flexible and customizable, <code>Chef</code> provides two options (LWRP, HWRP) for users to create their own resources.</p>
+
+<!-- more -->
+
+
+<p>Light Weight Resource Providers (LWRP) use DSL to simplify the creation of resources and are used when existing chef <code>resources</code> can be leveraged with minimal <code>Ruby</code> code. In contrast, Heavy Weight Resource Providers (HWRP) are used when existing resources can’t be leveraged and <code>Ruby</code> code need to be used to implement the resource provider.</p>
+
+<p>Lets quickly look at a LWRP using HDFS (which is a distributed file system) directory resource as an example. A LWRP is created and stored in a cookbook and there are two parts to it. First the resource definition which defines the actions supported and attributes accepted by the LWRP. The resource definition resides in the <code>resources</code> directory of the cookbook. The second part is the provider or simply the code which implements the actions supported by the LWRP. The provider is stored in the <code>provider</code> directory of the cookbook in which the LWRP is being created.</p>
+
+<p>For <code>chef</code> to be able to identify the new resource, the file name of the resource definition and the provider file need to have the same name. For e.g. lets assume that the HDFS directory resource is created in hdfs cookbook and the resource is named hdfsdir, the following will be the cookbook directory structure (showing only the required directories)</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hdfs
+</span><span class='line'>  |_____ providers
+</span><span class='line'>  |             |________ hdfsdir.rb        
+</span><span class='line'>  |
+</span><span class='line'>  |_____ Resources
+</span><span class='line'>                |________ hdfsdir.rb</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When the resource need to be used in a <code>recipe</code>, the resource need to be prefixed with the cookbook name separated by an “_” (underscore).  For e.g.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hdfs_hdfsdir “/tmp/pass” do
+</span><span class='line'>  action :delete
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Lets look at the LWRP <code>resource</code> definition for HDFS directory resource</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>actions :create, :delete, :chown, :chmod, :rename, :chgrp
+</span><span class='line'>default_action :create
+</span><span class='line'>#
+</span><span class='line'># fqdn or ip address of the name node server
+</span><span class='line'>#
+</span><span class='line'>attribute :namenode, :kind_of => String, :required => true
+</span><span class='line'>#
+</span><span class='line'># port number of the namenode
+</span><span class='line'>#
+</span><span class='line'>attribute :nnport, :kind_of => String, :required => true
+</span><span class='line'>#
+</span><span class='line'># Directory path on which actions need to be taken
+</span><span class='line'>#
+</span><span class='line'>attribute :path, :kind_of => String, :name_attribute => true, :required => true
+</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>actions</code> defines the actions supported by the new resource.</p>
+
+<p><code>default_action</code> defines the action when the resource is used in an recipe and no action clause is specified in the recipe.</p>
+
+<p><code>attribute</code> defines each attribute which can be set when using the resource. It also defines whether the attribute is required and the attribute type.</p>
+
+<p>One <code>attribute</code> can take the <code>name</code> value of the resource if it is not set explicitly in the recipe and in this case the <code>attribute</code> path takes the name value of the resource and it is specified using <code>:name_attribute =&gt; true</code>. The complete definition can be found <a href="https://github.com/bijugs/simple-scripts/blob/master/hdfsdir_resource.rb">here</a>.</p>
+
+<p>With the <code>resource</code> definition out of the way lets look at the <code>provider</code> for the hdfs directory resource. The following is the code skeleton for the provider and the full code can be found <a href="https://github.com/bijugs/simple-scripts/blob/master/hdfsdir_provider.rb">here</a>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>require 'chef/log'
+</span><span class='line'>require 'webhdfs'
+</span><span class='line'>#
+</span><span class='line'>
+</span><span class='line'>#
+</span><span class='line'>use_inline_resources
+</span><span class='line'>#
+</span><span class='line'># To enable -W/--why-run option of chef-client
+</span><span class='line'>#
+</span><span class='line'>def whyrun_supported?
+</span><span class='line'>   true
+</span><span class='line'>end
+</span><span class='line'>#
+</span><span class='line'># Method automatically called by Chef during the client execution phase
+</span><span class='line'># Can be used to initialize variables and also verify the current state
+</span><span class='line'>#
+</span><span class='line'>def load_current_resource
+</span><span class='line'>   @current_resource = Chef::Resource::HdfsHdfsdir.new(new_resource.name)
+</span><span class='line'>   new_resource.user == nil ? @current_resource.user = ENV['USER'] : @current_resource.user = new_resource.user
+</span><span class='line'>
+</span><span class='line'>...
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>action :create do
+</span><span class='line'>  if (dir_exists?(@path))
+</span><span class='line'>    Chef::Log::info("Directory #{ @path } exits; create action not taken")
+</span><span class='line'>  else
+</span><span class='line'>    converge_by("Create #{ @new_resource }") do
+</span><span class='line'>      @client.mkdir(@path,'permission' => @mode)
+</span><span class='line'>    end
+</span><span class='line'>    new_resource.updated_by_last_action(true)
+</span><span class='line'>  end
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>action :delete do
+</span><span class='line'>...
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>require</code> method is used to include external files as in any Ruby code. Note that <code>webhdfs</code> gem need to installed for this code to work.</p>
+
+<p> <code>use_inline_resources</code> is a must for LWRP. The reason is to make sure that any <code>notifications</code> raised from any of the resources in the LWRP (remember LWRP can leverage other Chef resources to implement its functionality) will be treated as being raised by the LWRP resource collection as a whole and not the individual resource within the LWRP resource which is raising the notification.</p>
+
+<p><code>new_resource</code> instance object is automatically created when the resource is used and the attribute values in the new object is set to the values passed from the recipe that is using the resource.</p>
+
+<p>When creating resources one of the key requirement is to make sure that it is <strong>idempotent</strong>. This requires the current state of the resource to be known. For this <code>chef</code> provides an empty method <code>load_current_resource</code> which can be overwritten by the resource provider. Since this method will be the first to be called when the resource is used in a recipe, the method call can be used to check the current state of the resource. For e.g. if the directory resource is already existing and the resource action is to <code>create</code> the directory, the resource provider can skip the requested action since the directory is up to date. For anyone interested in more details look into the code for <a href="https://github.com/chef/chef/blob/24c3387634f32f27f63d388ddbf64004e17c311b/lib/chef/provider/lwrp_base.rb">LWRPBase class</a> which is the parent for the LWRP provider.</p>
+
+<p>The remaining sections in the code skeleton are to implement the actions supported by the resource. They can use the existing <code>chef</code> resources and/or use Ruby code. If you had a chance to look at the complete code for <a href="https://github.com/bijugs/simple-scripts/blob/master/hdfsdir_provider.rb">hdfsdir provider</a> contrary to how LWRP is meant to be implemented, the code doesn’t use any existing <code>chef</code> resource since there is none for a distributed file system like HDFS and all the actions had to be implemented using <code>Ruby</code>. But to understand the various aspects of writing an LWRP it is still helpful.</p>
+
+<p><code>whyrun_supported?</code> method is used to enable/disable support for the <code>--why-run</code> option of <code>chef-client</code> by setting the return value to <code>true</code> or <code>false</code>.</p>
+
+<p>When <code>whyrun_supported?</code> is set to <code>true</code> and if <code>chef-client</code> run uses <code>--why-run</code> option the string passed to  <code>converge_by</code> clause will be logged instead of actual convergence.</p>
+
+<p>When an action is taken on a resource <code>new_resource.updated_by_last_action(true)</code> is used to notify <code>chef</code> that the resource was updated by the requested action.</p>
+
+<p>Finally, note that you can use the hdfs LWRP code used in this example if you are dealing with HDFS by renaming the files and copying into the resources and provider directories of your cookbook.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Integrating Chef and Apache ZooKeeper for Coordination in a Cluster]]></title>
+    <link href="http://asquareb.github.io/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/"/>
+    <updated>2015-04-03T23:36:21-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster</id>
+    <content type="html"><![CDATA[<p>In a cluster environment services on nodes may have to be coordinated for various reasons. For e.g., when a configuration change is made to a distributed computing component like <code>HDFS</code>, the <code>HDFS</code> service on all nodes shouldn&rsquo;t stop at the same time to restart so that the configuration takes in effect. Stopping of the service on all the nodes will end up in unavailability which is not desired to put it lightly.</p>
+
+<p>There are many options to perform orchestration/coordination with varied maturity when you manage a cluster using <code>Chef</code>. Here we look at how <code>Chef</code> and <code>ZooKeeper</code> can work together to perform coordination of services on cluster nodes. We will use the need to control and coordinate service restart so that the service in all nodes are not stopped at the same time as the example to explain the solution.</p>
+
+<!--more-->
+
+
+<p>Lets take the simple case of service restart where only one instance of the service can be restarted at any time. One of the ways to accomplish this is by forcing nodes to acquire a lock to perform service restarts. The following is the solution summary</p>
+
+<ul>
+<li>A lock need to be acquired by a node before it can take a restart action on the service instance running on the node.</li>
+<li>When a node tries to acquire a lock and if it fails since some other node is holding the lock or other reasons, the node waits and retries for a certain time.</li>
+<li>If the lock is acquired within the certain prescribed time, the node restarts the service.</li>
+<li>Once the restart is complete the node releases the lock so that other nodes can take a lock on it.</li>
+<li>If the lock is not acquired within the certain time, the node remembers that the restart was not successful and hence will try to restart the service next time chef client runs on the node.</li>
+</ul>
+
+
+<p>If there are any misconfigurations which triggered the restart, the service will not be successfully restarted due to the misconfiguration on the node which acquired the lock first. Since the restart process failed, lock will not be released resulting in other nodes not being able to able to acquire it. This prevents misconfiguration being propagated to other nodes preventing unavailability. Also until the misconfiguration is corrected the service will not be restarted in all the nodes.</p>
+
+<p>Now the key is to be able to implement lock primitive in a distributed environment and this is where <a href="https://zookeeper.apache.org/">Apache ZooKeeper</a> comes into play. <code>ZooKeeper</code> is a high-performance coordination service which among many things provides synchronization for distributed applications. <code>ZooKeeper</code> is used by many Apache projects like <code>HBase</code> which is a distributed scalable data store. <code>ZooKeeper</code> is also a distributed system which means failover is handled automatically preventing unavailability.</p>
+
+<p>For the use case of allowing only one node to restart a service, we can use ZooKeeper “znode” as the lock. For a service “X”, if a node is able to create a znode “X” in ZooKeeper then the service can be restarted by the node. If a node is not able to create znode “X” since the znode is already created by another node in the cluster or other reasons, then the node need to wait until the znode is removed.</p>
+
+<p>The following is a Chef <a href="https://github.com/bijugs/chef-bach/blob/master_rolling_restart/cookbooks/bcpc-hadoop/definitions/hadoop_service.rb"><code>definition</code></a> which implements the restart coordination logic. It is implemented as a <code>definition</code> so that it can be used to coordinate the restart of multiple services in a cluster. The inline comments in the code explains the logic and any reference to hadoop can be discarded since this can be used for any service. Currently this is implemented and used for a hadoop cluster.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#
+</span><span class='line'># Definition takes three parameters
+</span><span class='line'># service_name: Name of the service
+</span><span class='line'># dependencies: Resources typically template resources for which the service need to be restarted
+</span><span class='line'># process_identifier: String which identifies the process of the service
+</span><span class='line'>#
+</span><span class='line'>define :hadoop_service, :service_name => nil, :dependencies => nil, :process_identifier => nil do
+</span><span class='line'>
+</span><span class='line'>  params[:service_name] ||= params[:name]
+</span><span class='line'>  #
+</span><span class='line'>  # Service resource defined using the parameters passed
+</span><span class='line'>  #
+</span><span class='line'>  service "#{params[:service_name]}" do
+</span><span class='line'>    supports :status => true, :restart => true, :reload => false
+</span><span class='line'>    action [:enable, :start]
+</span><span class='line'>  end
+</span><span class='line'>  #
+</span><span class='line'>  # Checking to see whether user requested to not to use restart coordination
+</span><span class='line'>  #
+</span><span class='line'>  if node["bcpc"]["hadoop"]["skip_restart_coordination"]
+</span><span class='line'>    Chef::Log.info "Coordination of #{params[:service_name]} restart will be skipped as per user request."
+</span><span class='line'>    begin
+</span><span class='line'>      res = resources(service: "#{params[:service_name]}")
+</span><span class='line'>      if params[:dependencies]
+</span><span class='line'>        params[:dependencies].each do |dep|
+</span><span class='line'>          res.subscribes(:restart, "#{dep}", :delayed)
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>    rescue Chef::Exceptions::ResourceNotFound
+</span><span class='line'>      Chef::Log.info("Resource service #{params[:service_name]} not found")
+</span><span class='line'>    end
+</span><span class='line'>  else
+</span><span class='line'>    if !params[:process_identifier]
+</span><span class='line'>      Chef::Application.fatal!("hadoop_service for #{params[:service_name]} need to specify a valid value for the parameter :process_identifier")
+</span><span class='line'>    end
+</span><span class='line'>    #
+</span><span class='line'>    # When there is a need to restart a hadoop service, a lock need to be taken so that the restart is sequenced preventing all nodes being down at the sametime
+</span><span class='line'>    # If there is a failure in acquiring a lock with in a certian period, the restart is scheduled for the next run on chef-client on the node.
+</span><span class='line'>    # To determine whether the prev restart failed is the node attribute node[:bcpc][:hadoop][:service_name][:restart_failed] is set to true
+</span><span class='line'>    # This ruby block is to check whether this node attribute is set to true and if it is set then gets the hadoop service restart process in motion.
+</span><span class='line'>    #
+</span><span class='line'>    ruby_block "handle_prev_#{params[:service_name].gsub('-','_')}_restart_failure" do
+</span><span class='line'>      block do
+</span><span class='line'>        Chef::Log.info "Need to restart #{params[:service_name]} since it failed during the previous run. Another node's restart process failure is a possible reason"
+</span><span class='line'>      end
+</span><span class='line'>      action :create
+</span><span class='line'>      only_if { node[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed] and 
+</span><span class='line'>              !process_restarted_after_failure?(node[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed_time],"#{params[:process_identifier]}")}
+</span><span class='line'>    end
+</span><span class='line'>    #
+</span><span class='line'>    # Since string with all the zookeeper nodes is used multiple times this variable is populated once and reused reducing calls to Chef server
+</span><span class='line'>    #
+</span><span class='line'>    zk_hosts = (get_node_attributes(MGMT_IP_ATTR_SRCH_KEYS,"zookeeper_server","bcpc-hadoop").map{|zkhost| "#{zkhost['mgmt_ip']}:#{node[:bcpc][:hadoop][:zookeeper][:port]}"}).join(",")
+</span><span class='line'>    #
+</span><span class='line'>    # znode is used as the locking mechnism to control restart of services. The following code is to build the path
+</span><span class='line'>    # to create the znode before initiating the restart of hadoop service 
+</span><span class='line'>    #
+</span><span class='line'>    lock_znode_path = format_restart_lock_path(node[:bcpc][:hadoop][:restart_lock][:root],"#{params[:service_name]}")
+</span><span class='line'>    #
+</span><span class='line'>    # All hadoop service restart situations like changes in config files or restart due to previous failures invokes this ruby_block
+</span><span class='line'>    # This ruby block tries to acquire a lock and if not able to acquire the lock, sets the restart_failed node attribute to true
+</span><span class='line'>    #
+</span><span class='line'>    ruby_block "acquire_lock_to_restart_#{params[:service_name].gsub('-','_')}" do
+</span><span class='line'>      require 'time'
+</span><span class='line'>      block do
+</span><span class='line'>        tries = 0
+</span><span class='line'>        Chef::Log.info("#{node[:hostname]}: Acquring lock at #{lock_znode_path}")
+</span><span class='line'>        while true 
+</span><span class='line'>          lock = acquire_restart_lock(lock_znode_path, zk_hosts, node[:fqdn])
+</span><span class='line'>          if lock
+</span><span class='line'>            break
+</span><span class='line'>          else
+</span><span class='line'>            tries += 1
+</span><span class='line'>            if tries >= node[:bcpc][:hadoop][:restart_lock_acquire][:max_tries]
+</span><span class='line'>              failure_time = Time.now().to_s
+</span><span class='line'>              Chef::Log.info("Couldn't acquire lock to restart ")
+</span><span class='line'>              node.set[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed] = true
+</span><span class='line'>              node.set[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed_time] = failure_time
+</span><span class='line'>              node.save
+</span><span class='line'>              break
+</span><span class='line'>            end
+</span><span class='line'>            sleep(node[:bcpc][:hadoop][:restart_lock_acquire][:sleep_time])
+</span><span class='line'>          end
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>      action :nothing
+</span><span class='line'>      if params[:dependencies]
+</span><span class='line'>        params[:dependencies].each do |dep|
+</span><span class='line'>          subscribes :create, "#{dep}", :immediate
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>      subscribes :create, "ruby_block[handle_prev_#{params[:service_name].gsub('-','_')}_restart_failure]", :immediate
+</span><span class='line'>    end
+</span><span class='line'>    #
+</span><span class='line'>    # If lock is acquired by the node, ruby_block executes which is to notify service to restart
+</span><span class='line'>    #
+</span><span class='line'>    ruby_block "coordinate_#{params[:service_name].gsub('-','_')}_restart" do
+</span><span class='line'>      block do
+</span><span class='line'>        Chef::Log.info("Data node will be restarted in node #{node[:fqdn]}")
+</span><span class='line'>      end
+</span><span class='line'>      action :create
+</span><span class='line'>      only_if { my_restart_lock?(lock_znode_path, zk_hosts, node[:fqdn]) }
+</span><span class='line'>    end
+</span><span class='line'>
+</span><span class='line'>    begin
+</span><span class='line'>      res = resources(service: "#{params[:service_name]}")
+</span><span class='line'>      res.subscribes(:restart, "ruby_block[coordinate_#{params[:service_name].gsub('-','_')}_restart]", :immediate)
+</span><span class='line'>    rescue Chef::Exceptions::ResourceNotFound
+</span><span class='line'>      Chef::Log.info("Resource service #{params[:service_name]} not found")
+</span><span class='line'>    end
+</span><span class='line'>    #
+</span><span class='line'>    # Once the service restart is complete, the following block releases the lock 
+</span><span class='line'>    #
+</span><span class='line'>    ruby_block "release_#{params[:service_name].gsub('-','_')}_restart_lock" do
+</span><span class='line'>      block do
+</span><span class='line'>        Chef::Log.info("#{node[:hostname]}: Releasing lock at #{lock_znode_path}")
+</span><span class='line'>        lock_rel = rel_restart_lock(lock_znode_path, zk_hosts, node[:fqdn])
+</span><span class='line'>        if lock_rel
+</span><span class='line'>          node.set[:bcpc][:hadoop][params[:service_name].gsub('-','_').to_sym][:restart_failed] = false
+</span><span class='line'>          node.save
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>      action :create
+</span><span class='line'>      only_if { my_restart_lock?(lock_znode_path, zk_hosts, node[:fqdn]) }
+</span><span class='line'>    end
+</span><span class='line'>  end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The following code snippet is how it is used in recipes instead of the default Chef <code>service</code> resource.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>dep = ["template[/etc/hadoop/conf/hdfs-site.xml]",
+</span><span class='line'>       "template[/etc/hadoop/conf/hadoop-env.sh]"]
+</span><span class='line'>
+</span><span class='line'>hadoop_service "hadoop-hdfs-datanode" do
+</span><span class='line'>  dependencies dep
+</span><span class='line'>  process_identifier "org.apache.hadoop.hdfs.server.datanode.DataNode"
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Given this framework it is easier to implement complex logic to determine restart eligibility like rack awareness, restart greater than one node or a set percentage of nodes, restart based on the state of other services in the cluster etc. Also this can be used to implement rolling upgrades of software on cluster nodes. In short there are many options and use cases which can leverage this solution.</p>
+
+<p>Quick word on handling failure during lock acquisition. When the node tries to acquire the lock and fails, the whole chef-client run process could have been stopped or waited for the lock to become available. Both of the options are not desirable as one could understand the implications. That being the reason for choosing the approach of waiting for sometime for the lock to become available and if not remember that the restart need to happen in the next chef-client run. This has the advantage of chef-client run further steps and be successful even when the particular service is not restarted and also automatically restart the service in the next chef-client run which seems like a balanced approach.</p>
+
+<p>Note this solution uses the <code>zookeeper</code> ruby gem and the complete code can be found in the <a href="https://github.com/bloomberg/chef-bach/tree/master/cookbooks/bcpc-hadoop">chef-bach bcpc-hadoop cookbook</a>.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Restart of a Service Which Is Dependent on Multiple Services Through Chef]]></title>
+    <link href="http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/"/>
+    <updated>2015-02-28T23:07:47-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef</id>
+    <content type="html"><![CDATA[<p>In a node there can be services that are dependent on other services. For e.g. a monitoring service is dependent on services which it monitors and collects data. So when a service being monitored is restarted, the service monitoring may have to be restarted to establish back the connections. This was the case with older version of JMXTrans which required a restart when any of the services it is monitoring got restarted. Assuming that the older version of JMXTrans is used to monitor various services running on a node how do we restart JMXTrans when any of the process is restarted while using <code>Chef</code> to manage the environment.</p>
+
+<!--more-->
+
+
+<p>First, the processes which need to be monitored can vary in each node and there can be one or many processes. Since Chef role determines the recipes which are run on a node, a default attribute can be added to define the services JMXTrans is dependent on. The following is an example</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>"default_attributes" : {
+</span><span class='line'>   "jmxtrans":{
+</span><span class='line'>      "servers":[
+</span><span class='line'>                  {
+</span><span class='line'>                    "type": "datanode",
+</span><span class='line'>                    "service": "hadoop-hdfs-datanode",
+</span><span class='line'>                    "service_cmd": "org.apache.hadoop.hdfs.server.datanode.DataNode"
+</span><span class='line'>                  }, 
+</span><span class='line'>                  {
+</span><span class='line'>                    "type": "hbase_rs",
+</span><span class='line'>                    "service": "hbase-regionserver",
+</span><span class='line'>                    "service_cmd": “org.apache.hadoop.hbase.regionserver.HRegionServer"
+</span><span class='line'>                  }
+</span><span class='line'>                ]
+</span><span class='line'>              } ...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here the <code>service</code> key defines the name of the service on which JMXTrans is dependent on. The <code>service_cmd</code> key stores a string which can uniquely identify the running process of the service. The <code>type</code> key is not relevant for this discussion. These attributes will change for each role based on which service is installed as part of the role.</p>
+
+<p>Since JMXTRans need to be installed, configured and started on all the nodes to collect statistics from various services a recipe need to be created for the same. But the recipe can now take into account the new node attribute to build the JMXTrans restart logic. The following is a sample code snippet which shows how the logic can be built</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>jmx_services = Array.new
+</span><span class='line'>
+</span><span class='line'>node['jmxtrans']['servers'].each do |server|
+</span><span class='line'>  jmx_services.push(server['service'])
+</span><span class='line'>  jmx_srvc_cmds[server['service']] = server['service_cmd']
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>service "restart jmxtrans on dependent service" do
+</span><span class='line'>  service_name "jmxtrans"
+</span><span class='line'>  supports :restart => true, :status => true, :reload => true
+</span><span class='line'>  action   :restart
+</span><span class='line'>  #
+</span><span class='line'>  # Create subcribes entries for each of the services on which JMXTrans is dependent on
+</span><span class='line'>  #
+</span><span class='line'>  jmx_services.each do |jmx_dep_service| 
+</span><span class='line'>    subscribes :restart, "service[#{jmx_dep_service}]", :delayed
+</span><span class='line'>  end
+</span><span class='line'>end
+</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With the <code>subscribes</code> clause added to the <code>service</code> resource for every service JMXTrans is monitoring on the node, restarts of any of these services during <code>chef-client</code> run will make sure that JMXTrans service is restarted.</p>
+
+<p>But what will happen if any of the dependent service is restarted externally for e.g. manually or upstart bounces a service. Then Chef will not restart JMXTrans during <code>chef-client</code> run since all the services are running. This will result in services restarted manually not being monitored by JMXTrans. The following is an updated code snippet which will handle this scenario. The complete recipe is available <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc_jmxtrans/recipes/default.rb">here</a>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>jmx_services = Array.new
+</span><span class='line'>jmx_srvc_cmds = Hash.new
+</span><span class='line'>node['jmxtrans']['servers'].each do |server|
+</span><span class='line'>  jmx_services.push(server['service'])
+</span><span class='line'>  jmx_srvc_cmds[server['service']] = server['service_cmd']
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>service "restart jmxtrans on dependent service" do
+</span><span class='line'>  service_name "jmxtrans"
+</span><span class='line'>  supports :restart => true, :status => true, :reload => true
+</span><span class='line'>  action   :restart
+</span><span class='line'>  jmx_services.each do |jmx_dep_service| 
+</span><span class='line'>    subscribes :restart, "service[#{jmx_dep_service}]", :delayed
+</span><span class='line'>  end
+</span><span class='line'>  #
+</span><span class='line'>  # To determine any of the service JMXTrans depends on is started after JMXTrans service
+</span><span class='line'>  #
+</span><span class='line'>  only_if {process_require_restart?("jmxtrans","jmxtrans-all.jar", jmx_srvc_cmds)}
+</span><span class='line'>end
+</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you may have noticed there is a <code>only_if</code> condition calls a library function which takes in a hash of all the services and the string which identifies the service processes as the third paramter. The first two paramters passed are the JMXTrans service name and a string which can uniquely identify a running JMXTrans process.</p>
+
+<p>The following is the code snippet of the library function and the complete code can be found <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc_jmxtrans/libraries/utils.rb">here</a>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>def process_require_restart?(process_name, process_cmd, dep_cmds)
+</span><span class='line'>  tgt_proces_pid = `pgrep -f #{process_cmd}`
+</span><span class='line'>  ...
+</span><span class='line'>  #
+</span><span class='line'>  # Find the start time of the JMXTrans process
+</span><span class='line'>  #
+</span><span class='line'>  tgt_proces_stime = `ps --no-header -o start_time #{tgt_process_pid}`
+</span><span class='line'>  ...
+</span><span class='line'>  ret = false
+</span><span class='line'>  restarted_processes = Array.new
+</span><span class='line'>  #
+</span><span class='line'>  # Loop through the processess of all the dependent services
+</span><span class='line'>  #
+</span><span class='line'>  dep_cmds.each do |dep_process, dep_cmd|
+</span><span class='line'>    dep_pids = `pgrep -f #{dep_cmd}` 
+</span><span class='line'>    if dep_pids != ""
+</span><span class='line'>      dep_pids_arr = dep_pids.split("\n")
+</span><span class='line'>      dep_pids_arr.each do |dep_pid| 
+</span><span class='line'>        #
+</span><span class='line'>        # Find the start time of a dependent process
+</span><span class='line'>        #
+</span><span class='line'>        dep_process_stime = `ps --no-header -o start_time #{dep_pid}`
+</span><span class='line'>        #
+</span><span class='line'>        # If the dependent process start time is greater than JMXTrans start time 
+</span><span class='line'>        # set the return value to true
+</span><span class='line'>        #
+</span><span class='line'>        if DateTime.parse(tgt_proces_stime) &lt; DateTime.parse(dep_process_stime)
+</span><span class='line'>          restarted_processes.push(dep_process)
+</span><span class='line'>          ret = true
+</span><span class='line'>        end 
+</span><span class='line'>  ...</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>The logic behind the library function is to compare the start time of the JMXTrans process against the start time of processes of all the services it is dependent on. If any of the dependent processes start time is later than the start time of JMXTrans process then the JMXTrans service will get restarted.</p>
+
+<p>It would be good to have a Chef primitive that can accomplish what the library function does so that similar situations can use it. Hope this provides a solution option to restart a service dependent on multiple services during a <code>chef-client</code> run.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Dynamically Requesting a Common Service in a Chef Managed Environment]]></title>
+    <link href="http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/"/>
+    <updated>2015-02-21T22:39:48-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment</id>
+    <content type="html"><![CDATA[<p>In a cluster environment there can be a common service running on all the nodes in the cluster which may be requested by an application using the cluster. For e.g. in a distributed computing environment logs can be created on each node in the cluster and a common service on each cluster node can be a service which regularly copies log entries into a common location. Copying of logs can be a requirement for some of the applications/services running on the cluster nodes so that users can go to one location to view the log data from all the nodes instead of looking at each node. This can also help with managing the security of the cluster by providing access to this common location instead of providing access to all the nodes in the cluster.</p>
+
+<!-- more -->
+
+
+<p>But copying of the logs may not be a requirement for some other service or application and the requirement may change in the future. It is better to build a solution so that the changes in the requirements to copy logs can be accommodated dynamically.</p>
+
+<p>To explain the pattern on how we can accomplish the requirement, we will assume <code>Apache Flume</code> as the component which will be installed on all the nodes in the cluster and will be used to copy the log file entries to a common location in HDFS. The following is one solution to satisfy the requirement.</p>
+
+<p>Create a new cookbook or reuse an existing cookbook which will be used on all the nodes in the cluster. Create a node attribute which will store a hash of hashes. For e.g.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>default['bcpc']['hadoop']['copylog'] = {}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The following is the datastructure which will be used to populate the hash values to be stored in the attributes</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>  'app_id' =>  { 'logfile' => "/path/file_name_of_log_file",
+</span><span class='line'>                 'docopy' => true (or false)
+</span><span class='line'>                },...
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>where the <code>app_id</code> is an unique id of an application which requests the service to copy its logs, <code>logfile</code> is the path of the logfile and <code>docopy</code> is a flag to enable and disable the request to copy the log files based on change in need. If an application requests more than one logfile to be copied the <code>appli_id</code> need to be made unique with in the application by adding additonal details like log name or a sequence number.</p>
+
+<p>When an application need to make a request to copy its log file, in the application&rsquo;s recipe, request can be added to the node attribute. For e.g. if logs from the nodes running <code>hbase-region-server</code> need to copy its logs to the common location, code similar to the following can be included in the recipe installing and starting the <code>hbase-region-server</code> service.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>node.default['bcpc']['hadoop']['copylog']['hbase_regionserver_log'] = {
+</span><span class='line'>    'logfile' => "/var/log/hbase/hbase-regionserver-#{node.hostname}.log",
+</span><span class='line'>    'docopy' => true
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>node.default['bcpc']['hadoop']['copylog']['hbase_regionserver_out'] = {
+</span><span class='line'>    'logfile' => "/var/log/hbase/hbase-regionserver-#{node.hostname}.out",
+</span><span class='line'>    'docopy' => true
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note here how an unique identifier is used as the <code>app_id</code> for the two log files from <code>hbase_regionserver</code> to be copied to the common location in HDFS.</p>
+
+<p>For someone not familiar with <code>Flume</code>, flume agents can be used to move data and they need a config file which defines things like the source, sink, the type of sink,the target location etc. Since <code>Flume</code> need to be installed in all nodes in the cluster to be a common service, a recipe need to be created to install the software. But when it comes to start <code>Flume agents</code>, the recipe need to loop through the node attribute to create required Flume configuration files for each logfile copy requests made by the applications running on the node.</p>
+
+<p>For e.g if the node is running only <code>hbase_regionserver</code> there will be two copy requests in the attribute for which the recipe need to create Flume configuration files and start the corresponding <code>Flume agents</code>. If there are other applications/services running on the node for e.g. <code>HDFS Datanode</code> and if the recipes make copy requests then the number of flume configs and <code>flume agents</code> running on the node will be more. The following is the code snippet on how the <code>Flume</code> recipe can accomplish this</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>node['bcpc']['hadoop']['copylog'].each do |id,f|
+</span><span class='line'>   if f['docopy'] 
+</span><span class='line'>     template "/etc/flume/conf/flume-#{id}.conf" do
+</span><span class='line'>       source "flume_flume-conf.erb”
+</span><span class='line'>       action :create ...
+</span><span class='line'>       variables(:agent_name => "#{id}",
+</span><span class='line'>                 :log_location => "#{f['logfile']}" )
+</span><span class='line'>       notifies :restart,"service[flume-agent-multi-#{id}]",:delayed
+</span><span class='line'>     end
+</span><span class='line'>     service "flume-agent-multi-#{id}" do
+</span><span class='line'>       supports :status => true, :restart => true, :reload => false
+</span><span class='line'>       service_name "flume-agent-multi"
+</span><span class='line'>       action :start
+</span><span class='line'>       start_command "service flume-agent-multi start #{id}"
+</span><span class='line'>       restart_command "service flume-agent-multi restart #{id}"
+</span><span class='line'>       status_command "service flume-agent-multi status #{id}"
+</span><span class='line'>     end
+</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A complete <code>Flume</code> recipe which includes this feature is available <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc-hadoop/recipes/copylog.rb">here</a>.</p>
+
+<p>By default the init.d script for Flume starts one <code>Flume agent</code>. But BIGTOP jira <a href="https://issues.apache.org/jira/browse/BIGTOP-1581">BIGTOP-1581</a> provides an option to start/stop/restart flume agents by passing agent names as in the <code>service</code> resource in the previous code snippet. The name passed need to have a corresponding Flume config file under the configuration folder. Since <code>Flume</code> recipe need to know the copy request from all the applications running on the node, it should be the last recipe to be run on the node. This can be accomplished by creating a role to include the <code>Flume</code> recipe and add it to the end of chef-client runlist of all the nodes.</p>
+
+<p>Hope this provides a solution option in a similar situation where applications can dynamically request for a common service in an environment. Also note that the data structure can be expanded so that applications can make richer requests for e.g. in this case request to change the location of the common location where logs are copied into etc.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Design Optimal HBase Based Applications]]></title>
+    <link href="http://asquareb.github.io/blog/2015/02/07/optimal-hbase-based-applications/"/>
+    <updated>2015-02-07T21:53:29-05:00</updated>
+    <id>http://asquareb.github.io/blog/2015/02/07/optimal-hbase-based-applications</id>
+    <content type="html"><![CDATA[<p>Leveraging the architecture of any data management system used in an application will yield the best performance and is the case with HBase. So before listing the key points to remember while designing HBase based applications, lets briefly look at the relevant architecture of HBase which will provide the required context.</p>
+
+<!-- more -->
+
+
+
+
+<h2>Key value store</h2>
+
+
+<p>HBase at its core is a key value store that provides row and table abstractions for users. Some may wonder what that means and here is a quick high level explanation</p>
+
+<ul>
+<li>When a user writes a row to a table in HBase, value of columns are written separately in storage with a <a href="https://github.com/apache/hbase/blob/master/hbase-common/src/main/java/org/apache/hadoop/hbase/Cell.java">key value</a> of row identifier, column family name, column name, timestamp and version number combined</li>
+<li>The key value pairs are stored in sorted order and that means columns which are part of a row in a HBase table are stored in a sequence in storage</li>
+<li>When a row is read by a HBase client, all the columns values are read individually and stitched together to present it back to the client as a single row</li>
+</ul>
+
+
+<h2>Write path</h2>
+
+
+<p>When a write action is taken on a HBase table row, the data is written first to a log (WAL) on disk for recovery. Then the data is written to in memory storage called <code>memstore</code>.</p>
+
+<p>Data from each column family in a table utilizes separate memory area of memstore storage and when memstore thresholds are reached the memstores are flushed which creates immutable files on disk. Note that as with separate memory in memstore for different column families in a table, separate files are created in disk for each column family in a table.</p>
+
+<p>Since the disk files created are immutable, when an update request is made, data will be written with the latest timestamp which will be used by read requests to identify the latest data. Also for delete requests,a new row entry will be stored with a delete marker so that reads will be able to identify that the row is deleted.</p>
+
+<h2>Read path</h2>
+
+
+<p>When a read request is made, HBase identifies the files which stores the rows meeting the request criteria from the metadata it maintains. Each file includes a block index which will identify the block inside the file where the row can be found. HBase performs a scan of the block to retrieve all the key value pairs corresponding to the request and a copy gets stored in the <code>block cache</code> in memory before the row is returned back to the client. BlockCache stores the data in memory for further reads and the data in cache gets dropped using LRU algorithm when the cache gets filled.</p>
+
+<p>While scanning the file block, there is a possibility that there can be no data available which satisfies the read request. Also if a row spans multiple blocks HBase will scan multiple blocks to satisfy the read request.</p>
+
+<p>Note that if there are more than one column family in a table and the read request involves data from more than one column family, HBase need to go through the process against multiple files on disk to retrieve data to satisfy the request. Also if the latest data for the row is available in memstore due to recent writes, HBase will merge data from the files in disk with the data in memstore before returning it to the client as request response.</p>
+
+<h2>Processing and storage maintenance</h2>
+
+
+<p>From HBase process perspective, table data is stored in <code>regions</code> which includes <code>memstore</code> and files on disk (<code>store files</code>). Regions are managed by region servers which handles all user requests. HBase master allocates <code>regions</code> to <code>region servers</code> during start up and it also maintains the table metadata.</p>
+
+<p>In order to reduce the number of on-disk files which will also improve read performance, HBase performs regular minor compactions based on <a href="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/">configured thresholds</a> which will combine small files created by memstore flushes into a single large file. When the size of store (memstore + store file for a column family) grows beyond a certain limit, HBase by default will split the region into two and this automatic splitting process continues as more data is written to the table. The newly created region gets assigned to a new region server and hence the processing is distributed to additional node which improves performance and scalability.</p>
+
+<p>HBase by default also performs major compactions on all disk files in a region related to a table column family to create a single store file on disk which again improves read requests. During major compaction HBase also removes data for rows marked as deleted. But as one could guess there will be impact an on performance when major compaction occurs.</p>
+
+<h2>Application design considerations</h2>
+
+
+<p>Given this high level understanding of HBase which are relevant to anyone performing application design, the following are some of the points to take into account while designing an application using HBase to get optimal performance.</p>
+
+<ul>
+<li>Unlike traditional DBMS which can use data structures like indexes, HBase solely relies on table keys. So understanding the queries which are required to satisfy the user case and creating tables with the appropriate key is important.</li>
+<li>Table keys should also prevent data skew and processing skew i.e key should distribute data storage and processing to all region servers so that design can scale and perform well utilizing all the resources in the HBase cluster.</li>
+<li>While blocks storing data relevant to a query is quickly identified ( ~O(3) ), scanning through the block to retrieve the data takes longer time ( O(n) n being the number of key values stored in a block) along with the time it takes to bring the block from disk into memory. It is important to create tables with optimal block size which will also help utilize cache optimally.</li>
+<li>If queries often retrieve data from more than one column family in a table which means HBase needs to deal with two sets for store files, it would be good to have related columns in a single column family which will reduce the number of disk files to deal with during reads.</li>
+<li>Denormalize data since HBase doesn’t support multi-table joins. This will also help with data consistency since row level actions are atomic and HBase doesn’t support transactions where multiple actions can be committed or rolled back.</li>
+<li>Pre-split the tables so that data is distributed to multiple region servers from the get go instead of starting with one region server and getting hammered. Also look at using other auto splitting options other than the default size based splitting of regions.</li>
+<li>Leverage versioning and TTL features to prune the amount of relevant data stored in the cluster.</li>
+<li>Unlike traditional databases, column names can be used to store the column values with dummy data for the actual value which will reduce the amount of data stored in the table and inturn also reduces block/cache usage.</li>
+<li>If there is a pre-defined maintenance window available to perform major compaction, disable major compactions so that spikes in low performance can be avoided.</li>
+<li>Enable bloom filters on all tables which will reduce the number of blocks read. There is storage overhead to enable bloom filter which may be a worthy price to pay for the performance gain.</li>
+</ul>
+
+
+<p>These along with <a href="http://asquareb.github.io/blog/2014/12/13/jvm-gc-settings-and-hbase/">JVM</a>, <a href="http://asquareb.github.io/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/">cache</a> and HBase <a href="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/">configuration parameters</a> looked at earlier will help someone to get the best out of a HBase cluster. Also if HBase fits a use case and want to vet other options before making a decision Redis, Accumulo, Cassandra are some of the options to look into.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Configuration Parameters That Can Influence HBase Performance]]></title>
+    <link href="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/"/>
+    <updated>2015-01-01T18:10:24-05:00</updated>
+    <id>http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance</id>
+    <content type="html"><![CDATA[<p>Based on individual use case and HBase deployment the settings of the following parameter will vary. As with any performance improvement exercise all changes should be systematically tested for benefits.</p>
+
+<!--more-->
+
+
+<p><strong>HBase properties</strong></p>
+
+<p><code>hbase.regionserver.handler.count</code> - controls the number of RPC listener threads on each region server. Increasing the listeners threads can improve performance but need to be balanced against the amount of resource available in the system since each thread consumes memory and CPU.</p>
+
+<p><code>hbase.ipc.server.callqueue.handler.factor</code> - Determines the number of call queues interms of regionserver handler count. Dedicated queues for each RPC listener thread reduces contention.</p>
+
+<p><code>hbase.ipc.server.callqueue.read.ratio</code> - Determines the number of call queues dedicated to read and write requests. If the work load is primarily read then increasing read queues to higher value value will help. By default there is no differentiation of queues as read or write.</p>
+
+<p><code>hbase.ipc.server.callqueue.scan.ratio</code> - Determines the number of call queues allocated for gets and scan requests. If the work load is primarily gets and not scans increasing the get queues will help. By default all the read queues are used for both get and scan requests.</p>
+
+<p><code>hbase.regionserver.global.memstore.size</code> - Ratio of JVM heap allocated for HBase memstore. The defaul is 40%. If the work load is primarily writes increasing this percentage will help and that means the percentage of heap allocated to blockcache need to be reduced since the total of the two can’t go beyond 80%.</p>
+
+<p><code>hbase.regionserver.region.split.policy</code> - Policy which determines when a region to be split. There are a few options available and each of them can make a difference for different scenarios.</p>
+
+<p><code>hbase.zookeeper.property.maxClientCnxns</code> - Number of concurrent connections which can be made to a single member of ZK ensemble from a single client and this value should match the value in zoo.cfg. This need to be adjusted taking into consideration the expected number of HBase client connections.</p>
+
+<p><code>hbase.client.write.buffer</code> - Size of write buffer at client and server. Increased buffering will help but need to be balanced against memory available on the server side.</p>
+
+<p><code>hbase.client.scanner.caching</code> - Number of rows fetched when calling next on a scanner if it is not served from client local memory.</p>
+
+<p><code>hbase.hregion.memstore.flush.size</code> - Size when exceeded flushes the memstore and is checked at hbase.server.thread.wakefrequency intervals. Higher the number the</p>
+
+<p><code>hbase.hregion.memstore.mslab.enabled</code> - enabled by default to prevent heap fragmentation and better not to disable it.</p>
+
+<p><code>hbase.hregion.max.filesize</code> - Sum of region HFiles when exceeded, region is split into two. It can help to have a higer value than the default 10 GB, if the workload is high volume/velocity write.</p>
+
+<p><code>hbase.hregion.majorcompaction</code> - time between major compaction and a value of 0 disables it. It would be good to disable it and schedule it on a regular maintenance window to prevent performance issues.</p>
+
+<p><code>hfile.block.cache.size</code> - percentage of JVM heap allocated for block cache. By default it is 40% but a higher percentage will help with read latencies if the primary workload is read. But any change need to be reflected in the memstore percentage.</p>
+
+<p>Set <code>hbase.ipc.client.tcpnodelay</code> to true and is the case by default.</p>
+
+<p>Setting <code>hbase.storescanner.parallel.seek.enable</code> to true can help with read latencies</p>
+
+<p>If data staleness is not a concern during reads for e.g. in stiuations where data is loaded nightly, enable <a href="https://issues.apache.org/jira/browse/HBASE-10070">MTTR</a> so that read failures due to region failures can be prevented by HBase servicing the request from a (stale) copy of the data.</p>
+
+<p>Enable <strong>HDFS short circuit read</strong> so that read latencies can be improved by reading data locally.</p>
+
+<ul>
+<li>Set <code>dfs.block.local-path-access.user</code> to hbase</li>
+<li>Set <code>dfs.client.read.shortcircuit</code> to true</li>
+<li>Set <code>hbase.regionserver.checksum.verify</code> to true</li>
+</ul>
+
+
+<p><strong>On Linux OS:</strong></p>
+
+<p>Set <code>vm.swappiness</code> to 0 or low value</p>
+
+<p>As with any database based application, Even with a well tuned cluster with the best hardware, an application will not get the best performance if it is not designed properly.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a></p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Hbase | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/hbase/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[JDBC Connection to Apache Phoenix]]></title>
+    <link href="http://asquareb.github.io/blog/2016/03/31/jdbc-connection-to-apache-phoenix/"/>
+    <updated>2016-03-31T12:27:36-04:00</updated>
+    <id>http://asquareb.github.io/blog/2016/03/31/jdbc-connection-to-apache-phoenix</id>
+    <content type="html"><![CDATA[<p>Phoenix provides a JDBC driver for Java client and hence can be connected to Phoenix by following the steps required to get a JDBC connection. As with JDBC drivers for other DBMS, there are are some Phoenix specific requirements to get a JDBC connection. For a non secure HBase cluster the Phoenix JDBC connection string should be of the form <code>jdbc:phoenix:&lt;ZK-QUORUM&gt;:&lt;ZK-PORT&gt;:&lt;ZK-HBASE-NODE&gt;</code>. The following is the code snippet to get a Phoenix JDBC connection object for a non secure HBase cluster.</p>
+
+<!--more-->
+
+
+<pre><code>Connection con = DriverManager.getConnection("jdbc:phoenix:nodea,nodeb,nodec:2181:/hbase");
+</code></pre>
+
+<p>To connect to a secure HBase cluster using a Kerberos user principal and keytab, the Phoenix JDBC connection string should be of the form <code>jdbc:phoenix:&lt;ZK-QUORUM&gt;:&lt;ZK-PORT&gt;:&lt;ZK-HBASE-NODE&gt;:principal_name@REALM:/path/to/keytab</code>. The following is the code snippet to get a Phoenix JDBC connection object for a secure HBase cluster.
+<code>
+con = DriverManager.getConnection("jdbc:phoenix:node1,node2,node3:2181:/hbase:peace@REALM.COM:/home/peace/peace.keytab);
+</code>
+If Kerberos principal and keytab is not used to connect to a secured HBase cluster, then the user running the code to make the connection should be defined in the Kerberos KDC and should have a valid TGT. The user running the code can verify whether they are in the correct KDC and have a valid TGT by running <code>klist</code> command . One key item to note is that to access a secure HBase cluster, the hbase-site.xml and core-site.xml of the target HBase cluster should be available in the classpath of the application.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase 1.0 - Offheap Cache Configuration]]></title>
+    <link href="http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration/"/>
+    <updated>2016-03-12T10:55:14-05:00</updated>
+    <id>http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration</id>
+    <content type="html"><![CDATA[<p>If you have been using HBase off-heap bucketcache, you may agree that configuration it is a <a href="http://blog.asquareb.com/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/">bit cumbersome</a> to say the least. In version 1.0, the HBase development team <a href="https://issues.apache.org/jira/browse/HBASE-11520">simplified the offheap cache configuration process</a>. With the changes, the following are the steps to configure bucketCache for e.g. of size n GB.</p>
+
+<!--more-->
+
+
+<ul>
+<li>Set the total off-heap memory size to be used by HBase to the environment variable <code>HBASE_OFFHEAPSIZE</code>. One way to do this is to set it in <code>hbase-env.sh</code>
+<code>
+export HBASE_OFFHEAPSIZE=(n+x)G
+</code>
+<em>Note</em> The &ldquo;G&rdquo; is for gigabytes. The value for x should be 1 to 2 GB and the value should be at the higher end for clusters handling high volume of transactions.</li>
+<li>The other option to configure the total off-heap memory size is tp set the <code>-XX:MaxDirectMemorySize</code> JVM property. Again this value can be set in <code>hbase-env.sh</code>
+<code>
+export HBASE_OPTS="$HBASE_OPTS -XX:MaxDirectMemorySize=(n+x)G"
+</code>
+If you are wondering what x GB is for, it is for Java direct memory used by hdfs client used by hbase to interact with the underlying hdfs filesystem.</li>
+<li>Set the HBase property <code>hbase.bucketcache.combinedcache.enabled</code> to <code>true</code> so that on-heap cache will be used for index and bloomfilter blocks along with <code>bucketcache</code> for data blocks.
+<code>
+&lt;property&gt;
+  &lt;name&gt;hbase.bucketcache.combinedcache.enabled&lt;/name&gt;
+  &lt;value&gt;true&lt;/value&gt;
+&lt;/property&gt;
+</code></li>
+<li>Set the HBase property <code>hbase.bucketcache.ioengine</code> to <code>offheap</code>.
+<code>
+&lt;property&gt;
+  &lt;name&gt;hbase.bucketcache.ioengine&lt;/name&gt;
+  &lt;value&gt;offheap&lt;/value&gt;
+&lt;/property&gt;
+</code></li>
+<li>Set the HBase property <code>hbase.bucketcache.size</code> to the size of memory which is allocated for bucket cache in mb.
+<code>
+&lt;property&gt;
+  &lt;name&gt;hbase.bucketcache.size&lt;/name&gt;
+  &lt;value&gt;n*1024&lt;/value&gt;
+&lt;/property&gt;
+</code></li>
+<li>Restart HBase server processess so that these changes can take in effect.
+```</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Oozie Job to Schedule HBase Major Compaction]]></title>
+    <link href="http://asquareb.github.io/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction/"/>
+    <updated>2015-12-20T12:10:23-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction</id>
+    <content type="html"><![CDATA[<p>HBase performs time based major compaction and in-order to prevent this resource intensive process interfere performance sensitive applications, this can be disabled. Once disabled, in order to keep the HBase store files in optimal condition, application team need to schedule regular compaction. The following details the steps which need to be followed to schedule daily compaction through Oozie.</p>
+
+<!--more-->
+
+
+<p><strong>Non Kerberized Cluster</strong>
+Create the following files with the content shown in a local directory. In this example the files are created in hbasecompact under the users local home directory. Please note that the files are under different directories.
+Shell script to start HBase compaction on a table and copy the output of the command to a HDFS directory. The command output can be checked for any issues.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/scripts/hbaseCompact.sh&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>!/bin/ksh&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>echo &ldquo;Starting HBase major compaction on table $1 - $3&rdquo; > majorcompact.log
+</span><span class='line'>echo &ldquo;major_compact \&rdquo;$1\&ldquo;&rdquo; | /usr/bin/hbase shell 2>&amp;1 >> majorcompact.log
+</span><span class='line'>echo &ldquo;HBase major compaction request complete on table $1&rdquo; >> majorcompact.log
+</span><span class='line'>hdfs dfs -moveFromLocal -f majorcompact.log $2</span></code></pre></td></tr></table></div></figure>
+Shell script to copy the Oozie job id into a HDFS directory. The job id can be used to check any issues.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/scripts/logOozieId.sh
+</span><span class='line'>echo $1 > oozieId.log
+</span><span class='line'>hdfs dfs -moveFromLocal -f oozieId.log $2</span></code></pre></td></tr></table></div></figure>
+Oozie workflow definition to perform HBase compaction. The first step  major_compact runs the script hbaseCompact.sh. The next step logOozieId runs the script logOozieId.sh to copy the Oozie workflow id onto HDFS.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/workflow/workflow.xml
+</span><span class='line'>&lt;workflow-app xmlns='uri:oozie:workflow:0.5' name="major_compact_wf">
+</span><span class='line'>   &lt;global>
+</span><span class='line'>      &lt;job-tracker>${jobTracker}&lt;/job-tracker>
+</span><span class='line'>      &lt;name-node>${nameNode}&lt;/name-node>
+</span><span class='line'>      &lt;configuration>
+</span><span class='line'>         &lt;property>
+</span><span class='line'>            &lt;name>mapred.job.queue.name&lt;/name>
+</span><span class='line'>            &lt;value>${queueName}&lt;/value>
+</span><span class='line'>         &lt;/property>
+</span><span class='line'>      &lt;/configuration>
+</span><span class='line'>   &lt;/global>
+</span><span class='line'>   &lt;start to="major_compact"/>
+</span><span class='line'>   &lt;action name="major_compact">
+</span><span class='line'>      &lt;shell xmlns="uri:oozie:shell-action:0.3">
+</span><span class='line'>         &lt;configuration>
+</span><span class='line'>            &lt;property>
+</span><span class='line'>              &lt;name>oozie.launcher.mapreduce.map.memory.mb&lt;/name>
+</span><span class='line'>              &lt;value>${mapMemoryMB}&lt;/value>
+</span><span class='line'>            &lt;/property>
+</span><span class='line'>         &lt;/configuration>
+</span><span class='line'>         &lt;exec>${majorCompactScriptPath}/${majorCompactScriptName}&lt;/exec>
+</span><span class='line'>         &lt;argument>${tableName}&lt;/argument>
+</span><span class='line'>         &lt;argument>${hdfsLogDir}&lt;/argument>
+</span><span class='line'>         &lt;argument>${timestamp()}&lt;/argument>
+</span><span class='line'>         &lt;file>${majorCompactScriptPath}/${majorCompactScriptName}#${majorCompactScriptName}&lt;/file>
+</span><span class='line'>         &lt;capture-output/>
+</span><span class='line'>      &lt;/shell>
+</span><span class='line'>      &lt;ok to="logOozieId"/>
+</span><span class='line'>      &lt;error to="logOozieId"/>
+</span><span class='line'>   &lt;/action>
+</span><span class='line'>   &lt;action name="logOozieId">
+</span><span class='line'>      &lt;shell xmlns="uri:oozie:shell-action:0.3">
+</span><span class='line'>         &lt;exec>${majorCompactScriptPath}/${logOozieIdScriptName}&lt;/exec>
+</span><span class='line'>         &lt;argument>${wf:id()}&lt;/argument>
+</span><span class='line'>         &lt;argument>${hdfsLogDir}&lt;/argument>
+</span><span class='line'>         &lt;file>${majorCompactScriptPath}/${logOozieIdScriptName}#${logOozieIdScriptName}&lt;/file>
+</span><span class='line'>      &lt;/shell>
+</span><span class='line'>      &lt;ok to="end"/>
+</span><span class='line'>      &lt;error to="fail"/>
+</span><span class='line'>   &lt;/action>
+</span><span class='line'>   &lt;kill name="fail">
+</span><span class='line'>      &lt;message>Major compaction failed [${wf:errorMessage(wf:lastErrorNode())}]&lt;/message>
+</span><span class='line'>   &lt;/kill>
+</span><span class='line'>   &lt;end name="end"/>
+</span><span class='line'>&lt;/workflow-app></span></code></pre></td></tr></table></div></figure>
+Oozie coordinator.xml definition to run the major_compact_wf workflow defined in the previous step.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/coordinator/coordinator.xml
+</span><span class='line'>&lt;coordinator-app name="major_compact"
+</span><span class='line'>   frequency="${coord:days(1)}"
+</span><span class='line'>   start="${starttime}" end="${endtime}" timezone="${timezone}"
+</span><span class='line'>   xmlns="uri:oozie:coordinator:0.1">
+</span><span class='line'>    &lt;controls>
+</span><span class='line'>      &lt;concurrency>1&lt;/concurrency>
+</span><span class='line'>      &lt;execution>FIFO&lt;/execution>
+</span><span class='line'>    &lt;/controls>
+</span><span class='line'>    &lt;action>
+</span><span class='line'>      &lt;workflow>
+</span><span class='line'>         &lt;app-path>${nameNode}${rootDir}/workflow&lt;/app-path>
+</span><span class='line'>         &lt;configuration>
+</span><span class='line'>            &lt;property>
+</span><span class='line'>               &lt;name>HBaseMajorCompact&lt;/name>
+</span><span class='line'>               &lt;value>&lsquo;${coord:user()}: Kicking off HBase Major Compact WF&rsquo;&lt;/value>
+</span><span class='line'>            &lt;/property>
+</span><span class='line'>         &lt;/configuration>
+</span><span class='line'>      &lt;/workflow>
+</span><span class='line'>   &lt;/action>
+</span><span class='line'>&lt;/coordinator-app></span></code></pre></td></tr></table></div></figure>
+<strong>Note:</strong> Do not use 1440 minutes as frequency in workflow.xml if the expectation is to run compaction everyday at a certain time since this will cause change in job run time when system time gets changed for day light savings. The starttime and endtime should be specified in UTC/GMT. The timezone is required for Oozie to invoke the logic to handle the time changes due to day light savings.
+Properties which need to be substituted in the place of the parameters defined in the workflow and coordinator xml files. If this example is used, this is the only file which need to be changed. Inline comments will help in making the changes.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ cat hbasecompact/coordinator/coordinator.properties
+</span><span class='line'>//
+</span><span class='line'>//HDFS Namenode URL: You can find it in hdfs-site.xml
+</span><span class='line'>//If HDFS HA is enabled use the value of dfs.nameservices
+</span><span class='line'>//
+</span><span class='line'>nameNode=hdfs://NN-HA
+</span><span class='line'>//
+</span><span class='line'>//URL of jobTracker for MR1
+</span><span class='line'>//If MR2/YARN is used, use the YARN RM URL : YARN-RM:8032
+</span><span class='line'>//If YARN HA is enabled use the YARN cluster-id which is specified in
+</span><span class='line'>//yarn.resourcemanager.cluster-id property of yarn-site.xml
+</span><span class='line'>//
+</span><span class='line'>jobTracker=YARN-RM-CLUSTER-ID
+</span><span class='line'>//
+</span><span class='line'>// YARN queue to which the workflow MR jobs need to be submitted
+</span><span class='line'>//
+</span><span class='line'>queueName=default
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where the oozie application is stored
+</span><span class='line'>//
+</span><span class='line'>rootDir=/user/userid/hbasecompact
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where workflow.xml is stored
+</span><span class='line'>//
+</span><span class='line'>wf.application.path=${nameNode}${rootDir}/workflow
+</span><span class='line'>oozie.wf.rerun.failnodes=true
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where scripts in the workflow are located
+</span><span class='line'>//
+</span><span class='line'>majorCompactScriptPath=${nameNode}${rootDir}/scripts
+</span><span class='line'>majorCompactScriptName=hbaseCompact.sh
+</span><span class='line'>logOozieIdScriptName=logOozieId.sh
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where the script output need to be stored
+</span><span class='line'>//
+</span><span class='line'>hdfsLogDir=/user/userid/compact
+</span><span class='line'>//
+</span><span class='line'>// Table name which need to be compacted
+</span><span class='line'>//
+</span><span class='line'>tableName=t
+</span><span class='line'>mapMemoryMB=8192
+</span><span class='line'>//
+</span><span class='line'>// Date time to start and stop the workflow
+</span><span class='line'>//
+</span><span class='line'>starttime=2015-10-22T10:24Z
+</span><span class='line'>endtime=2020-10-22T10:26Z&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>timezone=America/New_York
+</span><span class='line'>//
+</span><span class='line'>// HDFS directory where the coordinator.xml is stored
+</span><span class='line'>//
+</span><span class='line'>oozie.coord.application.path=${nameNode}${rootDir}/coordinator
+</span><span class='line'>oozie.use.system.libpath=true
+</span><span class='line'>oozie.libpath=${nameNode}/user/oozie/share/lib</span></code></pre></td></tr></table></div></figure>
+If you list the local directory where these file are stored it will look like this
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ ls -ls -R hbasecompact/
+</span><span class='line'>hbasecompact/:
+</span><span class='line'>total 12
+</span><span class='line'>4 drwxr-xr-x 2 userid users 4096 Oct 22 14:46 coordinator
+</span><span class='line'>4 drwxr-xr-x 2 userid users 4096 Oct 22 14:15 scripts
+</span><span class='line'>4 drwxr-xr-x 2 userid users 4096 Oct 22 14:05 workflow&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbasecompact/coordinator:
+</span><span class='line'>total 8
+</span><span class='line'>4 -rw-r&ndash;r&ndash; 1 userid users 1197 Oct 22 14:46 coordinator.properties
+</span><span class='line'>4 -rw-r&ndash;r&ndash; 1 userid users  640 Oct 22 12:35 coordinator.xml&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbasecompact/scripts:
+</span><span class='line'>total 8
+</span><span class='line'>4 -rwxr-xr-x 1 userid users 243 Oct 22 12:02 hbaseCompact.sh
+</span><span class='line'>4 -rwxr-xr-x 1 userid users  65 Oct 22 12:23 logOozieId.sh&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbasecompact/workflow:
+</span><span class='line'>total 4
+</span><span class='line'>4 -rw-r&ndash;r&ndash; 1 userid users 1853 Oct 22 14:05 workflow.xml</span></code></pre></td></tr></table></div></figure>
+copy them into to a HDFS directory
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hdfs dfs -copyFromLocal ./hbasecompact /user/userid</span></code></pre></td></tr></table></div></figure>
+If you list the HDFS directory which was used as the target location in the previous step, the output should be similar to the following.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ hdfs dfs -ls -R /user/userid/hbasecompact
+</span><span class='line'>drwxr-xr-x   - userid supergroup          0 2015-10-22 12:58 /user/userid/hbasecompact/coordinator
+</span><span class='line'>-rw-r&ndash;r&ndash;   3 userid supergroup        513 2015-10-22 12:58 /user/userid/hbasecompact/coordinator/coordinator.properties
+</span><span class='line'>-rw-r&ndash;r&ndash;   3 userid supergroup        640 2015-10-22 12:58 /user/userid/hbasecompact/coordinator/coordinator.xml
+</span><span class='line'>drwxr-xr-x   - userid supergroup          0 2015-10-22 12:58 /user/userid/hbasecompact/scripts
+</span><span class='line'>-rw-r&ndash;r&ndash;   3 userid supergroup        243 2015-10-22 12:58 /user/userid/hbasecompact/scripts/hbaseCompact.sh
+</span><span class='line'>-rw-r&ndash;r&ndash;   3 userid supergroup         65 2015-10-22 12:58 /user/userid/hbasecompact/scripts/logOozieId.sh
+</span><span class='line'>drwxr-xr-x   - userid supergroup          0 2015-10-22 12:58 /user/userid/hbasecompact/workflow
+</span><span class='line'>-rw-r&ndash;r&ndash;   3 userid supergroup       1751 2015-10-22 12:58 /user/userid/hbasecompact/workflow/workflow.xml</span></code></pre></td></tr></table></div></figure>
+If the execute permissions in the two shell scripts are not set, do a chmod to set the executable permission.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hdfs dfs -chmod 755 /user/userid/hbasecompact/scripts/hbaseCompact.sh
+</span><span class='line'>hdfs dfs -chmod 755 /user/userid/hbasecompact/scripts/logOozieId.sh</span></code></pre></td></tr></table></div></figure>
+Schedule the Oozie job using the following command. Note that the properties file in this example /home/userid/hbasecompact/coordinator/coordinator.properties should be on the local disk from where this command is executed.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ oozie job -oozie &lt;a href="http://oozie-host:11000/oozie">http://oozie-host:11000/oozie&lt;/a> -config /home/userid/hbasecompact/coordinator/coordinator.properties -run
+</span><span class='line'>job: 0000000-150821155141136-oozie-oozi-C</span></code></pre></td></tr></table></div></figure>
+The status of the job submitted can be verified through the Oozie UI which should be normally accessible through *<a href="http://oozie-host:11000/oozie/*.">http://oozie-host:11000/oozie/*.</a> Also status of MapRed jobs can be viewed through the YARN RM/NM URLS.
+Also the id of the last Oozie workflow which was executed and the output from the HBase major_compact command which was executed in the last run can be found from the HDFS files which got created by the job.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~$ hdfs dfs -cat /user/userid/compact/majorcompact.log
+</span><span class='line'>HBase Shell; enter &lsquo;help&lt;RETURN>&rsquo; for list of supported commands.
+</span><span class='line'>Type &ldquo;exit&lt;RETURN>&rdquo; to leave the HBase Shell
+</span><span class='line'>Version 0.98.4.2.2.8.0-2928-hadoop2, r87e9f77a121be2dae41c9ef8964d254fdc4c23a3, Fri Aug 21 13:29:40 PDT 2015&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>major_compact &ldquo;t&rdquo;
+</span><span class='line'>0 row(s) in 5.0410 seconds&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>~$ hdfs dfs -cat /user/userid/compact/oozieId.log
+</span><span class='line'>0000009-150821155141136-oozie-oozi-W</span></code></pre></td></tr></table></div></figure></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase Replication]]></title>
+    <link href="http://asquareb.github.io/blog/2015/11/21/hbase-replication/"/>
+    <updated>2015-11-21T11:53:57-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/11/21/hbase-replication</id>
+    <content type="html"><![CDATA[<p>HBase supports inter-cluster data replication which can be used to propagate data to a secondary cluster/data center that can be accessed when primary cluster/data center is not available. The following are the high level steps to enable HBase inter-cluster replication. Note that HBase also supports region replication with in a cluster for read HA which is different from inter-cluster data replication.</p>
+
+<!--more-->
+
+
+<p>Set the <code>hbase.replication</code> property to <code>true</code> in hbase-site.xml of  the HBase cluster from which data need to be replicated from. This cluster is referred as the <code>master</code> going forward. By default the value of this property is &ldquo;true&rdquo;.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;property>
+</span><span class='line'>  &lt;name>hbase.replication&lt;/name>
+</span><span class='line'>  &lt;value>true&lt;/value>
+</span><span class='line'>&lt;/property></span></code></pre></td></tr></table></div></figure>
+Create a HBase replication peer in the master HBase cluster using the information about the ZooKeeper quorum of the cluster to which data need to be replicated to. The cluster to which data will be replicated to will be referred as <code>slave</code> going forward.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'>15/09/23 10:35:52 INFO Configuration.deprecation: hadoop.native.lib is deprecated. Instead, use io.native.lib.available
+</span><span class='line'>HBase Shell; enter &lsquo;help&lt;RETURN>&rsquo; for list of supported commands.
+</span><span class='line'>&hellip;
+</span><span class='line'>hbase(main):001:0>add_peer &lsquo;HBASE_REPL_PEER&rsquo;,&lsquo;zk1,zk2,zk3:2181:/hbase&rsquo;
+</span><span class='line'>0 row(s) in 0.3470 seconds&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbase(main):003:0> list_peers
+</span><span class='line'>PEER_ID CLUSTER_KEY STATE TABLE_CFS
+</span><span class='line'>HBASE_REPL_PEER zk1,zk2,zk3:2181:/hbase ENABLED
+</span><span class='line'>1 row(s) in 0.1520 seconds</span></code></pre></td></tr></table></div></figure>
+Once the replication peer is created and enabled, replication need to be enabled on HBase tables whose data need to be replicated from the master cluster by setting the &ldquo;REPLICATION_SCOPE&rdquo; attribute of the table to a non zero value. By default this value is set to &ldquo;0&rdquo;. If the table is an existing table, altering the table to set the &ldquo;REPLICATION_SCOPE&rdquo; to a non zero value requires disabling and enabling the table and the following is an example of the steps where the existing table&rsquo;s name is &ldquo;healthy&rdquo;. Note that a table with the same definition as the table being replicated (in this case &ldquo;healthy&rdquo;) should be created in the slave cluster before the replication is enabled on master.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):006:0> describe &lsquo;healthy&rsquo;
+</span><span class='line'>DESCRIPTION ENABLED
+</span><span class='line'>&lsquo;healthy&rsquo;, {NAME => &lsquo;cf1&rsquo;, DATA_BLOCK_ENCODING => &lsquo;NONE&rsquo;, BLOOMFILTER => &lsquo;ROW&rsquo;, REP true
+</span><span class='line'>LICATION_SCOPE => &lsquo;0&rsquo;, VERSIONS => &lsquo;1&rsquo;, COMPRESSION => &lsquo;NONE&rsquo;, MIN_VERSIONS => &lsquo;0&rsquo;,
+</span><span class='line'>TTL => &lsquo;FOREVER&rsquo;, KEEP_DELETED_CELLS => &lsquo;false&rsquo;, BLOCKSIZE => &lsquo;65536&rsquo;, IN_MEMORY =&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;p>&lsquo;false&rsquo;, BLOCKCACHE => &lsquo;true&rsquo;}
+</span><span class='line'>1 row(s) in 0.0430 seconds&lt;/p>&lt;/blockquote>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbase(main):007:0> disable &lsquo;healthy&rsquo;
+</span><span class='line'>0 row(s) in 1.2940 seconds&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbase(main):015:0> alter &lsquo;healthy&rsquo;,{NAME => &lsquo;cf1&rsquo;, REPLICATION_SCOPE => &lsquo;1&rsquo;}
+</span><span class='line'>Updating all regions with the new schema&hellip;
+</span><span class='line'>1/1 regions updated.
+</span><span class='line'>Done.
+</span><span class='line'>0 row(s) in 1.1660 seconds
+</span><span class='line'>hbase(main):017:0> enable &lsquo;healthy&rsquo;
+</span><span class='line'>0 row(s) in 0.2310 seconds&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbase(main):016:0> describe &lsquo;healthy&rsquo;
+</span><span class='line'>DESCRIPTION ENABLED
+</span><span class='line'>&lsquo;healthy&rsquo;, {NAME => &lsquo;cf1&rsquo;, DATA_BLOCK_ENCODING => &lsquo;NONE&rsquo;, BLOOMFILTER => &lsquo;ROW&rsquo;, REP false
+</span><span class='line'>LICATION_SCOPE => &lsquo;1&rsquo;, VERSIONS => &lsquo;1&rsquo;, COMPRESSION => &lsquo;NONE&rsquo;, MIN_VERSIONS => &lsquo;0&rsquo;,
+</span><span class='line'>TTL => &lsquo;FOREVER&rsquo;, KEEP_DELETED_CELLS => &lsquo;false&rsquo;, BLOCKSIZE => &lsquo;65536&rsquo;, IN_MEMORY =&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;p>&lsquo;false&rsquo;, BLOCKCACHE => &lsquo;true&rsquo;}
+</span><span class='line'>1 row(s) in 0.0450 seconds</span></code></pre></td></tr></table></div></figure>
+Once replication is enabled replication related JMX stats are made available in all the region servers in the master cluster hosting the regions for which data replication is enabled.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&ldquo;source.shippedKBs&rdquo; : 3388621,
+</span><span class='line'>&ldquo;source.logEditsFiltered&rdquo; : 428856845,
+</span><span class='line'>&ldquo;source.sizeOfLogQueue&rdquo; : 0,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER.logEditsFiltered&rdquo; : 378778983,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedBatches&rdquo; : 24,
+</span><span class='line'>&ldquo;source.logReadInBytes&rdquo; : 108666586903,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER.shippedOps&rdquo; : 2097152,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER.logReadInBytes&rdquo; : 96312291957,
+</span><span class='line'>&ldquo;source.shippedOps&rdquo; : 3098060,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER.shippedBatches&rdquo; : 51,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedKBs&rdquo; : 1094799,
+</span><span class='line'>&ldquo;source.logEditsRead&rdquo; : 428859535,
+</span><span class='line'>&ldquo;source.shippedBatches&rdquo; : 75,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER-rs1,60200,1441910792839.logReadInBytes&rdquo; : 12354294946,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER.shippedKBs&rdquo; : 2293822,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER-rs1,60200,1441910792839.shippedOps&rdquo; : 1000908,
+</span><span class='line'>&ldquo;source.ageOfLastShippedOp&rdquo; : 51072,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER.sizeOfLogQueue&rdquo; : 0,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER.ageOfLastShippedOp&rdquo; : 51072,
+</span><span class='line'>&ldquo;source.HBASE_REPL_PEER.logEditsRead&rdquo; : 378780481</span></code></pre></td></tr></table></div></figure>
+Note that these are statistics available in HBase version 0.98. Later versions may have additional statistics which can help with replication monitoring.</p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HBase Back-up]]></title>
+    <link href="http://asquareb.github.io/blog/2015/10/24/hbase-back-up/"/>
+    <updated>2015-10-24T11:02:17-04:00</updated>
+    <id>http://asquareb.github.io/blog/2015/10/24/hbase-back-up</id>
+    <content type="html"><![CDATA[<p>Often during development and sometimes in production backup of a HBase table need to be made, for e.g., to run a test code against a table during development and being able to restore the original data if some thing went wrong or create a clone of the existing table or move table data to a new development cluster. HBase provides the option of taking snapshot of tables which can be used in such scenarios. The following are the various hbase shell commands to accomplish some of the common requirements.</p>
+
+<!--more-->
+
+
+<p><strong>Create a snapshot of HBase table</strong>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'>&hellip;
+</span><span class='line'>hbase(main):001:0> snapshot &lsquo;tableName&rsquo;, &lsquo;table-snapshotname&rsquo;
+</span><span class='line'>0 row(s) in 1.1060 seconds</span></code></pre></td></tr></table></div></figure>
+For easier identification it is a good practice to create snapshot with table name, creation date, creation time in the snapshot name.</p>
+
+<p><strong>Restore data from snapshot</strong>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbase(main):001:0> disable &lsquo;tableName&rsquo;
+</span><span class='line'>0 row(s) in 1.1000 seconds
+</span><span class='line'>hbase(main):001:0> restore_snapshot &lsquo;table-snapshotname&rsquo;
+</span><span class='line'>0 row(s) in 2.1060 seconds
+</span><span class='line'>hbase(main):001:0> enable &lsquo;tableName&rsquo;
+</span><span class='line'>0 row(s) in 1.0000 seconds</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Note that the table need to be disabled to restore the table data from snapshot. Also note that any updates to the table data after the snapshot will be lost once the restoration is complete.</p>
+
+<p><strong>Clone table from snapshot</strong>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell
+</span><span class='line'>&hellip;
+</span><span class='line'>hbase(main):001:0> clone_snapshot &lsquo;table-snapshotname&rsquo;, &lsquo;newTableName&rsquo;
+</span><span class='line'>0 row(s) in 2.1060 seconds</span></code></pre></td></tr></table></div></figure>
+A new table will be created with the attributes of the original table from which the snap shot was made and the data from the point in time of the snapshot will be restored.</p>
+
+<p><strong>List all the available snapshots for a table</strong>
+If multiple snapshots were made on tables and would like to see the list of available snapshots
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ hbase shell&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>hbase(main):001:0> list_snapshots
+</span><span class='line'>SNAPSHOT                                     TABLE + CREATION TIME
+</span><span class='line'>  emp-snapshot-073115                        emp (Fri Jul 31 16:07:14 -0400 2015)&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>1 row(s) in 2.1060 seconds</span></code></pre></td></tr></table></div></figure></p>
+]]></content>
+  </entry>
+  
+</feed>

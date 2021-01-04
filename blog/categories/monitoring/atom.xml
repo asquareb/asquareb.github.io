@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Monitoring | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/monitoring/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Copy Distributed Log Files Into HDFS]]></title>
+    <link href="http://asquareb.github.io/blog/2014/12/16/copy-distributed-log-files-into-hdfs/"/>
+    <updated>2014-12-16T21:23:51-05:00</updated>
+    <id>http://asquareb.github.io/blog/2014/12/16/copy-distributed-log-files-into-hdfs</id>
+    <content type="html"><![CDATA[<p>In a distributed cluster like HBase, logs are created and written on individual nodes participating in the cluster. If users want to look at the log entries say for debugging purposes they would need to logon to individual nodes. Apart from the complexity of going through the logs on the individual nodes, users need to be provided access to all the nodes. One of the ways to mitigate these concerns is to copy the log files into a centralized location.</p>
+
+<!--more-->
+
+
+<p>Apache Flume can be used to copy log files from individual nodes into HDFS. The following is an example Flume configuration which can be used to start Flume agents to copy HBase region server log files into HDFS. Note that changes will be required to this sample configuration based on cluster set-up.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>#&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>Flume channel definition&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>#
+</span><span class='line'>agent.channels = memoryChannel
+</span><span class='line'>agent.channels.memoryChannel.type = memory
+</span><span class='line'>#&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>Flume source definition&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>#
+</span><span class='line'>agent.sources = pstream
+</span><span class='line'>agent.sources.pstream.channels = memoryChannel
+</span><span class='line'>agent.sources.pstream.type = exec
+</span><span class='line'>agent.sources.pstream.command = tail -f /var/log/hbase/hbase-hbase-regionserver-$hostname.log
+</span><span class='line'>#&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;h1>Flume sink definition&lt;/h1>
+</span><span class='line'>
+</span><span class='line'>&lt;p>#
+</span><span class='line'>agent.sinks = hdfsSink
+</span><span class='line'>agent.sinks.hdfsSink.type = hdfs
+</span><span class='line'>agent.sinks.hdfsSink.channel = memoryChannel
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.useLocalTimeStamp = true
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.path = hdfs://hdfs-service-name/user/flume/%y-%m-%d
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.filePrefix = hbase-$hostname
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.fileType = DataStream
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.writeFormat = Text
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.rollInterval = 86400
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.rollSize = 0
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.rollCount = 0&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
+
+<p>A daily log directory with the name <code>yy-mm-dd</code> will be created under <code>/user/flume</code> directory in HDFS. Log data from each individual nodes where Flume agent is run will be copied into individual files under the daily directory. By providing read access to the centralized HDFS directory in this case <code>/user/flume</code>, users will be able to go through the logs from all the nodes. Since each days logs are stored in seperate directories, users will be able to navigate easily.</p>
+
+<p>Inorder the Flume agent to copy the log data successfully, HDFS client components including <code>hdfs-site.xml</code> need to be installed on the individual nodes apart from Flume itself. In the case of HBase, HDFS components should be already available on the nodes since it is a pre-requisite.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Adding Users to Graphite]]></title>
+    <link href="http://asquareb.github.io/blog/2014/11/19/adding-users-to-graphite/"/>
+    <updated>2014-11-19T14:42:56-05:00</updated>
+    <id>http://asquareb.github.io/blog/2014/11/19/adding-users-to-graphite</id>
+    <content type="html"><![CDATA[<p>Once you start populating data to Graphite database, users can see data on Graphite UI and create custom graphs to see the data in realtime. When graphs are created users want to save the graphs for future use and probably want to create a dashboard with all the graphs created. One simple (but non user friendly) way to accomplish this is to save the URLs of the graphs created and users can use it to bring up the graphs when they need them.</p>
+
+<!-- more -->
+
+
+<p>Another option is to use the graph save option in Graphite web app UI which also provides an option to create and save dashboards. Both these options require logging onto web app which requires an user-id/password to log on to the web app. Here is the way to go about creating one.</p>
+
+<ul>
+<li>Logon to the server running Graphite web app</li>
+<li><code>cd</code> to <code>/opt/graphite/webapp/graphite/</code> (or the install directory)</li>
+<li>Execute the python script <code>manage.py</code> with the option <code>createsuperuser</code></li>
+</ul>
+
+
+<pre><code>  python manage.py createsuperuser
+  Username (Leave blank to use 'root'): test
+  E-mail address: test@happyday.com
+  Password:
+  Password (again):
+  Superuser created successfully.
+</code></pre>
+
+<ul>
+<li><code>admin</code> user is defined during installation and if you don&rsquo;t know the password (for admin or any user) run</li>
+</ul>
+
+
+<pre><code>  python manage.py changepassword
+</code></pre>
+
+<ul>
+<li>Once you have the user-id/password set the user can log on to the web app and create graphs/dahsboards and save them for future use.</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Enabling JAVA Plugin for Collectd]]></title>
+    <link href="http://asquareb.github.io/blog/2014/06/09/enabling-java-plugin-for-collectd/"/>
+    <updated>2014-06-09T21:33:50-04:00</updated>
+    <id>http://asquareb.github.io/blog/2014/06/09/enabling-java-plugin-for-collectd</id>
+    <content type="html"><![CDATA[<p>If you are trying to enable JAVA plugin on Ubuntu platform and facing issues the following is something you can try to fix it.</p>
+
+<ul>
+<li><p>Since JAVA plug-in is not enabled by default, collectd need to be compiled from the code.</p></li>
+<li><p>Download the source code and configure collectd with the following options</p></li>
+</ul>
+
+
+<!-- more -->
+
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./configure &ndash;with-java=$JAVA_HOME JAVA_CPPFLAGS=&ldquo;-I$JAVA_HOME/include -I$JAVA_HOME/include/linux&rdquo; JAVA_CFLAGS=&ldquo;-I$JAVA_HOME/include -I$JAVA_HOME/include/linux&rdquo; JAVA_LDFLAGS=&ldquo;-I$JAVA_HOME/include -I$JAVA_HOME/include/linux&rdquo; JAVA_LIBS=&ldquo;-I$JAVA_HOME/include&rdquo; JAR=&ldquo;/path/to/jar&rdquo; JAVAC=&ldquo;/path/to/javac&rdquo; &ndash;enable-write_graphite &ndash;enable-java=force</span></code></pre></td></tr></table></div></figure></p>
+
+<p> Note: JAVA_HOME is something like /usr/lib/jvm/java-1.7.0-openjdk-amd64. Also without the option &ldquo;force&rdquo; for enable-java, configure will fail</p>
+
+<ul>
+<li>Once configure is complete, compile and install collectd</li>
+</ul>
+
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>make all install</span></code></pre></td></tr></table></div></figure></p>
+
+<p>collectd gets installed by default under /opt/collectd in Ubuntu</p>
+
+<ul>
+<li>Start collectd using the following command assuming that the PWD is /opt/collectd/sbin</li>
+</ul>
+
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>LD_PRELOAD=/usr/lib/jvm/java-1.7.0-openjdk-amd64/jre/lib/amd64/server/libjvm.so ./collectd</span></code></pre></td></tr></table></div></figure></p>
+
+<ul>
+<li><p>Verify that collectd is running using &ldquo;ps&rdquo; command. If it is not running check the syslog by default located at /var/log/syslog.</p></li>
+<li><p>If there are no entries in syslog try starting the collectd process in the foreground which will write any errors on the console</p></li>
+</ul>
+
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./collectd -f</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Have fun with collectd and JMX stats collection!!</p>
+]]></content>
+  </entry>
+  
+</feed>

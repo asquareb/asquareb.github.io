@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>HBase - Data Load - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Often during development and in production data need to be loaded into HBase tables. This can be for testing application code or migrating data from &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/08/16/hbase-data-load/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">HBase - Data Load</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-08-16T20:56:33-05:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>16</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>8:56 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Often during development  and in production data need to be loaded into HBase tables. This can be for testing application code or migrating data from existing database among many other scenarios. One obvious option is to read data from a source and use HBase put client API to write data into tables. This works fine for small amount of data for unit testing or PoC. In order to load data of large size running into GBs or TBs, using put to write data to HBase tables will be time consuming if the source data is already available. In order to mitigate this, HBase provides an option to create hfiles which are HBase specific file formats used to store table data in the underlying filesystem and load them into HBase tables. For HDFS, these files can be created using a map reduce job and the following are the high level steps.</p>
+
+<!--more-->
+
+
+<ul>
+<li>Copy the source data in HDFS using tools like distcp</li>
+<li>Define the target table in HBase using HBase shell or programatically using HBase client admin APIs</li>
+<li>Create and run a map-reduce job to create HFiles for the source data on HDFS</li>
+<li>Load the HFiles into HBase using org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles program shipped with HBase
+The following code example shows how to go about with the creation of the map reduce job to generate the HFiles.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>import org.apache.hadoop.conf.Configuration;
+</span><span class='line'>import org.apache.hadoop.fs.Path;
+</span><span class='line'>import org.apache.hadoop.hbase.client.HTable;
+</span><span class='line'>import org.apache.hadoop.hbase.client.Put;
+</span><span class='line'>import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+</span><span class='line'>import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
+</span><span class='line'>import org.apache.hadoop.mapreduce.Job;
+</span><span class='line'>import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+</span><span class='line'>import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+</span><span class='line'> 
+</span><span class='line'>public class Driver {
+</span><span class='line'>  public static void main(String[] args) throws Exception {
+</span><span class='line'>      Configuration conf = new Configuration();
+</span><span class='line'>      conf.clear();
+</span><span class='line'>      conf.set("hbase.zookeeper.quorum","zk1:2181,zk2:2181,zk3:2181");
+</span><span class='line'>      Job job = new Job(conf, "HBase Bulk Import Example");
+</span><span class='line'>      job.setJarByClass(HFileMapper.class);
+</span><span class='line'>      job.setMapperClass(HFileMapper.class);
+</span><span class='line'>      job.setMapOutputKeyClass(ImmutableBytesWritable.class);
+</span><span class='line'>      job.setMapOutputValueClass(Put.class);
+</span><span class='line'>      job.setInputFormatClass(TextInputFormat.class);
+</span><span class='line'>      HTable hTable = new HTable(conf, args[2]);
+</span><span class='line'>      HFileOutputFormat.configureIncrementalLoad(job, hTable);
+</span><span class='line'>      FileInputFormat.addInputPath(job, new Path(args[0]));
+</span><span class='line'>      FileOutputFormat.setOutputPath(job, new Path(args[1]));
+</span><span class='line'>      job.waitForCompletion(true);
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The driver program takes in three parameters table name, HDFS directory where the source data is stored, the HDFS output directory where HFiles need to be created for loading into HBase
+It sets the out format to HBase org.apache.hadoop.hbase.client.Put which represents a single row in a HBase table
+The input format is set Text to read source data from a text file
+In the configuration object, the only parameter which need to be set iis the ZooKeeper (ZK) quorum and the value should be set to the ZK quorum corresponding to the HBase cluster on which the target table is defined
+No reducers are required to be set to create HFiles using map reduce
+The following is the code snippet for the HFileMapper class used by the Driver program</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>import java.util.Random;
+</span><span class='line'>import org.apache.hadoop.hbase.client.Put;
+</span><span class='line'>import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+</span><span class='line'>import org.apache.hadoop.io.LongWritable;
+</span><span class='line'>import org.apache.hadoop.io.Text;
+</span><span class='line'> public class HFileMapper extends Mapper&lt;LongWritable, Text, ImmutableBytesWritable, Put> {
+</span><span class='line'>     @Override
+</span><span class='line'>  protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException  {
+</span><span class='line'>      String rowkey = new Random().nextInt() + "";
+</span><span class='line'>      Put put = new Put(rowkey.getBytes());
+</span><span class='line'>      put.add(Constants.COL_FAMILY, "col".getBytes(), "v".getBytes());
+</span><span class='line'>      ImmutableBytesWritable hkey = new ImmutableBytesWritable(rowkey.getBytes());
+</span><span class='line'>      context.write(hkey, put);
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that this is a dummy mapper in which the key and values are generated dynamically in the code. Based on what the source data source file stores and what need to be stored in the HBase table, the mapper need to be modified. The key aspect to note is how the Put object is created.
+Once the driver and mapper code is compiled, packaged in a Java jar file (e.g. happy-hbase-sample.jar) and made available on all the nodes in the HBase/HDFS cluster, the HFiles can be generated by running the map-reduce job on the cluster.
+run mapred job</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hadoop jar happy-hbase-sample.jar com.happy.hbase.sample.Driver healthyTable /user/happy/data/input /user/hbase/healthytable/output</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When the map reduce job completes, it creates number of files in the output directory on HDFS and it can be used to load data into target HBase table and in this case healthyTable</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles /user/hbase/healthytable/output healthyTable</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-08-16T20:56:33-05:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>16</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>8:56 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hbase/'>hbase</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/08/16/hbase-data-load/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/08/16/hbase-data-load/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/07/05/hbase-shell/" title="Previous Post: HBase Shell">&laquo; HBase Shell</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/09/26/hbase-best-practices/" title="Next Post: HBase - Best Practices">HBase - Best Practices &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/08/16/hbase-data-load/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/08/16/hbase-data-load/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,804 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Python Basics for Programmers - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Once we understand the common social norms of interacting with others, it is a matter of knowing how to express it in the particular language to the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2014/09/14/python-basics-for-programmers/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Python Basics for Programmers</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-09-14T07:10:17-04:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>14</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>7:10 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Once we understand the common social norms of interacting with others, it is a matter of knowing how to express it in the particular language to the person we are interacting with. Similarly once we understand the fundamentals of computer programming, it is a matter of knowing the syntax of a particular language to express what needs to be accomplished. The following details the basic syntax of the Python language which will help get started with it and be able to build solutions for most of the programming tasks. The assumption is that the reader is familiar with fundamentals of programming and have been programming is another language.</p>
+
+<!-- more -->
+
+
+<p>Python programs are exectued through an interpreter called <code>python</code> and falls under the category of interpreted languages i.e. small chunks of code gets executed by an intrepreter program. So it is a pre-req to install the python interpreter. Python programs can be stored in a file with the extension <code>.py</code> normally referred as python script and passed as input to the python interpreter or python code can be executed through the python interpreter command prompt.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>python helloworld.py
+</span><span class='line'>Hello World!!</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Or the python interpreter can be invoked by the <code>python</code> command. Code can be developed and tested in the python interpreter command line.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>HW10478:python $ python
+</span><span class='line'>Python 2.7.2 (default, Oct 11 2012, 20:14:37)
+</span><span class='line'>[GCC 4.2.1 Compatible Apple Clang 4.0 (tags/Apple/clang-418.0.60)] on darwin
+</span><span class='line'>Type "help", "copyright", "credits" or "license" for more information.
+</span><span class='line'>>>> a = "Hello World"
+</span><span class='line'>>>> print a
+</span><span class='line'>Hello World
+</span><span class='line'>>>></span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<h3> Variables </h3>
+
+
+<p>Python is a dynamically typed language i.e. the type of the variables are determined during runtime based on what is stored and doesn&rsquo;t have to be specified when variables are defined. Variable names can be of arbitrary length, can contain letter, numbers and underscore. But variable name need to start with a letter and avoid reserved words (no surprises!!). We can find the type of the variable using the <code>type()</code> function.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> a = "Hello World"
+</span><span class='line'>>>> type(a)
+</span><span class='line'>&lt;type 'str'>
+</span><span class='line'>>>> a = 10
+</span><span class='line'>>>> type(a)
+</span><span class='line'>&lt;type 'int'></span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<h3> Operators and Expressions </h3>
+
+
+<p>All the arithmetic operators <code>+ - * / % **</code> are supported by Python and follows PEMDAS (Parentheses, Exponentiation, Multiplication, Division, Addition, Subtraction) order of execution. Python 3 has a new operator <code>//</code> which performs floor division i.e. <code>5/6</code> will produce a flot value of <code>0.8333333333333334</code> while it is zero in Python 2 and <code>5//6</code> will result in zero in Python 3. The <code>+ *</code> operators can be used on String data as in the following examples</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> a = 'Hello '
+</span><span class='line'>>>> a * 3
+</span><span class='line'>'Hello Hello Hello '
+</span><span class='line'>>>> a + 'World'
+</span><span class='line'>'Hello World'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Also all the standard relational operators <code>== != &lt; &lt;= &gt; &gt;=</code> and logical operators <code>and or not</code> are supported. Basic Python expressions are same as in any other language.</p>
+
+<h3> Data Structures </h3>
+
+
+<p>Python has inbuilt <code>list, tuple, dictionary</code> data structures.
+<strong>Lists</strong> are similar to arrays where the indexes are integers and are auto assigned. Lists can store objects of mixed types and they are mutable. Some of the list functions are <code>append</code> <code>extend</code> <code>insert(idx,val)</code> <code>pop</code> <code>count</code> <code>sort</code> <code>reverse</code></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> a = [1,2,3]
+</span><span class='line'>>>> a.append([4,5])
+</span><span class='line'>>>> a
+</span><span class='line'>[1, 2, 3, [4, 5]]
+</span><span class='line'>>>> a.extend([6,7])
+</span><span class='line'>>>> a
+</span><span class='line'>[1, 2, 3, [4, 5], 6, 7]
+</span><span class='line'>>>> a.reverse()
+</span><span class='line'>>>> a
+</span><span class='line'>[7, 6, [4, 5], 3, 2, 1]
+</span><span class='line'>>>> a.sort()
+</span><span class='line'>>>> a
+</span><span class='line'>[1, 2, 3, 6, 7, [4, 5]]
+</span><span class='line'>>>> a.pop()
+</span><span class='line'>[4, 5]
+</span><span class='line'>>>> a[1]
+</span><span class='line'>2
+</span><span class='line'>>>> a[2:]
+</span><span class='line'>[3, 6, 7]
+</span><span class='line'>>>> a[:2]
+</span><span class='line'>[1, 2]
+</span><span class='line'>>>> a[0:2]
+</span><span class='line'>[1, 2]
+</span><span class='line'>>>> del a[0]
+</span><span class='line'>>>> a
+</span><span class='line'>[2, 3, 6, 7]</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Tuples</strong> are similar to lists but are not mutable and are created by using <code>( )</code> instead of <code>[]</code> used for lists. All the functions which can be used to access elements in list can be used to access elements of tuples. Since tuples are not mutable functions which modifies list like <code>append pop del extend</code> are not supported by tuples.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> b = (1,2,3)
+</span><span class='line'>>>> b[1:]
+</span><span class='line'>(2, 3)
+</span><span class='line'>>>> b.count(3)
+</span><span class='line'>1
+</span><span class='line'>>>> b[:2]
+</span><span class='line'>(1, 2)
+</span><span class='line'>>>></span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Dictionaries</strong> are unordered set of key value pairs and indexed by the keys. <code>{ }</code> are used to create dictionaries and they are mutable. Elements in dictionaries are accessed using the key values. All datatypes including tuples which are not mutable can be used as key values for dictionaries.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> a =  {'a':1,'b':2,'c':3,'d':4}
+</span><span class='line'>>>> a
+</span><span class='line'>{'a': 1, 'c': 3, 'b': 2, 'd': 4}
+</span><span class='line'>>>> a['c']
+</span><span class='line'>3
+</span><span class='line'>>>> a['e']=5
+</span><span class='line'>>>> a
+</span><span class='line'>{'a': 1, 'c': 3, 'b': 2, 'e': 5, 'd': 4}
+</span><span class='line'>>>> a[('f','g')]=56
+</span><span class='line'>>>> a
+</span><span class='line'>{'a': 1, 'c': 3, 'b': 2, 'e': 5, 'd': 4, ('f', 'g'): 56}
+</span><span class='line'>>>> del a['a']
+</span><span class='line'>>>> a
+</span><span class='line'>{'c': 3, 'b': 2, 'e': 5, 'd': 4, ('f', 'g'): 56}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>len</code> is a common function across all the three data structures which can be used to find the length i.e the number of elements stored in them.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> len(a)
+</span><span class='line'>5</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All the three data structures have iterators which can be used to iterate through all the elements</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> a
+</span><span class='line'>{'c': 3, 'b': 2, 'e': 5, 'd': 4, ('f', 'g'): 56}
+</span><span class='line'>>>> for i in a:
+</span><span class='line'>...   print i, a[i]
+</span><span class='line'>...
+</span><span class='line'>c 3
+</span><span class='line'>b 2
+</span><span class='line'>e 5
+</span><span class='line'>d 4
+</span><span class='line'>('f', 'g') 56</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you have a list, a tuple can be created using the <code>tuple</code> function</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> a = [1,2,3]
+</span><span class='line'>>>> c = tuple(a)
+</span><span class='line'>>>> c
+</span><span class='line'>(1, 2, 3)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you have a tuple, a list can be created using the <code>list</code> function.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> d = list(c)
+</span><span class='line'>>>> d
+</span><span class='line'>[1, 2, 3]</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you have two lists then a list of tuples can be created using the <code>zip</code> function.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> a = [1,2,3]
+</span><span class='line'>>>> d
+</span><span class='line'>[1, 2, 3]
+</span><span class='line'>>>> f = zip(a,d)
+</span><span class='line'>>>> f
+</span><span class='line'>[(1, 1), (2, 2), (3, 3)]</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When you have a list of tuples as in the previous example, then a dictionary can be created using the <code>dict</code> function.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> g = dict(f)
+</span><span class='line'>>>> g
+</span><span class='line'>{1: 1, 2: 2, 3: 3}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Also when you have a dictionary a list of tuples can be created using the <code>items</code> dictionary function.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> h = g.items()
+</span><span class='line'>>>> h
+</span><span class='line'>[(1, 1), (2, 2), (3, 3)]</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Note that <strong>strings</strong> are nothing but list of characters.</p>
+
+<h3> Functions and Modules </h3>
+
+
+<p>Sequence of related statements can be grouped in to a function so that it can be reused. Group of related functions can be saved in a file and it is called a <strong>module</strong>. For e.g. Pythons inbuilt module <strong>math</strong> stores mathematical functions like <code>sqrt cos sin</code> etc. To access a function in a module, the module need to be imported into the python script or in the interpreter command line. If you are someone who know <strong>C</strong> programing, this will be very familiar.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> import math
+</span><span class='line'>>>> math.sqrt(25)
+</span><span class='line'>5.0</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When the whole module is imported as above, then a specific function need to be called by qualifying it with the module name like in the code above <code>math.sqrt()</code>. If you are interested only in a certain function is a module, that particular module can be imported as in the following example.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> from math import sqrt
+</span><span class='line'>>>> sqrt(36)
+</span><span class='line'>6.0</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that when a specific function is imported as above, it doesn&rsquo;t have to be qualified with the module name when the function is called.</p>
+
+<h4> Defining a function </h4>
+
+
+<p>Functions can be defined using a <code>def</code> keyword <code>def function_name(optional parameters):</code>. The statements which belong to the function is grouped by intendation using spaces. The end of the function is determined by a blank space after the function or begining of another function or end of the file storing the function.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>def farr(arrin):
+</span><span class='line'>  a = arrin
+</span><span class='line'>  print a</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All parameters and variables defined in a function are all local to the function. Any changes made to the parameters passed to the function will not be reflected in the parent code calling the function i.e. all the parameters are passed by value and not by reference.</p>
+
+<p>When a group of related functions are stored in a file then it becomes a module and the file name is the module name. As with the inbuilt module like <code>math</code>, functions from user defined modules can be made available for use in python scripts using the <code>import</code> statement.</p>
+
+<h3> Comments </h3>
+
+
+<p>Documenting the code is key. <code>#</code> can be used to add comments to Python code and anything added after <code>#</code> until the end of line is considered comment. Also Python supports adding documentationusing <code>docstring</code> to modules and functions so that they can read by users using the <code>__doc__</code> function. <code>docstring</code> starts and ends with <code>"""</code> <em>triple quotes</em>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> def coolfunc():
+</span><span class='line'>...   """ This is a cool function which does nothing !!! """
+</span><span class='line'>...   print "Cool function"
+</span><span class='line'>...
+</span><span class='line'>>>> coolfunc.__doc__
+</span><span class='line'>' This is a cool function which does nothing !!! '
+</span><span class='line'>>>></span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<h3> Execution Flow Control </h3>
+
+
+<p>Commonly found <code>if</code> <code>for</code> <code>while</code> statements are supported in Python. As in function definition, <code>:</code> is used to define the start of flow control  and the list of statments to be executed is grouped using proper intendation.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> a = [1,2,3]
+</span><span class='line'>>>> for i in a:
+</span><span class='line'>...   print i
+</span><span class='line'>...   if i > 2:
+</span><span class='line'>...     print "Got you!!"
+</span><span class='line'>...
+</span><span class='line'>1
+</span><span class='line'>2
+</span><span class='line'>3
+</span><span class='line'>Got you!!</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Python <strong>for</strong> statement is different from other languages where users can define an initial value, end condition and an arithmetic expression which can be used to control the number of times the loop gets executed. In python <code>for</code> statement iterates over the items of any sequence in the order they appear in the sequence. In the previous example the for statement iterates over the list &ldquo;a&rdquo;. <code>range</code> function can create a number list which inturn can be used in <code>for</code> loops.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> for i in range(1,3):
+</span><span class='line'>...    print i
+</span><span class='line'>...
+</span><span class='line'>1
+</span><span class='line'>2</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>if</code> statement supports <code>elif</code> which prevents deep code indendation and <code>else</code> clauses.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> n = 10
+</span><span class='line'>>>> if n &lt; 5:
+</span><span class='line'>...   print 'Less than 5'
+</span><span class='line'>... elif n >= 5:
+</span><span class='line'>...   print 'Greater than 5'
+</span><span class='line'>... else:
+</span><span class='line'>...   print 'Unknown'
+</span><span class='line'>...
+</span><span class='line'>Greater than 5</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p><code>while</code> statement is similar to other languages.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> n = 3
+</span><span class='line'>>>> while n &lt; 5:
+</span><span class='line'>...   print n
+</span><span class='line'>...   n += 1
+</span><span class='line'>...
+</span><span class='line'>3
+</span><span class='line'>4</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>break</code> and <code>continue</code> statements are available to control the <code>for</code> and <code>while</code> loops.</p>
+
+<h3> Console Input Output </h3>
+
+
+<p><code>raw_input()</code> function can be used to receive input from users through <strong>console</strong>. The function takes an optional String, which will be output on console and waits for user to input value.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> x = raw_input()
+</span><span class='line'>Test
+</span><span class='line'>>>> x
+</span><span class='line'>'Test'
+</span><span class='line'>>>> x = raw_input("Enter value :")
+</span><span class='line'>Enter value :Test
+</span><span class='line'>>>> x
+</span><span class='line'>'Test'
+</span><span class='line'>>>></span></code></pre></td></tr></table></div></figure>
+
+
+<p>Output to <strong>console</strong> can be done using <code>print</code> statement which takes in a string. If values need to be passed dynamically to the string to be displayed they can be done using the <code>%</code> operator.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> print 'Test %s %s' % ('Hello','world')
+</span><span class='line'>Test Hello world
+</span><span class='line'>>>> print 'Test %s %s. Test Count %d' % ('Hello', 'world!', 2)
+</span><span class='line'>Test Hello world!. Test Count 2</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that the values passed should be elements if a tuple.</p>
+
+<h3> Files </h3>
+
+
+<p><code>open</code> and <code>close</code> functions can be used to (as you guessed) open and close files. <code>open</code> function takes in the file name including the path to the file and a character to indicate whether the file need to be opened for read or write. The returned value of <code>open</code> is a file handle which can be used for file processing and at the end of processing can be used to close the file.</p>
+
+<p><code>readline</code> function can be used to read a line from the file at a time and <code>read</code> can be used to read the complete file. <code>write</code> function can be used to write data into the file.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>>>> fout = open('data.txt','w')
+</span><span class='line'>>>> fout.write('This is test data 1')
+</span><span class='line'>>>> fout.write('This is test data 2')
+</span><span class='line'>>>> fout.close()
+</span><span class='line'>>>> fin = open('data.txt','r')
+</span><span class='line'>>>> data = fin.readline()
+</span><span class='line'>>>> data
+</span><span class='line'>'This is test data 1This is test data 2'
+</span><span class='line'>>>> fin.close()
+</span><span class='line'>>>></span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<h3> Exception Handling </h3>
+
+
+<p>Similar to &ldquo;try&rdquo; &ldquo;catch&rdquo; block in JAVA for exception handling, Python uses <code>try</code> <code>except</code> clauses to handle exceptions.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>try:
+</span><span class='line'>  fout = open('invalid_file_name.txt','r')
+</span><span class='line'>except:
+</span><span class='line'>  print 'File open failed'</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<h3> Executing Python Scripts </h3>
+
+
+<p>As you may have noticed all the code block shown so far is using the Python command line interpreter. If a Python script is created and stored in a file then the script can be executed using the <code>python filename</code> command.</p>
+
+<p>For e.g., if the following is the contend of the Python script file test.py</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>def double(i):
+</span><span class='line'>    i += 1
+</span><span class='line'>    return i
+</span><span class='line'>
+</span><span class='line'>x = 1
+</span><span class='line'>x = double(x)
+</span><span class='line'>print 'Value of x is %d' % x</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then the script can be executed as below</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>> python test.py
+</span><span class='line'>Value of x is 2</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>If a file (module) is created with Python functions, the functions can be exected as in the following example. This will avoid the functions to be executed when the module is imported into another script.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>> cat modu.py
+</span><span class='line'>def test1():
+</span><span class='line'>   print "Test 1"
+</span><span class='line'>
+</span><span class='line'>def test2():
+</span><span class='line'>   print "Test 2"
+</span><span class='line'>
+</span><span class='line'>if __name__ == "__main__" :
+</span><span class='line'>   test1()
+</span><span class='line'>   test2()</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>> python modu.py
+</span><span class='line'>Test 1
+</span><span class='line'>Test 2</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>What is covered so far could be used to accomplish most of the fundamantal tasks. This is intended to give a quick start on Python so that scripts can be created and used by the reader.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-09-14T07:10:17-04:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>14</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>7:10 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2014/09/14/python-basics-for-programmers/" data-via="" data-counturl="http://asquareb.github.io/blog/2014/09/14/python-basics-for-programmers/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/06/19/creating-a-single-node-kafka-server-using-chef/" title="Previous Post: Creating a single node Kafka server using Chef">&laquo; Creating a single node Kafka server using Chef</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/09/19/oo-programming-aspects-of-python/" title="Next Post: OO Programming aspects of Python">OO Programming aspects of Python &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2014/09/14/python-basics-for-programmers/';
+        var disqus_url = 'http://asquareb.github.io/blog/2014/09/14/python-basics-for-programmers/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

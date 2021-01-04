@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Hadoop | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/hadoop/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Build Your Hadoop Cluster Unattended (Almost!!)]]></title>
+    <link href="http://asquareb.github.io/blog/2014/12/27/build-your-hadoop-cluster-unattended-almostls/"/>
+    <updated>2014-12-27T21:13:36-05:00</updated>
+    <id>http://asquareb.github.io/blog/2014/12/27/build-your-hadoop-cluster-unattended-almostls</id>
+    <content type="html"><![CDATA[<p>If you are a developer who would like to have a Hadoop cluster or a dev lead who would like everyone in your team a cluster of their own without going through the hassle of creating machines, networking them, install the required software components, <a href="https://github.com/bloomberg/chef-bach">chef-bach</a> is an option you want to try.</p>
+
+<!-- more -->
+
+
+<p>Chef-Bach is a set of <a href="https://www.chef.io/">Chef</a> cookbooks which can be used bring up a Hadoop cluster. It is open source software and that means it can be customized to your needs. By default, a &ldquo;Test-Laptop&rdquo; configuration will bring up a three node Hadoop cluster based on <a href="http://hortonworks.com/products/releases/hdp-2-0-ga/">HDP 2.0</a> on a laptop or machine with enough resources like 16 GB RAM and quad core processor. Behind the scenes, chef-bach will create VM machines using VirtualBox, configures the network, PXE boots the cluster nodes, installs OS and deploys the Hadoop components with out any user intervention (almost).</p>
+
+<p>The total time to create a &ldquo;Test-Laptop&rdquo; cluster is around 3 hours and that means at anytime the cluster can be destroyed and rebuilt without much loss in time or productivity of developers. If this is something of interest to you, refer to the instructions to perform the cluster creation process <a href="https://gist.github.com/cbaenziger/816e7c42913433f5743f">here</a>. Also users will be able to create a cluster with <a href="https://gist.github.com/bijugs/27f44d51b69402eb90ab">more than 3 nodes</a> or <a href="https://gist.github.com/bijugs/27f44d51b69402eb90ab">add new nodes</a> to the cluster after the cluster has been created.</p>
+
+<p>Even though test cluster creation is mentioned as the primary use case so far, nothing prevents someone to use chef-bach to create production clusters and for that matter it is currently being used in production environment. Some of the notable features which makes it production capable include</p>
+
+<ul>
+<li>deployment of key components like mysql server, graphite, zabbix etc in HA mode</li>
+<li>monitoring and triggering using Zabbix and Graphite</li>
+<li>all JMX and server statistics made available on Graphite so that graphs using various data points can be created for better insight</li>
+<li>rolling restart of various Hadoop components to prevent unavailability during configuration changes</li>
+<li>being able to run chef as daemon process at regular intervals so that all the nodes are kept updated</li>
+<li>copy of logs from various nodes into a centralized location (HDFS) so that users can access them for debugging</li>
+<li>option to create a <a href="https://kafka.apache.org/">Kafka</a> cluster</li>
+</ul>
+
+
+<p>As a open source project you can also get involved and influence the future direction of this project.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,322 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Dynamically Requesting a Common Service in a Chef Managed Environment - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="In a cluster environment there can be a common service running on all the nodes in the cluster which may be requested by an application using the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Dynamically Requesting a Common Service in a Chef Managed Environment</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-02-21T22:39:48-04:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2015</span></span> <span class='time'>10:39 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>In a cluster environment there can be a common service running on all the nodes in the cluster which may be requested by an application using the cluster. For e.g. in a distributed computing environment logs can be created on each node in the cluster and a common service on each cluster node can be a service which regularly copies log entries into a common location. Copying of logs can be a requirement for some of the applications/services running on the cluster nodes so that users can go to one location to view the log data from all the nodes instead of looking at each node. This can also help with managing the security of the cluster by providing access to this common location instead of providing access to all the nodes in the cluster.</p>
+
+<!-- more -->
+
+
+<p>But copying of the logs may not be a requirement for some other service or application and the requirement may change in the future. It is better to build a solution so that the changes in the requirements to copy logs can be accommodated dynamically.</p>
+
+<p>To explain the pattern on how we can accomplish the requirement, we will assume <code>Apache Flume</code> as the component which will be installed on all the nodes in the cluster and will be used to copy the log file entries to a common location in HDFS. The following is one solution to satisfy the requirement.</p>
+
+<p>Create a new cookbook or reuse an existing cookbook which will be used on all the nodes in the cluster. Create a node attribute which will store a hash of hashes. For e.g.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>default['bcpc']['hadoop']['copylog'] = {}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The following is the datastructure which will be used to populate the hash values to be stored in the attributes</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>  'app_id' =>  { 'logfile' => "/path/file_name_of_log_file",
+</span><span class='line'>                 'docopy' => true (or false)
+</span><span class='line'>                },...
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>where the <code>app_id</code> is an unique id of an application which requests the service to copy its logs, <code>logfile</code> is the path of the logfile and <code>docopy</code> is a flag to enable and disable the request to copy the log files based on change in need. If an application requests more than one logfile to be copied the <code>appli_id</code> need to be made unique with in the application by adding additonal details like log name or a sequence number.</p>
+
+<p>When an application need to make a request to copy its log file, in the application&rsquo;s recipe, request can be added to the node attribute. For e.g. if logs from the nodes running <code>hbase-region-server</code> need to copy its logs to the common location, code similar to the following can be included in the recipe installing and starting the <code>hbase-region-server</code> service.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>node.default['bcpc']['hadoop']['copylog']['hbase_regionserver_log'] = {
+</span><span class='line'>    'logfile' => "/var/log/hbase/hbase-regionserver-#{node.hostname}.log",
+</span><span class='line'>    'docopy' => true
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>node.default['bcpc']['hadoop']['copylog']['hbase_regionserver_out'] = {
+</span><span class='line'>    'logfile' => "/var/log/hbase/hbase-regionserver-#{node.hostname}.out",
+</span><span class='line'>    'docopy' => true
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note here how an unique identifier is used as the <code>app_id</code> for the two log files from <code>hbase_regionserver</code> to be copied to the common location in HDFS.</p>
+
+<p>For someone not familiar with <code>Flume</code>, flume agents can be used to move data and they need a config file which defines things like the source, sink, the type of sink,the target location etc. Since <code>Flume</code> need to be installed in all nodes in the cluster to be a common service, a recipe need to be created to install the software. But when it comes to start <code>Flume agents</code>, the recipe need to loop through the node attribute to create required Flume configuration files for each logfile copy requests made by the applications running on the node.</p>
+
+<p>For e.g if the node is running only <code>hbase_regionserver</code> there will be two copy requests in the attribute for which the recipe need to create Flume configuration files and start the corresponding <code>Flume agents</code>. If there are other applications/services running on the node for e.g. <code>HDFS Datanode</code> and if the recipes make copy requests then the number of flume configs and <code>flume agents</code> running on the node will be more. The following is the code snippet on how the <code>Flume</code> recipe can accomplish this</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>node['bcpc']['hadoop']['copylog'].each do |id,f|
+</span><span class='line'>   if f['docopy'] 
+</span><span class='line'>     template "/etc/flume/conf/flume-#{id}.conf" do
+</span><span class='line'>       source "flume_flume-conf.erb”
+</span><span class='line'>       action :create ...
+</span><span class='line'>       variables(:agent_name => "#{id}",
+</span><span class='line'>                 :log_location => "#{f['logfile']}" )
+</span><span class='line'>       notifies :restart,"service[flume-agent-multi-#{id}]",:delayed
+</span><span class='line'>     end
+</span><span class='line'>     service "flume-agent-multi-#{id}" do
+</span><span class='line'>       supports :status => true, :restart => true, :reload => false
+</span><span class='line'>       service_name "flume-agent-multi"
+</span><span class='line'>       action :start
+</span><span class='line'>       start_command "service flume-agent-multi start #{id}"
+</span><span class='line'>       restart_command "service flume-agent-multi restart #{id}"
+</span><span class='line'>       status_command "service flume-agent-multi status #{id}"
+</span><span class='line'>     end
+</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A complete <code>Flume</code> recipe which includes this feature is available <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc-hadoop/recipes/copylog.rb">here</a>.</p>
+
+<p>By default the init.d script for Flume starts one <code>Flume agent</code>. But BIGTOP jira <a href="https://issues.apache.org/jira/browse/BIGTOP-1581">BIGTOP-1581</a> provides an option to start/stop/restart flume agents by passing agent names as in the <code>service</code> resource in the previous code snippet. The name passed need to have a corresponding Flume config file under the configuration folder. Since <code>Flume</code> recipe need to know the copy request from all the applications running on the node, it should be the last recipe to be run on the node. This can be accomplished by creating a role to include the <code>Flume</code> recipe and add it to the end of chef-client runlist of all the nodes.</p>
+
+<p>Hope this provides a solution option in a similar situation where applications can dynamically request for a common service in an environment. Also note that the data structure can be expanded so that applications can make richer requests for e.g. in this case request to change the location of the common location where logs are copied into etc.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-02-21T22:39:48-04:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2015</span></span> <span class='time'>10:39 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/chef-patterns/'>chef-patterns</a>, <a class='category' href='/blog/categories/infrastructure-mgmt/'>infrastructure-mgmt</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/02/07/optimal-hbase-based-applications/" title="Previous Post: Design optimal HBase based applications">&laquo; Design optimal HBase based applications</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/" title="Next Post: Restart of a service which is dependent on multiple services through Chef">Restart of a service which is dependent on multiple services through Chef &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

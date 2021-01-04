@@ -1,0 +1,282 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Copy Distributed Log Files Into HDFS - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="In a distributed cluster like HBase, logs are created and written on individual nodes participating in the cluster. If users want to look at the log &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2014/12/16/copy-distributed-log-files-into-hdfs/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Copy Distributed Log Files Into HDFS</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-12-16T21:23:51-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>16</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>9:23 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>In a distributed cluster like HBase, logs are created and written on individual nodes participating in the cluster. If users want to look at the log entries say for debugging purposes they would need to logon to individual nodes. Apart from the complexity of going through the logs on the individual nodes, users need to be provided access to all the nodes. One of the ways to mitigate these concerns is to copy the log files into a centralized location.</p>
+
+<!--more-->
+
+
+<p>Apache Flume can be used to copy log files from individual nodes into HDFS. The following is an example Flume configuration which can be used to start Flume agents to copy HBase region server log files into HDFS. Note that changes will be required to this sample configuration based on cluster set-up.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#
+</span><span class='line'># Flume channel definition
+</span><span class='line'>#
+</span><span class='line'>agent.channels = memoryChannel
+</span><span class='line'>agent.channels.memoryChannel.type = memory
+</span><span class='line'>#
+</span><span class='line'># Flume source definition
+</span><span class='line'>#
+</span><span class='line'>agent.sources = pstream
+</span><span class='line'>agent.sources.pstream.channels = memoryChannel
+</span><span class='line'>agent.sources.pstream.type = exec
+</span><span class='line'>agent.sources.pstream.command = tail -f /var/log/hbase/hbase-hbase-regionserver-$hostname.log
+</span><span class='line'>#
+</span><span class='line'># Flume sink definition
+</span><span class='line'>#
+</span><span class='line'>agent.sinks = hdfsSink
+</span><span class='line'>agent.sinks.hdfsSink.type = hdfs
+</span><span class='line'>agent.sinks.hdfsSink.channel = memoryChannel
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.useLocalTimeStamp = true
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.path = hdfs://hdfs-service-name/user/flume/%y-%m-%d
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.filePrefix = hbase-$hostname
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.fileType = DataStream
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.writeFormat = Text
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.rollInterval = 86400
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.rollSize = 0
+</span><span class='line'>agent.sinks.hdfsSink.hdfs.rollCount = 0</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>A daily log directory with the name <code>yy-mm-dd</code> will be created under <code>/user/flume</code> directory in HDFS. Log data from each individual nodes where Flume agent is run will be copied into individual files under the daily directory. By providing read access to the centralized HDFS directory in this case <code>/user/flume</code>, users will be able to go through the logs from all the nodes. Since each days logs are stored in seperate directories, users will be able to navigate easily.</p>
+
+<p>Inorder the Flume agent to copy the log data successfully, HDFS client components including <code>hdfs-site.xml</code> need to be installed on the individual nodes apart from Flume itself. In the case of HBase, HDFS components should be already available on the nodes since it is a pre-requisite.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-12-16T21:23:51-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>16</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>9:23 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hbase/'>hbase</a>, <a class='category' href='/blog/categories/monitoring/'>monitoring</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2014/12/16/copy-distributed-log-files-into-hdfs/" data-via="" data-counturl="http://asquareb.github.io/blog/2014/12/16/copy-distributed-log-files-into-hdfs/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/12/13/jvm-gc-settings-and-hbase/" title="Previous Post: JVM GC settings and HBase Performance">&laquo; JVM GC settings and HBase Performance</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/12/18/garbage-first-g1-gc-and-hbase/" title="Next Post: Garbage First (G1) GC and HBase">Garbage First (G1) GC and HBase &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2014/12/16/copy-distributed-log-files-into-hdfs/';
+        var disqus_url = 'http://asquareb.github.io/blog/2014/12/16/copy-distributed-log-files-into-hdfs/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

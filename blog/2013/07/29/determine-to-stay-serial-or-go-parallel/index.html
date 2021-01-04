@@ -1,0 +1,256 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Determine to Stay Serial or Go Parallel - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Given that concurrent programming involves unique challenges like race conditions and deadlocks, it would be advantageous to determine whether &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2013/07/29/determine-to-stay-serial-or-go-parallel/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Determine to Stay Serial or Go Parallel</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2013-07-29T18:12:46-04:00'><span class='date'><span class='date-month'>Jul</span> <span class='date-day'>29</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>6:12 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Given that concurrent programming involves unique challenges like race conditions and deadlocks, it would be advantageous to determine whether concurrent processing of a problem provides better performance than serial processing. Speedup is the metric which can be used to make this comparison. This involves identifying the best solutions to solve the problem through serial processing and concurrent processing.</p>
+
+<!-- more -->
+
+
+<p>Speed up in simple terms is the ratio of serial execution time to parallel execution time and is expressed as a multiplier. For e.g if it takes 1000 seconds and 100 seconds to complete a problem through serial and concurrent execution then the speedup is 10 times normally indicated as 10x. In order to determine an approximate speedup without actually developing and executing any programs, two laws Amdhal&rsquo;s and/or Gustafson&rsquo;s can be used. It would require a good understanding of the percentage of time the concurrent processing solution can execute concurrently. Even though  the values derived out of these laws may not be perfect with out actual execution, it would give a good idea as to whether one can pursue developing the concurrent processing solution.</p>
+
+<h2> Amdhal's Law: </h2>
+
+
+<p>Amdhal&rsquo;s law states that Speedup &lt;= 1/((1-PCTpar)+(PCTpar/P))</p>
+
+<ul>
+<li><p>where PCTpar is the percentage of code which will run concurrently</p></li>
+<li><p>P is the number of processors/cores</p></li>
+</ul>
+
+
+<p>For e.g. if the percentage of code which will run concurrently is 90 and there are 8 cores available on the machine the speedup &lt;= 1/((1-0.9)+(0.9/8) which is 4.7x speedup compared to serial processing.</p>
+
+<h2> Gustafson's Law: </h2>
+
+
+<ul>
+<li><p>Gustafson&rsquo;s law covers some of the criticisms about Amdhal&rsquo;s law like not taking into account the increase in the data processed with the increase in the number of cores.</p></li>
+<li><p>It states that Speedup &lt;= P + (1-P) S</p></li>
+<li><p>where P is the number of processors/cores as in Amdhal&rsquo;s law</p></li>
+<li><p>S is the percentage of time spend in serial execution</p></li>
+</ul>
+
+
+<p>For e.g. if the percentage of time which will be spent in serial execution is 1% and if there are 32 cores then the speedup will be &lt;= 32+(1-32)*0.01 which is 31.69x speedup</p>
+
+<ul>
+<li><p>Another metric which is can be used to measure concurrent processing is its efficiency which provides the percentage utilization of the computational resources.</p></li>
+<li><p>Efficiency is defined as Speedup/number of cores and is expressed as a percentage. For e.g. the efficiency of 31.69x speedup on 32 core is 99% efficient.</p></li>
+</ul>
+
+
+<p>By doing this calculations upfront one can determine whether to go concurrent or stay serial.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2013-07-29T18:12:46-04:00'><span class='date'><span class='date-month'>Jul</span> <span class='date-day'>29</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>6:12 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/software-design/'>software-design</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2013/07/29/determine-to-stay-serial-or-go-parallel/" data-via="" data-counturl="http://asquareb.github.io/blog/2013/07/29/determine-to-stay-serial-or-go-parallel/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/06/30/concurrent-parallel-or-distributed-processing/" title="Previous Post: Concurrent Parallel or Distributed Processing">&laquo; Concurrent Parallel or Distributed Processing</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/08/15/challenges-in-concurrent-programming-i/" title="Next Post: Challenges in concurrent programming - I">Challenges in concurrent programming - I &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2013/07/29/determine-to-stay-serial-or-go-parallel/';
+        var disqus_url = 'http://asquareb.github.io/blog/2013/07/29/determine-to-stay-serial-or-go-parallel/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

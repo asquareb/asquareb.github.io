@@ -1,0 +1,433 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>HBase Shell - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="HBase shell is a Ruby based shell which can be used to interact with HBase cluster and perform data definition and data manipulation tasks. The shell &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/07/05/hbase-shell/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">HBase Shell</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-07-05T18:05:25-05:00'><span class='date'><span class='date-month'>Jul</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>6:05 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>HBase shell is a Ruby based shell which can be used to interact with HBase cluster and perform data definition and data manipulation tasks. The shell is made available as part of the HBase code base and by default gets installed on all the nodes of the HBase cluster. In order to access the shell, HBase software need to be installed on the machine from where the shell is invoked and the PATH environment variable updated with the directory where the hbase shell program is stored. Commonly users and administrators access the shell through one of the nodes in the HBase cluster. Following is a quick introduction to frequently used hbase shell commands.
+HBase shell is invoked using the hbase shell command which in turn provides the user with a command prompt to enter the commands supported by the particular version of HBase.</p>
+
+<!--more-->
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>$ hbase shell
+</span><span class='line'>...
+</span><span class='line'>hbase(main):001:0&gt; help
+</span><span class='line'>...
+</span><span class='line'>
+</span><span class='line'>COMMAND GROUPS:
+</span><span class='line'>   Group name: general
+</span><span class='line'>   Commands: status, table_help, version, whoami
+</span><span class='line'>   Group name: ddl
+</span><span class='line'>   Commands: alter, alter_async, alter_status, create, describe, disable, disable_all, drop, drop_all, enable, enable_all, exists, get_table, is_disabled, is_enabled, list, show_filters</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Further details on a particular command can be found using help &lsquo;command-of-interest&rsquo;. The following is the partial output from help on create command help create</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):002:0&gt; help 'create'
+</span><span class='line'>Creates a table. Pass a table name, and a set of column family
+</span><span class='line'>specifications (at least one), and, optionally, table configuration.
+</span><span class='line'>Column specification can be a simple string (name), or a dictionary
+</span><span class='line'>(dictionaries are described below in main help output), necessarily
+</span><span class='line'>including NAME attribute.
+</span><span class='line'>Examples:
+</span><span class='line'>Create a table with namespace=ns1 and table qualifier=t1
+</span><span class='line'>   hbase&gt; create 'ns1:t1', {NAME =&gt; 'f1', VERSIONS =&gt; 5}
+</span><span class='line'>Create a table with namespace=default and table qualifier=t1
+</span><span class='line'>   hbase&gt; create 't1', {NAME =&gt; 'f1'}, {NAME =&gt; 'f2'}, {NAME =&gt; 'f3'}
+</span><span class='line'>   hbase&gt; # The above in shorthand would be the following:
+</span><span class='line'>As one would expect creating a table is using create command. The following is an example of creating a table TestTable with column family cf. The column family is of BLOCKSIZE 16K, uses SNAPPY COMPRESSION and the BLOOMFILTER attribute set to ROWCOL. 
+</span><span class='line'>create Table
+</span><span class='line'>hbase(main):014:0&gt; create 'TestTable', {NAME =&gt; 'cf', BLOCKSIZE =&gt; 16384, BLOOMFILTER =&gt; 'ROWCOL', COMPRESSION =&gt; 'SNAPPY'}
+</span><span class='line'>0 row(s) in 0.5020 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that by default a table is created in the default namespace if the namespace is not specified during table creation. If a namespace is specified during table creation, the namespace should already exist and it can be created using create namespace command.
+To view the properties of a table describe command can be used.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):017:0&gt; describe 'TestTable'
+</span><span class='line'>DESCRIPTION                                                                                                   ENABLED
+</span><span class='line'>  'TestTable1', {NAME =&gt; 'cf', DATA_BLOCK_ENCODING =&gt; 'NONE', BLOOMFILTER =&gt; 'ROWCOL', REPLICATION_SCOPE =&gt; '0 true
+</span><span class='line'>  ', VERSIONS =&gt; '1', COMPRESSION =&gt; 'SNAPPY', MIN_VERSIONS =&gt; '0', TTL =&gt; 'FOREVER', KEEP_DELETED_CELLS =&gt; 'f
+</span><span class='line'>  alse', BLOCKSIZE =&gt; '16384', IN_MEMORY =&gt; 'false', BLOCKCACHE =&gt; 'true'}
+</span><span class='line'>1 row(s) in 0.0730 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that there are two columns in the output DESCRIPTION and ENABLED. The value true displayed on the console is for the ENABLED column which informs the user whether the table is enabled or not. To see whether a table is defined in the cluster, use list command which lists all the tables in the HBase cluster and the following is a sample output.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):018:0&gt; list
+</span><span class='line'>TABLE
+</span><span class='line'>TestTable
+</span><span class='line'>TestTable1
+</span><span class='line'>TestTableRpl3
+</span><span class='line'>3 row(s) in 0.0600 seconds
+</span><span class='line'>=&gt; ["TestTable", "TestTable1", "TestTableRpl3"]</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To drop a table, the table need to be disabled first using the disable command before dropping using the drop command. If drop is attempted before the disable the shell will prompt with the message that the table is enabled.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):019:0&gt; drop 'TestTable'
+</span><span class='line'>ERROR: Table TestTable1 is enabled. Disable it first.'
+</span><span class='line'> 
+</span><span class='line'>hbase(main):020:0&gt; disable 'TestTable'
+</span><span class='line'>0 row(s) in 1.3510 seconds
+</span><span class='line'> hbase(main):021:0&gt; drop 'TestTable'
+</span><span class='line'>0 row(s) in 0.2470 seconds
+</span><span class='line'>To alter a table, use alter command. The alter command can be used to make changes at table level and at the columnfamily level and it can also operate on multiple columnfamilies at the same time. Use the help 'alter' command to get more details. The following is an example of altering the number of versions that need to be stored for a particular columnfamily in a table.
+</span><span class='line'>alter table
+</span><span class='line'>hbase(main):025:0&gt; alter 'TestTable',{NAME =&gt; 'cf', VERSIONS =&gt; 3}
+</span><span class='line'>Updating all regions with the new schema...
+</span><span class='line'>0/1 regions updated.
+</span><span class='line'>1/1 regions updated.
+</span><span class='line'>Done.
+</span><span class='line'>0 row(s) in 2.2800 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that changes to some of the attributes require other actions. For e.g. changing the BLOCKSIZE will require a major compaction of the table if the change need to take effect immediately. Other changes like modifying the REGION_REPLICATION property requires the table to be disabled before altering the table and then enabling it
+For basic data manipulations, the put, get, scan, delete commands can be used. The following puts two rows to a table, does a get a scan and a delete.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>put get scan delete
+</span><span class='line'>hbase(main):036:0&gt; put 'TestTable','r1','cf:c1','v1'
+</span><span class='line'>0 row(s) in 0.0300 seconds
+</span><span class='line'>hbase(main):037:0&gt; put 'TestTable','r2','cf:c1','v2'
+</span><span class='line'>0 row(s) in 0.0060 seconds
+</span><span class='line'>hbase(main):038:0&gt; get 'TestTable','r1'
+</span><span class='line'>COLUMN                                    CELL
+</span><span class='line'>  cf:c1                                   timestamp=1437492679670, value=v1
+</span><span class='line'>1 row(s) in 0.0340 seconds
+</span><span class='line'>hbase(main):039:0&gt; scan 'TestTable'
+</span><span class='line'>ROW                                       COLUMN+CELL
+</span><span class='line'>  r1                                      column=cf:c1, timestamp=1437492679670, value=v1
+</span><span class='line'>  r2                                      column=cf:c1, timestamp=1437492691520, value=v2
+</span><span class='line'>2 row(s) in 0.0620 seconds
+</span><span class='line'>hbase(main):041:0&gt; delete 'TestTable','r1','cf:c1'
+</span><span class='line'>0 row(s) in 0.0630 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>During development if minor compaction need to be performed explicitly on table regions, the compact command can be used. Note: since compaction process will have performance impact use caution on when you invoke compaction in a production environment.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):043:0&gt; compact 'TestTable', 'cf'
+</span><span class='line'>0 row(s) in 3.5630 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Also to improve data locality and performance major compaction of a table may have to be run and the following is an example. Again, major compaction is a resource intensive (CPU, IO, Memory and Network) process and should not be run in production without proper scheduling to minimize business impact.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):044:0&gt; major_compact 'TestTable'
+</span><span class='line'>0 row(s) in 1.1430 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Balancing the region distribution of a table may help improving performance and it is a best practice to balance the regions before running major compaction explicitly to improve its performance. Be cautious on when you run balancer in production environment since it will impact performance.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):045:0&gt; balancer
+</span><span class='line'>true
+</span><span class='line'>0 row(s) in 59.1120 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>During development there may be a need to disable running of HBase balancer so that regions can be moved manually. Enabling and disabling of balancer can be accomplished using balance_switch command which takes in the value true|false as input.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):048:0&gt; balance_switch false
+</span><span class='line'>true
+</span><span class='line'>0 row(s) in 0.0300 seconds</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that balance_switch command will return the previous value of whether the balancer is enabled or not. In the previous example the balancer was enabled and hence the return value of true.</p>
+
+<p>To check the status of the HBase cluster, the status command can be used. The command can generate detailed, simple or summary status based on whether detailed|simple|summary parameter is passed.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hbase(main):052:0&gt; status 'summary'
+</span><span class='line'>13 servers, 0 dead, 478.1538 average load</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">asquareb</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-07-05T18:05:25-05:00'><span class='date'><span class='date-month'>Jul</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>6:05 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hbase/'>hbase</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/07/05/hbase-shell/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/07/05/hbase-shell/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/" title="Previous Post: Java Direct ByteBuffer Performance Advantages and Considerations">&laquo; Java Direct ByteBuffer Performance Advantages and Considerations</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/08/16/hbase-data-load/" title="Next Post: HBase - Data Load">HBase - Data Load &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/07/05/hbase-shell/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/07/05/hbase-shell/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

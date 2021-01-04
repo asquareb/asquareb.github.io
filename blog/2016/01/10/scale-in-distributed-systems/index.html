@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Scale in Distributed Systems - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="This paper looks at scale and how it affects distributed systems including highlights of how how scale is addressed in existing systems.
+A system is &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Scale in Distributed Systems</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-01-10T18:51:35-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:51 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://clifford.neuman.name/papers/pdf/94--_scale-dist-sys-neuman-readings-dcs.pdf">This paper</a> looks at scale and how it affects distributed systems including highlights of how how scale is addressed in existing systems.
+A system is said to be <strong>scalable</strong> if it can handle addition of resources and users without suffering noticeable loss in performance or increase in administrative complexity. Scale also affects the way users perceive the systems. For e.g. as the number of objects accessible grows it becomes increasingly difficult to locate the objects of interest.</p>
+
+<!--more-->
+
+
+<ul>
+<li>Definitions
+
+<ul>
+<li>A <strong>distributed system</strong> is a collection of computers, connected by a computer network, working together to collectively implement some minimal set of services.</li>
+<li>A service or resource is <strong>replicated</strong> when it has multiple logically identical instances appearing on different nodes in a system</li>
+<li>A service is <strong>distributed</strong> when it is provided by multiple nodes each capable of handling a subset of the requests for service. A distribution function maps requests to the subset of the nodes that can handle it</li>
+<li><strong>Caching</strong> is a temporary form of replication used to save and reuse of query results on nodes. Caching need to use validation techniques to make sure that the data saved are current</li>
+</ul>
+</li>
+<li>Effects of Scale
+
+<ul>
+<li>Reliability
+
+<ul>
+<li>Systems should not cease to operate just because nodes are unavailable</li>
+<li>Reliability can be improved by increasing the autonomy of the nodes and replication</li>
+</ul>
+</li>
+<li>System Load
+
+<ul>
+<li>System query load increases with increase in amount of data, nodes, services</li>
+<li>Replication, distribution and caching can be used to reduce the number of requests that need to be handled by each node</li>
+</ul>
+</li>
+<li>Administration
+
+<ul>
+<li>With increase in number of nodes, administration of users, services and systems becomes complex</li>
+<li>Complexity in administration can be reduced by maintaining common information centrally</li>
+</ul>
+</li>
+<li>Heterogeneity
+
+<ul>
+<li>With scale nodes part of the system can not only of different hardware but can also run different OS and different versions of OS</li>
+<li><strong>Coherence</strong> an approach which expects nodes in a system support a common interface is one which is used to deal with heterogeneity
+
+<ul>
+<li>Common instruction set</li>
+<li>Common execution abstraction</li>
+<li>Support a common set of protocols</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Distributed system components affected by scale
+
+<ul>
+<li>Naming and directory services</li>
+<li>Authentication</li>
+<li>Authorization</li>
+<li>Accounting</li>
+<li>Communication</li>
+<li>Remote Resources</li>
+</ul>
+</li>
+</ul>
+
+
+<p><em>Scaling of all the components can be improved by replication, distribution and caching</em></p>
+
+<p>Key points to remember while building scalable systems</p>
+
+<ul>
+<li>Replication
+
+<ul>
+<li>Replication important resources</li>
+<li>Distribute the replicas</li>
+<li>Use loose consistency</li>
+</ul>
+</li>
+<li>Distribution
+
+<ul>
+<li>Distribute across multiple servers</li>
+<li>Distribute evenly</li>
+<li>Exploit locality</li>
+<li>Avoid upper level of hierarchies</li>
+</ul>
+</li>
+<li>Caching
+
+<ul>
+<li>Cache frequently accessed data</li>
+<li>Consider access patterns when caching
+
+<ul>
+<li>amount of data accessed together, read to write ratio, likelihood of conflicts, number of simultaneous users</li>
+</ul>
+</li>
+<li>Cache timeouts</li>
+<li>Caching at multiple levels</li>
+<li>Look first locally</li>
+<li>Data cached extensively must be changed less frequently</li>
+</ul>
+</li>
+<li>Avoid global broadcast</li>
+<li>Shed load but not too much: perform computation where it suits better</li>
+<li>Support multiple access mechanisms</li>
+<li>Keep users in mind</li>
+</ul>
+
+
+<p>Evaluating distributed systems</p>
+
+<ul>
+<li>Use of the system
+
+<ul>
+<li>Growth of queries as the system grows</li>
+<li>Central servers in the system and issues with replication</li>
+</ul>
+</li>
+<li>Data
+
+<ul>
+<li>Increase in data and how it increases data maintained in each node in the system</li>
+<li>Increase in query time with increase in data size</li>
+<li>Data update process and how it scales</li>
+<li>Cache data invalidation and query performance</li>
+</ul>
+</li>
+<li>Administration
+
+<ul>
+<li>Does the system require a centralized admin system?</li>
+<li>Is it practical in the environment in which the system is used?</li>
+</ul>
+</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-01-10T18:51:35-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:51 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/distributed-systems/'>distributed systems</a>, <a class='category' href='/blog/categories/paper/'>paper</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems/" data-via="" data-counturl="http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction/" title="Previous Post: Oozie job to schedule HBase major compaction">&laquo; Oozie job to schedule HBase major compaction</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/02/07/end-to-end-arguments-in-system-design/" title="Next Post: End-to-end arguments in system design">End-to-end arguments in system design &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems/';
+        var disqus_url = 'http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

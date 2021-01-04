@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Git | Quick Notes]]></title>
+  <link href="http://asquareb.github.io/blog/categories/git/atom.xml" rel="self"/>
+  <link href="http://asquareb.github.io/"/>
+  <updated>2021-01-03T19:08:23-08:00</updated>
+  <id>http://asquareb.github.io/</id>
+  <author>
+    <name><![CDATA[asquareb]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Making a Git Pull Request for Specific Commits]]></title>
+    <link href="http://asquareb.github.io/blog/2014/06/19/making-a-git-pull-request-for-specific-commits/"/>
+    <updated>2014-06-19T18:12:46-04:00</updated>
+    <id>http://asquareb.github.io/blog/2014/06/19/making-a-git-pull-request-for-specific-commits</id>
+    <content type="html"><![CDATA[<p>Time to time when working on a project using a fork from a git repository, situations arise that a pull request need to be made to the master
+repository for a sub set of commits you made to the fork. The following are a set of steps which can help with accomplishing these scenarios.</p>
+
+<!-- more -->
+
+
+<ul>
+<li>On the git repository in your local machine created from your fork, create a new branch</li>
+</ul>
+
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git branch cherry-branch origin/master</span></code></pre></td></tr></table></div></figure></p>
+
+<ul>
+<li><p>The assumption is that there is only one branch in your fork and the master repository and origin is pointing to your github fork.</p></li>
+<li><p>Switch to the new branch created
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git checkout cherry-branch</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>You can verify that you are on the correct branch by running the command
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git branch</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Identify ids of the commits you want to include into the pull request from your github fork.</p></li>
+<li><p>Issue a git cherry-pick command to include the commits into the new branch
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git cherry-pick COMMIT-ID</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Push the new branch to your fork
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git push origin cherry-branch</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>On github you can now see the new branch in your fork with only the commits selected. Now a pull request to the master repository.</p></li>
+</ul>
+
+
+<p>What if there are multiple branches on the master repository and your fork and you want to send a pull request from a particular branch of your fork
+to a branch in the master repository.</p>
+
+<ul>
+<li><p>Create a clone of the master repository branch you are interested in
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git clone &lt;a href="https://github.com/master-owner/project-repo">https://github.com/master-owner/project-repo&lt;/a> -b interested-branch</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Create a remote reference to the local repository of the your fork where all the commits are
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git remote add -t local-branch-name mylocalrepo /location/of/local/gitrepo</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Do a fetch of all the changes available in the local repository from your fork
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git fetch mylocalrepo</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Identify ids of all the commits you want to include into the pull request from your github fork.</p></li>
+<li><p>Issue a git cherry-pick command to include the commits you want to get pulled
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git cherry-pick COMMIT-ID</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Create a branch
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git branch cherry-branch</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Switch to the new branch
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git checkout cherry-branch</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Push the changes into your fork in github
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git push &lt;a href="https://github.com/yourid/project-repo">https://github.com/yourid/project-repo&lt;/a> cherry-branch</span></code></pre></td></tr></table></div></figure></p></li>
+<li><p>Now the branch &ldquo;cherry-branch&rdquo; will be show up in github UI with the changes selected. A new pull request can be created for the changes to be committed into the master repository.</p></li>
+<li><p>Once the changes are merged, the branch can be deleted and the local repository created can be removed.</p></li>
+</ul>
+
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git push origin :cherry-branch</span></code></pre></td></tr></table></div></figure></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Setting Up to Contribute Using Git]]></title>
+    <link href="http://asquareb.github.io/blog/2014/06/07/contribute-using-git/"/>
+    <updated>2014-06-07T10:49:22-04:00</updated>
+    <id>http://asquareb.github.io/blog/2014/06/07/contribute-using-git</id>
+    <content type="html"><![CDATA[<p>Basic steps if you are planning to contribute to an existing project currently on GitHub.</p>
+
+<ul>
+<li>Create an account on GitHub.</li>
+<li>Create a fork of the project repository on GitHub.</li>
+<li>Create a Git repository on your local machine. This requires Git to be available on the machine
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git clone &lt;a href="https://github.com/your-user-name/repository-name">https://github.com/your-user-name/repository-name&lt;/a> -b branch-name</span></code></pre></td></tr></table></div></figure></li>
+</ul>
+
+
+<!-- more -->
+
+
+<ul>
+<li>Note the -b option is used to specify a particular branch you want to work on in the project. You can verify the branch the local repository is pointing to by
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git branch</span></code></pre></td></tr></table></div></figure></li>
+<li>The repository created locally by the clone points to the fork which was created by you on GitHub</li>
+<li>You would also want to pull in all the changes happening in the project repository like changes from other contributers</li>
+<li>Inorder to be able to pull the changes, set &ldquo;upstream&rdquo; to point to the project repository. CD to your local repository and issue the following command.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git remote add upstream &lt;a href="https://github.com/project-or-user-name/repository-name">https://github.com/project-or-user-name/repository-name&lt;/a></span></code></pre></td></tr></table></div></figure></li>
+<li>You can verify the &ldquo;origin&rdquo; and the &ldquo;upstream&rdquo; repositories your local repository is pointing to by issuing the following command
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git remote -v</span></code></pre></td></tr></table></div></figure></li>
+<li>Inorder to update your local repository with any changes in the project repository, issue the following command
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git pull upstream</span></code></pre></td></tr></table></div></figure></li>
+<li>Git wll perform automerge of changes where possible and if there are any conflicts they need to be resolved manually</li>
+<li>Make the changes you wish to make to the project repository on your local machine and once satisfied follow these steps</li>
+<li>Perform a pull upstream to make sure that your repository is upto date with project repository<br/>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git pull upstream</span></code></pre></td></tr></table></div></figure></li>
+<li>Commit all your changes to the local respository. This step will ask to enter comments about the change etc.
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git commit -a</span></code></pre></td></tr></table></div></figure></li>
+<li>Push the changes to GitHub which will update the fork you had created initially. This step will prompt for your GitHub user-id and password
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git push -u branch-name</span></code></pre></td></tr></table></div></figure></li>
+<li>You can verify that the changes are on your fork by browsing the changed components through GitHub web interface</li>
+<li>Once satisfied with your changes, you can make a pull request using the pull request icon on the GitHub web interface</li>
+<li>If the project owner is fine with the changes, the changes will get merged into the project repository. Then the changes will be available for everyone to use.</li>
+<li>Few other useful commands
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git stash</span></code></pre></td></tr></table></div></figure>
+This will revert back all the changes made in the local repository
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git rebase -i HEAD~n</span></code></pre></td></tr></table></div></figure>
+Where n is a number and this will help in merging multiple commits into fewer so that the change history is much cleaner.</li>
+<li>This is a very quick summary of steps. Git documents provide details, options and other useful commands which you may want to look at</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

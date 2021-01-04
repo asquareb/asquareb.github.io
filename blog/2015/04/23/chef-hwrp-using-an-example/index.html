@@ -1,0 +1,468 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Chef HWRP Using an Example - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Heavy Weight Resource Provider (HWRP) is one of the options Chef offers to create custom resources and the other being LWRP. It would be good to read &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/04/23/chef-hwrp-using-an-example/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Chef HWRP Using an Example</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-04-23T23:34:17-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>23</span><span class='date-suffix'>rd</span>, <span class='date-year'>2015</span></span> <span class='time'>11:34 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Heavy Weight Resource Provider (HWRP) is one of the options Chef offers to create custom resources and the other being <a href="http://blog.asquareb.com/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">LWRP</a>. It would be good to read the notes on <a href="http://blog.asquareb.com/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">LWRP</a> to understand the context and the difference between <code>LWRP</code> and <code>HWRP</code>.</p>
+
+<p>Similar to LWRP, HWRP requires a resource definition and the corresponding provider. The key difference is that there are no DSL in the HWRP as in LWRP and everything is coded in <code>Ruby</code> code. So taking the same example of HDFS directory resource used in the notes on LWRP, the following is the skeleton of the resource definition.</p>
+
+<!-- more -->
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class Chef
+</span><span class='line'>  class Resource
+</span><span class='line'>    class HdfsDir &lt; Chef::Resource
+</span><span class='line'>
+</span><span class='line'>      #
+</span><span class='line'>      # What provider this resource provides
+</span><span class='line'>      #
+</span><span class='line'>      provides :hdfsdir
+</span><span class='line'>
+</span><span class='line'>      def initialize(name, run_context=nil)
+</span><span class='line'>        super
+</span><span class='line'>
+</span><span class='line'>        #
+</span><span class='line'>        # Set the resource name
+</span><span class='line'>        #
+</span><span class='line'>        @resource_name = :hdfsdir
+</span><span class='line'>
+</span><span class='line'>        #
+</span><span class='line'>        # Allowed actions in this resource
+</span><span class='line'>        #
+</span><span class='line'>        @allowed_actions = [:create, :delete, :chown, :chmod, :rename, :chgrp, :nothing]
+</span><span class='line'>
+</span><span class='line'>        #
+</span><span class='line'>        # Default action if none specified when using the resource
+</span><span class='line'>        #
+</span><span class='line'>        @action = :create
+</span><span class='line'>
+</span><span class='line'>        #
+</span><span class='line'>        # Set default values for resource attributes
+</span><span class='line'>        #
+</span><span class='line'>        @path = name
+</span><span class='line'>        @namenode = nil
+</span><span class='line'>        ...
+</span><span class='line'>      end
+</span><span class='line'>      
+</span><span class='line'>      #
+</span><span class='line'>      # Methods to get/set attributes and define additional characteristics
+</span><span class='line'>      #
+</span><span class='line'>      def path(arg=nil)
+</span><span class='line'>        set_or_return(:path, arg, :kind_of => String, :required => true)
+</span><span class='line'>      end
+</span><span class='line'>
+</span><span class='line'>      def namenode(arg=nil)
+</span><span class='line'>        set_or_return(:namenode, arg, :kind_of => String, :required => true)
+</span><span class='line'>      end
+</span><span class='line'>
+</span><span class='line'>      ...
+</span><span class='line'>
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The HWRP is a <code>Ruby</code> class in this case <code>HdfsDir</code> which is a subclass of <code>Chef::Resource</code> class. The <code>provides</code> method specifies the resource provider for this resource and in this case it is <code>hdfsdir</code>.</p>
+
+<p>As in any <code>Ruby</code> class, the <code>initialize</code> method is used perform initializations like setting initial values of variables. In this case the pre-defined instance variable <code>resource_name</code> is set to a name which can be used to create a resource block in recipes using this HWRP. An array of symbols specifying the supported <code>actions</code> supported by this HWRP is assigned to the instance variable <code>allowed_actions</code>. A default action which will be taken if an <code>action</code> is not set for while creating a resource using this HWRP (in this case <code>create</code>) is set to the instance variable <code>action</code>.</p>
+
+<p>The remaining section in the skeleton is to define the characteristics of all the attributes of this resource which is similar to the attribute definition in LWRP. The key difference is that they are all defined as <code>Ruby</code> methods and the <code>set_or_return</code> is similar to <code>Ruby</code> <code>attr_accessor</code> method which creates the getters and setters for the attributes.</p>
+
+<p>Unlike LWRP, the HWRP resource and provider code is stored in files under the <code>libraries</code> directory of the cookbook. Also there is no strict rules about the file naming conventions since these are <code>Ruby</code> classes and they get loaded first during the <code>Chef client</code> run.</p>
+
+<p>Now lets turn to the corresponding provider definition and the following is the skeleton. It is more or less similar to the LWRP provider code we had seen earlier with some differences.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>require 'chef/log'
+</span><span class='line'>
+</span><span class='line'>class Chef
+</span><span class='line'>  class Provider
+</span><span class='line'>    class HdfsDir &lt; Chef::Provider
+</span><span class='line'>
+</span><span class='line'>      #
+</span><span class='line'>      # To enable -W/--why-run option of chef-client
+</span><span class='line'>      #
+</span><span class='line'>      def whyrun_supported?
+</span><span class='line'>         true
+</span><span class='line'>      end
+</span><span class='line'>
+</span><span class='line'>      #
+</span><span class='line'>      # Method automatically called by Chef during the client execution phase
+</span><span class='line'>      # Can be used to initialize variables and also verify the current state
+</span><span class='line'>      #
+</span><span class='line'>      def load_current_resource
+</span><span class='line'>        require 'webhdfs'
+</span><span class='line'>
+</span><span class='line'>        new_resource.user == nil ? @user = ENV['USER'] : @user = new_resource.user
+</span><span class='line'>        nnaddress = new_resource.namenode
+</span><span class='line'>        nnport = new_resource.nnport
+</span><span class='line'>        @client = WebHDFS::Client.new(nnaddress,nnport,@user)
+</span><span class='line'>        if (!validnn?())
+</span><span class='line'>          raise RuntimeError, "Invalid namenode provided or HDFS not available"
+</span><span class='line'>        end
+</span><span class='line'>        @omode = new_resource.mode
+</span><span class='line'>        new_resource.mode == nil ? @mode = "0750" : @mode = new_resource.mode
+</span><span class='line'>        @path = new_resource.path
+</span><span class='line'>        @tpath = new_resource.tpath
+</span><span class='line'>        @tgroup = new_resource.tgroup
+</span><span class='line'>        @tuser = new_resource.tuser
+</span><span class='line'>      end
+</span><span class='line'>
+</span><span class='line'>      ...
+</span><span class='line'>      #
+</span><span class='line'>      # Action to create a directory in HDFS
+</span><span class='line'>      #
+</span><span class='line'>      def action_create
+</span><span class='line'>        if (dir_exists?(@path))
+</span><span class='line'>          Chef::Log::info("Directory #{ @path } exits; create action not taken")
+</span><span class='line'>        else
+</span><span class='line'>          converge_by("Create #{ @new_resource }") do
+</span><span class='line'>            @client.mkdir(@path,'permission' => @mode)
+</span><span class='line'>          end
+</span><span class='line'>          new_resource.updated_by_last_action(true)
+</span><span class='line'>        end
+</span><span class='line'>      end
+</span><span class='line'>    …
+</span><span class='line'>      #
+</span><span class='line'>      # Method to check whether the namenode provided is valid
+</span><span class='line'>      #
+</span><span class='line'>      def validnn?()
+</span><span class='line'>        return dir_exists?("/") ? true : false
+</span><span class='line'>      end
+</span><span class='line'>      ...
+</span><span class='line'>    end
+</span><span class='line'>  end
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As with the resource definition, the provider is also a <code>Ruby</code> class which is a subclass of <code>Chef::Provider</code> class. The method <code>whyrun_supported</code> is to specify whether the resource supports the <code>chef client</code> run with <code>why-run</code> option. If this method is set to return <code>true</code>, then the strings provided in the <code>converge_by</code> statement of the <code>action</code> requested in the recipe will be logged instead of performing the actual convergence of the resource.</p>
+
+<p><code>load_current_resource</code> method need to be overwritten in an HWRP which is optional in as LWRP. As discussed in the LWRP note, this method can be used to check the current state of the resource.</p>
+
+<p>The methods for the <code>actions</code> supported are defined using the naming convention <code>action_name</code>. For e.g. for the <code>create</code> action the method name is <code>action_create</code>. Supporting methods can be defined as in any <code>Ruby</code> class for e.g. in this case `validnn??`` method.</p>
+
+<p>The method <code>new_resource.updated_by_last_action</code> is called with a value of <code>true</code> so that <code>Chef</code> is notified that the resource got updated by that particular <code>action</code>.</p>
+
+<p>More notes in this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-04-23T23:34:17-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>23</span><span class='date-suffix'>rd</span>, <span class='date-year'>2015</span></span> <span class='time'>11:34 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/04/23/chef-hwrp-using-an-example/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/04/23/chef-hwrp-using-an-example/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/" title="Previous Post: Chef LWRP using HDFS directory as an example">&laquo; Chef LWRP using HDFS directory as an example</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/04/30/secure-all-applications-please/" title="Next Post: Secure all applications please">Secure all applications please &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/04/23/chef-hwrp-using-an-example/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/04/23/chef-hwrp-using-an-example/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

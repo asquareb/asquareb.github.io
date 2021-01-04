@@ -1,0 +1,426 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Restart of a Service Which Is Dependent on Multiple Services Through Chef - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="In a node there can be services that are dependent on other services. For e.g. a monitoring service is dependent on services which it monitors and &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Restart of a Service Which Is Dependent on Multiple Services Through Chef</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-02-28T23:07:47-04:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>28</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>11:07 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>In a node there can be services that are dependent on other services. For e.g. a monitoring service is dependent on services which it monitors and collects data. So when a service being monitored is restarted, the service monitoring may have to be restarted to establish back the connections. This was the case with older version of JMXTrans which required a restart when any of the services it is monitoring got restarted. Assuming that the older version of JMXTrans is used to monitor various services running on a node how do we restart JMXTrans when any of the process is restarted while using <code>Chef</code> to manage the environment.</p>
+
+<!--more-->
+
+
+<p>First, the processes which need to be monitored can vary in each node and there can be one or many processes. Since Chef role determines the recipes which are run on a node, a default attribute can be added to define the services JMXTrans is dependent on. The following is an example</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>"default_attributes" : {
+</span><span class='line'>   "jmxtrans":{
+</span><span class='line'>      "servers":[
+</span><span class='line'>                  {
+</span><span class='line'>                    "type": "datanode",
+</span><span class='line'>                    "service": "hadoop-hdfs-datanode",
+</span><span class='line'>                    "service_cmd": "org.apache.hadoop.hdfs.server.datanode.DataNode"
+</span><span class='line'>                  }, 
+</span><span class='line'>                  {
+</span><span class='line'>                    "type": "hbase_rs",
+</span><span class='line'>                    "service": "hbase-regionserver",
+</span><span class='line'>                    "service_cmd": “org.apache.hadoop.hbase.regionserver.HRegionServer"
+</span><span class='line'>                  }
+</span><span class='line'>                ]
+</span><span class='line'>              } ...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here the <code>service</code> key defines the name of the service on which JMXTrans is dependent on. The <code>service_cmd</code> key stores a string which can uniquely identify the running process of the service. The <code>type</code> key is not relevant for this discussion. These attributes will change for each role based on which service is installed as part of the role.</p>
+
+<p>Since JMXTRans need to be installed, configured and started on all the nodes to collect statistics from various services a recipe need to be created for the same. But the recipe can now take into account the new node attribute to build the JMXTrans restart logic. The following is a sample code snippet which shows how the logic can be built</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>jmx_services = Array.new
+</span><span class='line'>
+</span><span class='line'>node['jmxtrans']['servers'].each do |server|
+</span><span class='line'>  jmx_services.push(server['service'])
+</span><span class='line'>  jmx_srvc_cmds[server['service']] = server['service_cmd']
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>service "restart jmxtrans on dependent service" do
+</span><span class='line'>  service_name "jmxtrans"
+</span><span class='line'>  supports :restart => true, :status => true, :reload => true
+</span><span class='line'>  action   :restart
+</span><span class='line'>  #
+</span><span class='line'>  # Create subcribes entries for each of the services on which JMXTrans is dependent on
+</span><span class='line'>  #
+</span><span class='line'>  jmx_services.each do |jmx_dep_service| 
+</span><span class='line'>    subscribes :restart, "service[#{jmx_dep_service}]", :delayed
+</span><span class='line'>  end
+</span><span class='line'>end
+</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With the <code>subscribes</code> clause added to the <code>service</code> resource for every service JMXTrans is monitoring on the node, restarts of any of these services during <code>chef-client</code> run will make sure that JMXTrans service is restarted.</p>
+
+<p>But what will happen if any of the dependent service is restarted externally for e.g. manually or upstart bounces a service. Then Chef will not restart JMXTrans during <code>chef-client</code> run since all the services are running. This will result in services restarted manually not being monitored by JMXTrans. The following is an updated code snippet which will handle this scenario. The complete recipe is available <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc_jmxtrans/recipes/default.rb">here</a>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>...
+</span><span class='line'>jmx_services = Array.new
+</span><span class='line'>jmx_srvc_cmds = Hash.new
+</span><span class='line'>node['jmxtrans']['servers'].each do |server|
+</span><span class='line'>  jmx_services.push(server['service'])
+</span><span class='line'>  jmx_srvc_cmds[server['service']] = server['service_cmd']
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>service "restart jmxtrans on dependent service" do
+</span><span class='line'>  service_name "jmxtrans"
+</span><span class='line'>  supports :restart => true, :status => true, :reload => true
+</span><span class='line'>  action   :restart
+</span><span class='line'>  jmx_services.each do |jmx_dep_service| 
+</span><span class='line'>    subscribes :restart, "service[#{jmx_dep_service}]", :delayed
+</span><span class='line'>  end
+</span><span class='line'>  #
+</span><span class='line'>  # To determine any of the service JMXTrans depends on is started after JMXTrans service
+</span><span class='line'>  #
+</span><span class='line'>  only_if {process_require_restart?("jmxtrans","jmxtrans-all.jar", jmx_srvc_cmds)}
+</span><span class='line'>end
+</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you may have noticed there is a <code>only_if</code> condition calls a library function which takes in a hash of all the services and the string which identifies the service processes as the third paramter. The first two paramters passed are the JMXTrans service name and a string which can uniquely identify a running JMXTrans process.</p>
+
+<p>The following is the code snippet of the library function and the complete code can be found <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc_jmxtrans/libraries/utils.rb">here</a>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>def process_require_restart?(process_name, process_cmd, dep_cmds)
+</span><span class='line'>  tgt_proces_pid = `pgrep -f #{process_cmd}`
+</span><span class='line'>  ...
+</span><span class='line'>  #
+</span><span class='line'>  # Find the start time of the JMXTrans process
+</span><span class='line'>  #
+</span><span class='line'>  tgt_proces_stime = `ps --no-header -o start_time #{tgt_process_pid}`
+</span><span class='line'>  ...
+</span><span class='line'>  ret = false
+</span><span class='line'>  restarted_processes = Array.new
+</span><span class='line'>  #
+</span><span class='line'>  # Loop through the processess of all the dependent services
+</span><span class='line'>  #
+</span><span class='line'>  dep_cmds.each do |dep_process, dep_cmd|
+</span><span class='line'>    dep_pids = `pgrep -f #{dep_cmd}` 
+</span><span class='line'>    if dep_pids != ""
+</span><span class='line'>      dep_pids_arr = dep_pids.split("\n")
+</span><span class='line'>      dep_pids_arr.each do |dep_pid| 
+</span><span class='line'>        #
+</span><span class='line'>        # Find the start time of a dependent process
+</span><span class='line'>        #
+</span><span class='line'>        dep_process_stime = `ps --no-header -o start_time #{dep_pid}`
+</span><span class='line'>        #
+</span><span class='line'>        # If the dependent process start time is greater than JMXTrans start time 
+</span><span class='line'>        # set the return value to true
+</span><span class='line'>        #
+</span><span class='line'>        if DateTime.parse(tgt_proces_stime) &lt; DateTime.parse(dep_process_stime)
+</span><span class='line'>          restarted_processes.push(dep_process)
+</span><span class='line'>          ret = true
+</span><span class='line'>        end 
+</span><span class='line'>  ...</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>The logic behind the library function is to compare the start time of the JMXTrans process against the start time of processes of all the services it is dependent on. If any of the dependent processes start time is later than the start time of JMXTrans process then the JMXTrans service will get restarted.</p>
+
+<p>It would be good to have a Chef primitive that can accomplish what the library function does so that similar situations can use it. Hope this provides a solution option to restart a service dependent on multiple services during a <code>chef-client</code> run.</p>
+
+<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-02-28T23:07:47-04:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>28</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>11:07 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/chef-patterns/'>chef-patterns</a>, <a class='category' href='/blog/categories/infrastructure-mgmt/'>infrastructure-mgmt</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/" title="Previous Post: Dynamically requesting a common service in a Chef managed environment">&laquo; Dynamically requesting a common service in a Chef managed environment</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/" title="Next Post: Integrating Chef and Apache ZooKeeper for coordination in a cluster">Integrating Chef and Apache ZooKeeper for coordination in a cluster &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

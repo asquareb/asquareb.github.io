@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Secure All Applications Please - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="When you work with enterprises often you get to see batch applications storing credentials to login to systems like databases or messaging &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2015/04/30/secure-all-applications-please/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
++  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Secure All Applications Please</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-04-30T22:46:43-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>10:46 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>When you work with enterprises often you get to see batch applications storing credentials to login to systems like databases or messaging infrastructure or other enterprise applications in config files as plain text. Also these batch applications don’t get the same attention as customer facing applications when it comes to security. If you have similar application configurations and the thought is that these batch applications are behind the firewall in a DMZ and hence pose less risk, think again. As anyone who work in computer forensics/security can attest, most often data breach is perpetrated by an insider and these instances never get reported or get media attention. If you are looking for numbers here is a <a href="http://blogs.forrester.com/heidi_shey/13-01-07-a_2012_security_incident_recap_by_the_numbers">summary of 2012 security incident report from Forrester</a>.</p>
+
+<p>To de-risk scenarios like these, the solution doesn&rsquo;t have to be too complex. It can be a matter of following a simple process similar to the following across the enterprise,</p>
+
+<!--more-->
+
+
+<ul>
+<li>Generate an application specific key for the particular machine on which an application will be scheduled to run.</li>
+<li>Store the key in a location which is accessible only to the service id (headless user id) which will run the application.</li>
+<li>Encrypt the password of credentials which will be used by the application to authenticate with critical systems using the key generated.</li>
+<li>Store the encrypted password and the location of the key in the application configuration file.</li>
+<li>In the application code, when required decrypt the password using the key. Once the decrypted password is used for authentication, destroy the decrypted password value so that application process memory dump doesn&rsquo;t expose the decrypted value.</li>
+<li>And have the application owner or sys admin own the responsibility for key generation, storage and encryption of passwords for the application.</li>
+</ul>
+
+
+<p>Some may say that this is too simplistic and they may be correct. But here is something to think about. Have you wondered the use of a lock when road side assistance comes and opens your car when you loose your key? Locks are not for the small percentage of the population who will always find a way to break it, it is there to act as a barrier to the temptations of the vast majority of us. So even if this approach is simplistic it still acts as a barrier in a situation where there is nothing in place. If there are other solutions which can be put in place that you are comfortable with, it is even better, but please secure all applications. It can save someones life savings, identity, medical records or other critical data and the someone can be your friend, family, neighbor or even yourself!! With so much at stake on data, any vulnearabilty to breach is not an option anymore.</p>
+
+<p>Note: A simple utility to create a barrier is available <a href="https://github.com/bijugs/kaaval">here</a> for Java based applications.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Biju Nair</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-04-30T22:46:43-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>10:46 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/security/'>security</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2015/04/30/secure-all-applications-please/" data-via="" data-counturl="http://asquareb.github.io/blog/2015/04/30/secure-all-applications-please/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/23/chef-hwrp-using-an-example/" title="Previous Post: Chef HWRP using an example">&laquo; Chef HWRP using an example</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/" title="Next Post: Java Direct ByteBuffer Performance Advantages and Considerations">Java Direct ByteBuffer Performance Advantages and Considerations &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2015/04/30/secure-all-applications-please/';
+        var disqus_url = 'http://asquareb.github.io/blog/2015/04/30/secure-all-applications-please/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
