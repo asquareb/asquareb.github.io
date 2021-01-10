@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="As with any database management system, proper utilization of caches will improve the query performance in HBase. If someone is looking to optimize &hellip;">
+  <meta name="description" content="HBase uses block cache to store data read from disks in memory so that data referenced repeatedly are serviced with out disk reads. Block cache uses &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/">Leverage Large Physical Memory to Improve HBase Read Performance</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-11-24T08:29:34-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>8:29 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>HBase uses <a href="/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/">block cache</a> to store data read from disks in memory so that data referenced repeatedly are serviced with out disk reads. Block cache uses the HBase JVM heap to store cache data and that means any factor which adversely impacts JVM GC process will impact cache and hence query performance.It is commonly known that large heap sizes of say more than 16 GB will make &ldquo;stop the world&rdquo; instances of GC run very slow and the time taken to complete can even make the HBase region server to be marked as dead.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -230,40 +264,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2014/09/19/oo-programming-aspects-of-python/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/14/python-basics-for-programmers/">Python Basics for Programmers</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-09-14T07:10:17-04:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>14</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>7:10 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Once we understand the common social norms of interacting with others, it is a matter of knowing how to express it in the particular language to the person we are interacting with. Similarly once we understand the fundamentals of computer programming, it is a matter of knowing the syntax of a particular language to express what needs to be accomplished. The following details the basic syntax of the Python language which will help get started with it and be able to build solutions for most of the programming tasks. The assumption is that the reader is familiar with fundamentals of programming and have been programming is another language.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/14/python-basics-for-programmers/">Read on &rarr;</a>
     </footer>
   
 

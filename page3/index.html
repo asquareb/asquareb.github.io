@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="HBase shell is a Ruby based shell which can be used to interact with HBase cluster and perform data definition and data manipulation tasks. The shell &hellip;">
+  <meta name="description" content="Often during development and in production data need to be loaded into HBase tables. This can be for testing application code or migrating data from &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/08/16/hbase-data-load/">HBase - Data Load</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-08-16T20:56:33-05:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>16</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>8:56 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Often during development  and in production data need to be loaded into HBase tables. This can be for testing application code or migrating data from existing database among many other scenarios. One obvious option is to read data from a source and use HBase put client API to write data into tables. This works fine for small amount of data for unit testing or PoC. In order to load data of large size running into GBs or TBs, using put to write data to HBase tables will be time consuming if the source data is already available. In order to mitigate this, HBase provides an option to create hfiles which are HBase specific file formats used to store table data in the underlying filesystem and load them into HBase tables. For HDFS, these files can be created using a map reduce job and the following are the high level steps.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/08/16/hbase-data-load/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -219,40 +253,6 @@ HBase shell is invoked using the hbase shell command which in turn provides the 
   
     <footer>
       <a rel="full-article" href="/blog/2015/04/23/chef-hwrp-using-an-example/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">Chef LWRP Using HDFS Directory as an Example</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-04-19T22:48:58-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>10:48 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><code>Chef</code> provides a large set of <code>resources</code> to work with. But there are situations where  resources provided by <code>Chef</code> may not be sufficient. For e.g, distributed file systems can’t be handled by the file system related resources (<code>file</code>, <code>directory</code> etc) which comes out of the box with <code>Chef</code>. Being flexible and customizable, <code>Chef</code> provides two options (LWRP, HWRP) for users to create their own resources.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">Read on &rarr;</a>
     </footer>
   
 

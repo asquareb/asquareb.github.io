@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Phoenix provides a JDBC driver for Java client and hence can be connected to Phoenix by following the steps required to get a JDBC connection. As &hellip;">
+  <meta name="description" content="Two fundamental concepts enables Amazon Aurora help meet requirements that need to be satisfied by any cloud based database like seamless scalability &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,46 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2021/01/10/amazon-aurora-storage/">Amazon Aurora Storage</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2021-01-10T12:05:19-08:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2021</span></span> <span class='time'>12:05 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Two fundamental concepts enables Amazon Aurora help meet requirements that need to be satisfied by any cloud based database like seamless scalability, high availability, fault tolerance, quick recovery without compromising on performance or increase in maintenance effort.</p>
+
+<ul>
+<li>Monotonically increasing Log Sequence Number (LSN) attached to each log record which is written for changes</li>
+<li>A multi tenant distributed storage system built for databases to which multiple database instances can be attached. The storage system performs the persistence functions of a traditional database like writing logs to disk, creating and persisting data pages i.e. the custom storage system understands log records and data pages. Also the storage system makes it possible for Aurora to segregate the compute components of databases namely the SQL layer, transaction management and caching from the storage layer</li>
+</ul>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2021/01/10/amazon-aurora-storage/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -212,41 +252,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2016/02/07/end-to-end-arguments-in-system-design/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2016/01/10/scale-in-distributed-systems/">Scale in Distributed Systems</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-01-10T18:51:35-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:51 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><a href="http://clifford.neuman.name/papers/pdf/94--_scale-dist-sys-neuman-readings-dcs.pdf">This paper</a> looks at scale and how it affects distributed systems including highlights of how how scale is addressed in existing systems.
-A system is said to be <strong>scalable</strong> if it can handle addition of resources and users without suffering noticeable loss in performance or increase in administrative complexity. Scale also affects the way users perceive the systems. For e.g. as the number of objects accessible grows it becomes increasingly difficult to locate the objects of interest.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2016/01/10/scale-in-distributed-systems/">Read on &rarr;</a>
     </footer>
   
 

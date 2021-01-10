@@ -4,7 +4,7 @@
   <title><![CDATA[Quick Notes]]></title>
   <link href="http://asquareb.github.io/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-01-03T19:08:23-08:00</updated>
+  <updated>2021-01-10T12:41:44-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -12,6 +12,58 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Amazon Aurora Storage]]></title>
+    <link href="http://asquareb.github.io/blog/2021/01/10/amazon-aurora-storage/"/>
+    <updated>2021-01-10T12:05:19-08:00</updated>
+    <id>http://asquareb.github.io/blog/2021/01/10/amazon-aurora-storage</id>
+    <content type="html"><![CDATA[<p>Two fundamental concepts enables Amazon Aurora help meet requirements that need to be satisfied by any cloud based database like seamless scalability, high availability, fault tolerance, quick recovery without compromising on performance or increase in maintenance effort.</p>
+
+<ul>
+<li>Monotonically increasing Log Sequence Number (LSN) attached to each log record which is written for changes</li>
+<li>A multi tenant distributed storage system built for databases to which multiple database instances can be attached. The storage system performs the persistence functions of a traditional database like writing logs to disk, creating and persisting data pages i.e. the custom storage system understands log records and data pages. Also the storage system makes it possible for Aurora to segregate the compute components of databases namely the SQL layer, transaction management and caching from the storage layer</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>Storage System</h2>
+
+<p><img src="http://asquareb.github.io/images/aurora/Aurora-storage-workflow.png" ALIGN=”left” /></p>
+
+<p>The storage system exposes API to write redo logs which a database instance can use to persist a redo log entries and need to pass in the LSN for the change while doing so. Since this is a network IO, the database instance can make the request to persist log entries as soon as changes are made. This is in contrast to traditional database where log entries are buffered to group them before persisting since it involves disk IO.  The storage system persists the log entry to a “hot log” and acknowledges the database instance. This is the only write request made from the database instance to the storage system which reduces the number of IOs by a factor of ~7 per transaction.  Data is stored in 10 GB chunks called segments and replicated 6 ways. For availability and recovery, 2 out of 6 copies are made available in an availability zone with a total of 3 AZs where data is stored. The logical group of 6 segments is called the protection group (PG). Storage segments are distributed across storage nodes which are EC2 instances in AWS. Chain of PGs constitutes a database volume which has a one to one relationship to a database instance and the volume can grow as data grows by adding new PGs. The database instance maintains the metadata about the segments, the protection group to which it is part of, the storage nodes which are responsible for the segments along with the data pages and log offsets which is stored in each segment in AWS key value store DynamoDB.</p>
+
+<p>Database instance sends write requests to all the segments for log write and the write is considered successful if 4 out of the 6 storage node acknowledges that the write is successful. The storage system can identify issues with any storage node or segment and when one is found it will add a  new protection group by replacing the segment with issues with a new segment to the members of the existing protection group. The database instance can decide which PG to drop based on how quickly the issue with the old segment is resolved. Since the write is coordinated by the database instance, there is no need to consensus protocols in the storage layer which reduces complexity.</p>
+
+<p><img src="http://asquareb.github.io/images/aurora/Aurora-read-replication.png" ALIGN=”left” /></p>
+
+<p> In the background the storage system coalesces log entries, create/update data pages, garbage collect unwanted data pages, perform consistency checks of pages and backup data pages to external storage like S3 for recovery relieving the database instance from these operations. This also allows multiple database instances to be attached to the same storage volume. When there are multiple read instances attached to the same storage volume, the write instance along with sending log write requests to the storage system, it will also send the log entries to the read database instances so that they can keep their buffer caches current. Multiple write instances are enabled by pre-allocating range of LSNs for each instance so that there are no conflicts between the updates made through the various instances. If transactions from two write instances updates the same rows in a table, the transaction for which the 4 out of 6 quorum writes completes first gets committed and the other transaction will fail.</p>
+
+<p>Aurora database instances maintains various consistency points enabled by the monotonically increasing LSN which makes distributed commits and recovery simpler. Segment complete LSN (SCL) is the low watermark below which all the log records has been received. When there are holes in the log records, storage nodes gossip with other nodes in the PG to which is the segment is part of to fill the holes. Protection group complete LSN (PGCL) keeps track of when 4/6 segment SCLs advance in a PG. Volume complete LSN (VCL) tracks the LSN when PGCLs advance at all the PGs. When a recovery happens, the storage system can truncate all the log records with an LSN larger than the VCL can be truncated.</p>
+
+<p>Database can also set a recovery point based transactions. Each database level transactions is broken into multiple mini-transactions (MTR) that need to be performed in order and atomically. The final record in a mini transaction is marked as Consistency Point LSN (CPL). Volume durable LSN (VDL) tracks the CPL which is smaller than or equal to VCL. During recovery, the database establishes the durable point to be the VDL and the storage system truncates all data above that consistency point.</p>
+
+<h2>Database Cloning</h2>
+
+<p>Cloning database will result in the new database pointing to the same logs and data pages of the original database i.e. the clone will much quicker and will be able to perform reads on the data as of that point in time. Creation of new log segments and data pages are done as writes a made through the new database instance. This satisfies the need for reducing cost of creating database clone and the speed in a cloud offering.</p>
+
+<h2>Database Backtracking</h2>
+
+<p>Aurora can be configured to track changes so that state of the database can be moved to a previous point in time quickly for any reasons like data corruption due to incorrect code. Once backtracking is configured, data pages are not garbage collected by the storage system and tracked so that users can go back to a desired point time.</p>
+
+<p><img src="http://asquareb.github.io/images/aurora/Aurora-High-Level.png" ALIGN=”left” /></p>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://www.amazon.science/publications/amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Aurora Design Considerations - SIGMOD 17</a></li>
+<li><a href="https://www.amazon.science/publications/amazon-aurora-on-avoiding-distributed-consensus-for-i-os-commits-and-membership-changes">Amazon Aurora: On Avoiding Distributed Consensus</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[JDBC Connection to Apache Phoenix]]></title>
@@ -1016,9 +1068,9 @@ If multiple snapshots were made on tables and would like to see the list of avai
     <link href="http://asquareb.github.io/blog/2015/09/26/hbase-best-practices/"/>
     <updated>2015-09-26T19:06:10-05:00</updated>
     <id>http://asquareb.github.io/blog/2015/09/26/hbase-best-practices</id>
-    <content type="html"><![CDATA[<p><strong>Application Development</strong></p>
+    <content type="html"><![CDATA[<h2>Application Development</h2>
 
-<p><strong>Connection Object Reuse</strong></p>
+<h3>Connection Object Reuse</h3>
 
 <p>Creating connections to a server component from an application is a heavy weight operation and it is much pronounced when connecting to a database server. That being the reason database connection pooling is used to reuse connection objects and HBase is no exception. In HBase, data from meta table that stores details about region servers that can serve data for specific key ranges gets cached at the individual connection level that makes HBase connections much heavier. So if there are region movements for balancing or if a region server fails, the meta data need to be refreshed for each connection object which is a performance overhead. For these reasons, applications need to try to reuse connection objects created.</p>
 
@@ -1038,7 +1090,7 @@ If multiple snapshots were made on tables and would like to see the list of avai
 <p>If the application is multi-threaded, then it need to reuse the connection object to perform any data manipulation operations on tables. This can be achieved by individual threads creating the HTable object using the getTable(TableName) method of the HConnection object.
 Once the data manipulation operations are complete each thread should close corresponding HTable but not the HConnection object so that it can be reused by other threads.</p>
 
-<p><strong>Pre-split Table</strong></p>
+<h3>Pre-split Table</h3>
 
 <p>In order to prevent skews in processing of queries and to distribute query processing work load across all the nodes in the cluster, it is a good practice to create tables which is pre-split. The key is to identify the split point so that the data will be distributed across all the nodes in the cluster. Once the split point is identified the table can be created pre-split using HBase shell and the following is an example of a table with 3 split points.</p>
 
@@ -2698,71 +2750,6 @@ For basic data manipulations, the put, get, scan, delete commands can be used. T
 <p>These along with <a href="http://asquareb.github.io/blog/2014/12/13/jvm-gc-settings-and-hbase/">JVM</a>, <a href="http://asquareb.github.io/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/">cache</a> and HBase <a href="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/">configuration parameters</a> looked at earlier will help someone to get the best out of a HBase cluster. Also if HBase fits a use case and want to vet other options before making a decision Redis, Accumulo, Cassandra are some of the options to look into.</p>
 
 <p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Configuration Parameters That Can Influence HBase Performance]]></title>
-    <link href="http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/"/>
-    <updated>2015-01-01T18:10:24-05:00</updated>
-    <id>http://asquareb.github.io/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance</id>
-    <content type="html"><![CDATA[<p>Based on individual use case and HBase deployment the settings of the following parameter will vary. As with any performance improvement exercise all changes should be systematically tested for benefits.</p>
-
-<!--more-->
-
-
-<p><strong>HBase properties</strong></p>
-
-<p><code>hbase.regionserver.handler.count</code> - controls the number of RPC listener threads on each region server. Increasing the listeners threads can improve performance but need to be balanced against the amount of resource available in the system since each thread consumes memory and CPU.</p>
-
-<p><code>hbase.ipc.server.callqueue.handler.factor</code> - Determines the number of call queues interms of regionserver handler count. Dedicated queues for each RPC listener thread reduces contention.</p>
-
-<p><code>hbase.ipc.server.callqueue.read.ratio</code> - Determines the number of call queues dedicated to read and write requests. If the work load is primarily read then increasing read queues to higher value value will help. By default there is no differentiation of queues as read or write.</p>
-
-<p><code>hbase.ipc.server.callqueue.scan.ratio</code> - Determines the number of call queues allocated for gets and scan requests. If the work load is primarily gets and not scans increasing the get queues will help. By default all the read queues are used for both get and scan requests.</p>
-
-<p><code>hbase.regionserver.global.memstore.size</code> - Ratio of JVM heap allocated for HBase memstore. The defaul is 40%. If the work load is primarily writes increasing this percentage will help and that means the percentage of heap allocated to blockcache need to be reduced since the total of the two can’t go beyond 80%.</p>
-
-<p><code>hbase.regionserver.region.split.policy</code> - Policy which determines when a region to be split. There are a few options available and each of them can make a difference for different scenarios.</p>
-
-<p><code>hbase.zookeeper.property.maxClientCnxns</code> - Number of concurrent connections which can be made to a single member of ZK ensemble from a single client and this value should match the value in zoo.cfg. This need to be adjusted taking into consideration the expected number of HBase client connections.</p>
-
-<p><code>hbase.client.write.buffer</code> - Size of write buffer at client and server. Increased buffering will help but need to be balanced against memory available on the server side.</p>
-
-<p><code>hbase.client.scanner.caching</code> - Number of rows fetched when calling next on a scanner if it is not served from client local memory.</p>
-
-<p><code>hbase.hregion.memstore.flush.size</code> - Size when exceeded flushes the memstore and is checked at hbase.server.thread.wakefrequency intervals. Higher the number the</p>
-
-<p><code>hbase.hregion.memstore.mslab.enabled</code> - enabled by default to prevent heap fragmentation and better not to disable it.</p>
-
-<p><code>hbase.hregion.max.filesize</code> - Sum of region HFiles when exceeded, region is split into two. It can help to have a higer value than the default 10 GB, if the workload is high volume/velocity write.</p>
-
-<p><code>hbase.hregion.majorcompaction</code> - time between major compaction and a value of 0 disables it. It would be good to disable it and schedule it on a regular maintenance window to prevent performance issues.</p>
-
-<p><code>hfile.block.cache.size</code> - percentage of JVM heap allocated for block cache. By default it is 40% but a higher percentage will help with read latencies if the primary workload is read. But any change need to be reflected in the memstore percentage.</p>
-
-<p>Set <code>hbase.ipc.client.tcpnodelay</code> to true and is the case by default.</p>
-
-<p>Setting <code>hbase.storescanner.parallel.seek.enable</code> to true can help with read latencies</p>
-
-<p>If data staleness is not a concern during reads for e.g. in stiuations where data is loaded nightly, enable <a href="https://issues.apache.org/jira/browse/HBASE-10070">MTTR</a> so that read failures due to region failures can be prevented by HBase servicing the request from a (stale) copy of the data.</p>
-
-<p>Enable <strong>HDFS short circuit read</strong> so that read latencies can be improved by reading data locally.</p>
-
-<ul>
-<li>Set <code>dfs.block.local-path-access.user</code> to hbase</li>
-<li>Set <code>dfs.client.read.shortcircuit</code> to true</li>
-<li>Set <code>hbase.regionserver.checksum.verify</code> to true</li>
-</ul>
-
-
-<p><strong>On Linux OS:</strong></p>
-
-<p>Set <code>vm.swappiness</code> to 0 or low value</p>
-
-<p>As with any database based application, Even with a well tuned cluster with the best hardware, an application will not get the best performance if it is not designed properly.</p>
-
-<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a></p>
 ]]></content>
   </entry>
   
