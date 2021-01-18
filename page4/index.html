@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Chef provides a large set of resources to work with. But there are situations where resources provided by Chef may not be sufficient. For e.g, &hellip;">
+  <meta name="description" content="Heavy Weight Resource Provider (HWRP) is one of the options Chef offers to create custom resources and the other being LWRP. It would be good to read &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,42 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/23/chef-hwrp-using-an-example/">Chef HWRP Using an Example</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-04-23T23:34:17-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>23</span><span class='date-suffix'>rd</span>, <span class='date-year'>2015</span></span> <span class='time'>11:34 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Heavy Weight Resource Provider (HWRP) is one of the options Chef offers to create custom resources and the other being <a href="http://blog.asquareb.com/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">LWRP</a>. It would be good to read the notes on <a href="http://blog.asquareb.com/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">LWRP</a> to understand the context and the difference between <code>LWRP</code> and <code>HWRP</code>.</p>
+
+<p>Similar to LWRP, HWRP requires a resource definition and the corresponding provider. The key difference is that there are no DSL in the HWRP as in LWRP and everything is coded in <code>Ruby</code> code. So taking the same example of HDFS directory resource used in the notes on LWRP, the following is the skeleton of the resource definition.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/04/23/chef-hwrp-using-an-example/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -214,40 +250,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/02/07/optimal-hbase-based-applications/">Design Optimal HBase Based Applications</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-02-07T21:53:29-05:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>9:53 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Leveraging the architecture of any data management system used in an application will yield the best performance and is the case with HBase. So before listing the key points to remember while designing HBase based applications, lets briefly look at the relevant architecture of HBase which will provide the required context.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/02/07/optimal-hbase-based-applications/">Read on &rarr;</a>
     </footer>
   
 

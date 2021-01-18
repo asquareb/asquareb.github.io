@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Often during development and in production data need to be loaded into HBase tables. This can be for testing application code or migrating data from &hellip;">
+  <meta name="description" content="Application Development Connection Object Reuse Creating connections to a server component from an application is a heavy weight operation and it is &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,44 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/09/26/hbase-best-practices/">HBase - Best Practices</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-09-26T19:06:10-05:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>26</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>7:06 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Application Development</h2>
+
+<h3>Connection Object Reuse</h3>
+
+<p>Creating connections to a server component from an application is a heavy weight operation and it is much pronounced when connecting to a database server. That being the reason database connection pooling is used to reuse connection objects and HBase is no exception. In HBase, data from meta table that stores details about region servers that can serve data for specific key ranges gets cached at the individual connection level that makes HBase connections much heavier. So if there are region movements for balancing or if a region server fails, the meta data need to be refreshed for each connection object which is a performance overhead. For these reasons, applications need to try to reuse connection objects created.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/09/26/hbase-best-practices/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -217,42 +255,6 @@ HBase shell is invoked using the hbase shell command which in turn provides the 
   
     <footer>
       <a rel="full-article" href="/blog/2015/04/30/secure-all-applications-please/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/04/23/chef-hwrp-using-an-example/">Chef HWRP Using an Example</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-04-23T23:34:17-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>23</span><span class='date-suffix'>rd</span>, <span class='date-year'>2015</span></span> <span class='time'>11:34 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Heavy Weight Resource Provider (HWRP) is one of the options Chef offers to create custom resources and the other being <a href="http://blog.asquareb.com/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">LWRP</a>. It would be good to read the notes on <a href="http://blog.asquareb.com/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">LWRP</a> to understand the context and the difference between <code>LWRP</code> and <code>HWRP</code>.</p>
-
-<p>Similar to LWRP, HWRP requires a resource definition and the corresponding provider. The key difference is that there are no DSL in the HWRP as in LWRP and everything is coded in <code>Ruby</code> code. So taking the same example of HDFS directory resource used in the notes on LWRP, the following is the skeleton of the resource definition.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/04/23/chef-hwrp-using-an-example/">Read on &rarr;</a>
     </footer>
   
 

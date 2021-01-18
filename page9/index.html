@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Inherently concurrent processing will involve shared resources like memory and will lead to race conditions. A simple example would be an accumulator &hellip;">
+  <meta name="description" content="In addition to race conditions, the second challenge in developing concurrent processing is deadlocks and they occur when the processes running &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,46 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/09/15/challenges-in-concurrent-programming-ii/">Challenges in Concurrent Programming - II</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2013-09-15T18:41:18-04:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>6:41 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In addition to <a href="/blog/2013/08/15/challenges-in-concurrent-programming-i/">race conditions</a>, the second challenge in developing concurrent processing is deadlocks and they occur when the processes running concurrently need access to more than one resource. For e.g. if there are two resources R1 &amp; R2 which will be accessed by two concurrent processes A &amp; B,</p>
+
+<ul>
+<li><p>Lets assume process A acquired resource R1</p></li>
+<li><p>OS swaps processes A to start executing process B and processes B acquired resource R2</p></li>
+</ul>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/09/15/challenges-in-concurrent-programming-ii/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -212,42 +252,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2013/06/15/concurrency-and-why-application-developers-need-to-know-about-it/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2011/11/08/organizational-knowledge-management/">Organizational Knowledge Management</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2011-11-08T12:08:32-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>8</span><span class='date-suffix'>th</span>, <span class='date-year'>2011</span></span> <span class='time'>12:08 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>With increased opportunity for mobility comes the higher risk of losing knowledge. Knowledge which is detrimental to the success of an organization, mitigating the risk of losing it is vital.</p>
-
-<p>Knowledge is broadly categorized as <strong>explicit</strong> and <strong>tacit</strong>. Explicit knowledge is something which can be recorded, for e.g. the process of multiplying numbers and multiplication tables. A person learns from explicit knowledge and assimilates it through reflective cognition. Then by repeatedly applying the knowledge they gain the expertise and it becomes part of their reflective cognition and in turn tacit.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2011/11/08/organizational-knowledge-management/">Read on &rarr;</a>
     </footer>
   
 

@@ -9,8 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="This paper looks at scale and how it affects distributed systems including highlights of how how scale is addressed in existing systems.
-A system is &hellip;">
+  <meta name="description" content="This paper presents the design principle regarding placement of functions in computer system design called &ldquo;end-to-end argument&rdquo;. The &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +81,40 @@ A system is &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/02/07/end-to-end-arguments-in-system-design/">End-to-end Arguments in System Design</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-02-07T18:41:26-05:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:41 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="http://web.mit.edu/Saltzer/www/publications/endtoend/endtoend.pdf">This paper</a> presents the design principle regarding placement of functions in computer system design called &ldquo;end-to-end argument&rdquo;.  The argument of the principle is that any application functions implemented at lower levels of a system may be redundant or of little value when compared with the cost of providing them at lower level.  The paper articulates the argument through requirements and examples in distributed systems like reliable data transmission, encryption, duplicate message detection, message sequencing, detecting host crashes, delivery receipts etc.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/02/07/end-to-end-arguments-in-system-design/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -214,44 +247,6 @@ A system is said to be <strong>scalable</strong> if it can handle addition of re
   
     <footer>
       <a rel="full-article" href="/blog/2015/10/24/hbase-back-up/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/09/26/hbase-best-practices/">HBase - Best Practices</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-09-26T19:06:10-05:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>26</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>7:06 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>Application Development</h2>
-
-<h3>Connection Object Reuse</h3>
-
-<p>Creating connections to a server component from an application is a heavy weight operation and it is much pronounced when connecting to a database server. That being the reason database connection pooling is used to reuse connection objects and HBase is no exception. In HBase, data from meta table that stores details about region servers that can serve data for specific key ranges gets cached at the individual connection level that makes HBase connections much heavier. So if there are region movements for balancing or if a region server fails, the meta data need to be refreshed for each connection object which is a performance overhead. For these reasons, applications need to try to reuse connection objects created.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/09/26/hbase-best-practices/">Read on &rarr;</a>
     </footer>
   
 
