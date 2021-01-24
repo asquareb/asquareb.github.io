@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Challenges in concurrent programming - I"
+title: "Challenges in concurrent programming I"
 date: 2013-08-15 18:38:19 -0400
 author: Biju Nair
 comments: true

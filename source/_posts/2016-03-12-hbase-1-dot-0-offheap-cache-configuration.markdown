@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HBase 1.0 - Offheap Cache Configuration"
+title: "HBase 1.0 : Offheap Cache Configuration"
 date: 2016-03-12 10:55:14 -0500
 comments: true
 author: Biju Nair

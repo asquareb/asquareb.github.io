@@ -43,7 +43,7 @@ categories: [paper, distributed systems, databases]
 
 Dynamo uses consistent hashing where the output range of a hash function is treated as a fixed circular space or ring. Each node in Dynamo is assigned a random value within this space which represents its position in the ring. Each data item identified by its key is assigned to a node by hashing the key to identify its position in the ring and assigning to the first node in the ring with a position larger than the item’s position. This node is the coordinator node for the key for writes. Also by assigning items to nodes, adding or removing nodes to Dynamo impacts immediate neighbors and other nodes remain unaffected. To reduce non uniform distribution of data and load distribution due to random position assignment of nodes in the has ring , Dynamo uses virtual nodes. Each virtual node is assigned a position in the hash ring and each physical node is assigned multiple virtual nodes. Varying the number of virtual nodes based on physical node capacity, heterogeneity of the environment can be taken into account. If a node becomes unavailable, virtual nodes help in equal dispersement of load across other nodes. 
 
-<img src="{{ root_url }}/images/dynamo/Dynamo-Partitioning-Schemes.png" ALIGN=”left” />
+<img src="{{ root_url }}/images/dynamo/Dynamo-Partitioning-Schemes.png" ALIGN=”center” />
 
 The following three partition schemes used and efficiency of load distribution compared
 

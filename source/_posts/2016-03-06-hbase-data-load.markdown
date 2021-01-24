@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HBase - Data Load"
+title: "HBase : Data Load"
 date: 2015-08-16 20:56:33 -0500
 author: Biju Nair
 comments: true

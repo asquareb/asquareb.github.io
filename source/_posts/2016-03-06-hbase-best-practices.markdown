@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HBase - Best Practices"
+title: "HBase : Best Practices"
 date: 2015-09-26 19:06:10 -0500
 author: Biju Nair
 comments: true
