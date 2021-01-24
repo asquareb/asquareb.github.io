@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Software-design | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/software-design/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-01-18T19:22:45-08:00</updated>
+  <updated>2021-01-24T10:41:24-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -71,7 +71,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Challenges in Concurrent Programming - II]]></title>
+    <title type="html"><![CDATA[Challenges in Concurrent Programming II]]></title>
     <link href="http://asquareb.github.io/blog/2013/09/15/challenges-in-concurrent-programming-ii/"/>
     <updated>2013-09-15T18:41:18-04:00</updated>
     <id>http://asquareb.github.io/blog/2013/09/15/challenges-in-concurrent-programming-ii</id>
@@ -124,7 +124,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Challenges in Concurrent Programming - I]]></title>
+    <title type="html"><![CDATA[Challenges in Concurrent Programming I]]></title>
     <link href="http://asquareb.github.io/blog/2013/08/15/challenges-in-concurrent-programming-i/"/>
     <updated>2013-08-15T18:38:19-04:00</updated>
     <id>http://asquareb.github.io/blog/2013/08/15/challenges-in-concurrent-programming-i</id>

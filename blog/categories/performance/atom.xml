@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Performance | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/performance/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-01-18T19:22:45-08:00</updated>
+  <updated>2021-01-24T10:41:24-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[HBase 1.0 - Offheap Cache Configuration]]></title>
+    <title type="html"><![CDATA[HBase 1.0 : Offheap Cache Configuration]]></title>
     <link href="http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration/"/>
     <updated>2016-03-12T10:55:14-05:00</updated>
     <id>http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration</id>

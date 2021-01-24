@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Google File System - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="GFS is Google’s distributed filesystem to support their processing needs based on the following observations Observations Component failures are the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2012/01/24/google-file-system/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Google File System</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2012-01-24T10:14:02-08:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2012</span></span> <span class='time'>10:14 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>GFS is Google’s distributed filesystem to support their processing needs based on the following observations</p>
+
+<h2>Observations</h2>
+
+<ul>
+<li>Component failures are the norm rather than the exception. Therefore monitoring, error detection, fault tolerance and recovery should be integral to the system</li>
+<li>Files are large by traditional standards and grows faster.</li>
+<li>Files are mutated by append operation rather than overwriting existing data</li>
+</ul>
+
+
+<!--more-->
+
+
+<ul>
+<li>Co-designing the applications and the file system APIs increases flexibility. For e.g. relaxing consistency model of filesystem reduces burden on the applications</li>
+</ul>
+
+
+<h2>Design Considerations</h2>
+
+<ul>
+<li>The system should run on inexpensive commodity hardware that often fails</li>
+<li>The system should manage large files efficiently while it doesn’t have to be optimized for small files</li>
+<li>The primary workloads to be considered are large streaming reads and small random reads. Also large sequential writes which appends data and small number of writes to random positions which doesn’t have to be efficient</li>
+<li>Atomicity with minimal synchronization overhead is essential when multiple clients concurrently appends to the same file</li>
+<li>Should support data processing done in bulk at a high rate and hence high sustained bandwidth is more important than latency</li>
+</ul>
+
+
+<h2>Architecture</h2>
+
+<p>Files in GFS are divided into fixed size chunks of 64MB and stored in chunkservers which are commodity Linux machines running a user-level server process. The metadata about files like the chunks which form part of a file, the byte range, its namespace and the chunkservers where they are stored are all managed by a single master node. Filesystem metadata is stored in memory of the master and updates due to file creation or deletion is logged to operation log for failure recovery. The operation log is replicated to remote machines for recovery from master machine failure.</p>
+
+<p><img src="/images/gfs/gfs-architecture.png" ALIGN=”center” /></p>
+
+<p>Each chunk is identified by an immutable 64 bit chunk handle and the master determines the check servers that will store a chunk when it is created and stores in the in-memory metadata. When a client requires to read data in a file, the GFS client converts the file name and the byte location to a chunk index and requests the master for the location. Master then sends back the chunkservers where the chunks are stored which then is used by the client.  Not involving the master in the data read-write path makes GFS highly scalable.  Chunks are replicated to multiple chunkservers (3 by default) for resiliency against chunkserver failures.  One copy of all chunks is stored in a chunkserver which is not in the same rack as the previous two so that data is available for clients when there is a rack failure.</p>
+
+<p><img src="/images/gfs/gfs-write-flow.png" ALIGN=”center” /></p>
+
+<p>For writes, client receives from master the chunkservers to which the data need to be written and identifies one as the primary. The client then sends the data to be written to one of the chunkservers which then pipelines the data to other chunkservers to which the data need to be replicated to. After the data is send to all the chunkservers which then acknowledges after writing into its LRU cache, the client client sends a write request to the chunkserver as the primary along with the identify of data pushed. The primary assigns consecutive serial number to all mutations it receives and applies them locally in the serial order and also forwards to other replicas holding the chunk. Once all the replica cunkservers applies the mutations locally and informs the primary, the primary chunkserver acknowledges the client. The communication between chunksevers are over TCP. If a write crosses chunk boundary, the write is split and multiple write operations are initiated across multiple chunks.</p>
+
+<p>Health of master is monitored using an external system and when there is a failure, a new master is brought up which inturn uses the operating log to build the metadata in-memory datastructue. In order to reduce the  recovery time, regular checkpoints are taken when a master is alive which copies the in-memory data on a regular interval which can be mapped directly into the memory of a new master when it is brought up. Once the I’m-memory data is recreated, the new master will need to walk through the mutations which happened after the checkpoint that is logged in the operating log. When checkpoints are made the file chunks to chunkserver mapping is not saved. Instead the new master requests each chunkserver to send the chunks they store which is always kept current.</p>
+
+<p>The health of chunkserver is known by the master through regular heartbeat messages send by the chunkservers and also GFS client informing the master if one of the chunkservers provided by master is not reachable. When a chunkserver is identified as unhealthy, the master identifies other chunkservers to which chunks need to be replicated and initiates the replication. The heartbeat message also includes chunks stored in a chunkserver and if the master identifies that a chunk is no more required like chunks created but not part of a successful write, it will initiate the garbage collection process to reduce the space use. The same process is used when files are deleted. In order to be able to recover a file deleted by mistake, GFS renames the deleted file and hence the chunks are kept in the system for a period of time during which the file can be recovered by renaming the file. After the time period, master deletes the metadata of the file and when a chunkserver informs about the chunk that belonged to the deleted file, the master sees that as garbage and informs the chunkserver to remove the chunk. Stale chunks are also identified when a chunkserver comes back online after a failure and sends heatbeat message to master and is subsequently removed.</p>
+
+<p>Snapshot of a file or directory can be made quickly by GFS master making a copy of the metadata to create the snapshot file or directory which inturn points to the source chunks. Further mutations to the source, will create new chunks on the same chunkserver where original chunks were stored and data gets copied before mutation takes place i.e. copy on write. Given the visibility master has about the state of chunkserver like the amount of chunks it stores, its capacity, its load etc, the master can determine where new chunks should be stored so that the load is balanced. Also in the background it can initiate moving of replicas for rebalancing and recoverability.</p>
+
+<p>Inorder to maintain data integrity and detect data corruption, chunks are broken into 64 KB blocks and checksum of each block is calculated and stored persistently separate from the data. This can be used by the client during reads and also in the background by chunkserver on unread chunks to check the data integrity.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://research.google/pubs/pub51/">Google File System</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">asquareb</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2012-01-24T10:14:02-08:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2012</span></span> <span class='time'>10:14 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/distributed-systems/'>distributed systems</a>, <a class='category' href='/blog/categories/filesytem/'>filesytem</a>, <a class='category' href='/blog/categories/paper/'>paper</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2012/01/24/google-file-system/" data-via="" data-counturl="http://asquareb.github.io/blog/2012/01/24/google-file-system/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2011/11/08/organizational-knowledge-management/" title="Previous Post: Organizational knowledge management">&laquo; Organizational knowledge management</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/06/15/concurrency-and-why-application-developers-need-to-know-about-it/" title="Next Post: Concurrency and why application developers need to know about it">Concurrency and why application developers need to know about it &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2012/01/24/google-file-system/';
+        var disqus_url = 'http://asquareb.github.io/blog/2012/01/24/google-file-system/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

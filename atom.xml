@@ -4,7 +4,7 @@
   <title><![CDATA[Quick Notes]]></title>
   <link href="http://asquareb.github.io/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-01-18T19:22:45-08:00</updated>
+  <updated>2021-01-24T10:41:24-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -31,15 +31,15 @@
 
 <h2>Storage System</h2>
 
-<p><img src="http://asquareb.github.io/images/aurora/Aurora-storage-workflow.png" ALIGN=”left” /></p>
+<p><img src="http://asquareb.github.io/images/aurora/Aurora-storage-workflow.png" ALIGN=”center” /></p>
 
-<p>The storage system exposes API to write redo logs which a database instance can use to persist a redo log entries and need to pass in the LSN for the change while doing so. Since this is a network IO, the database instance can make the request to persist log entries as soon as changes are made. This is in contrast to traditional database where log entries are buffered to group them before persisting since it involves disk IO.  The storage system persists the log entry to a “hot log” and acknowledges the database instance. This is the only write request made from the database instance to the storage system which reduces the number of IOs by a factor of ~7 per transaction.  Data is stored in 10 GB chunks called segments and replicated 6 ways. For availability and recovery, 2 out of 6 copies are made available in an availability zone with a total of 3 AZs where data is stored. The logical group of 6 segments is called the protection group (PG). Storage segments are distributed across storage nodes which are EC2 instances in AWS. Chain of PGs constitutes a database volume which has a one to one relationship to a database instance and the volume can grow as data grows by adding new PGs. The database instance maintains the metadata about the segments, the protection group to which it is part of, the storage nodes which are responsible for the segments along with the data pages and log offsets which is stored in each segment in AWS key value store DynamoDB.</p>
+<p>The storage system exposes API to write redo logs which a database instance can use to persist a redo log entries and need to pass in the LSN for the change while doing so. Since this is a network IO, the database instance can make the request to persist log entries as soon as changes are made. This is in contrast to traditional database where log entries are buffered to group them before persisting since it involves disk IO. The storage system persists the log entry to a “hot log” and acknowledges the database instance. This is the only write request made from the database instance to the storage system which reduces the number of IOs by a factor of ~7 per transaction. Data is stored in 10 GB chunks called segments and replicated 6 ways. For availability and recovery, 2 out of 6 copies are made available in an availability zone with a total of 3 AZs where data is stored. The logical group of 6 segments is called the protection group (PG). Storage segments are distributed across storage nodes which are EC2 instances in AWS. Chain of PGs constitutes a database volume which has a one to one relationship to a database instance and the volume can grow as data grows by adding new PGs. The database instance maintains the metadata about the segments, the protection group to which it is part of, the storage nodes which are responsible for the segments along with the data pages and log offsets which is stored in each segment in AWS key value store DynamoDB.</p>
 
 <p>Database instance sends write requests to all the segments for log write and the write is considered successful if 4 out of the 6 storage node acknowledges that the write is successful. The storage system can identify issues with any storage node or segment and when one is found it will add a  new protection group by replacing the segment with issues with a new segment to the members of the existing protection group. The database instance can decide which PG to drop based on how quickly the issue with the old segment is resolved. Since the write is coordinated by the database instance, there is no need to consensus protocols in the storage layer which reduces complexity.</p>
 
-<p><img src="http://asquareb.github.io/images/aurora/Aurora-read-replication.png" ALIGN=”left” /></p>
+<p><img src="http://asquareb.github.io/images/aurora/Aurora-read-replication.png" ALIGN=”center” /></p>
 
-<p> In the background the storage system coalesces log entries, create/update data pages, garbage collect unwanted data pages, perform consistency checks of pages and backup data pages to external storage like S3 for recovery relieving the database instance from these operations. This also allows multiple database instances to be attached to the same storage volume. When there are multiple read instances attached to the same storage volume, the write instance along with sending log write requests to the storage system, it will also send the log entries to the read database instances so that they can keep their buffer caches current. Multiple write instances are enabled by pre-allocating range of LSNs for each instance so that there are no conflicts between the updates made through the various instances. If transactions from two write instances updates the same rows in a table, the transaction for which the 4 out of 6 quorum writes completes first gets committed and the other transaction will fail.</p>
+<p>In the background the storage system coalesces log entries, create/update data pages, garbage collect unwanted data pages, perform consistency checks of pages and backup data pages to external storage like S3 for recovery relieving the database instance from these operations. This also allows multiple database instances to be attached to the same storage volume. When there are multiple read instances attached to the same storage volume, the write instance along with sending log write requests to the storage system, it will also send the log entries to the read database instances so that they can keep their buffer caches current. Multiple write instances are enabled by pre-allocating range of LSNs for each instance so that there are no conflicts between the updates made through the various instances. If transactions from two write instances updates the same rows in a table, the transaction for which the 4 out of 6 quorum writes completes first gets committed and the other transaction will fail.</p>
 
 <p>Aurora database instances maintains various consistency points enabled by the monotonically increasing LSN which makes distributed commits and recovery simpler. Segment complete LSN (SCL) is the low watermark below which all the log records has been received. When there are holes in the log records, storage nodes gossip with other nodes in the PG to which is the segment is part of to fill the holes. Protection group complete LSN (PGCL) keeps track of when 4/6 segment SCLs advance in a PG. Volume complete LSN (VCL) tracks the LSN when PGCLs advance at all the PGs. When a recovery happens, the storage system can truncate all the log records with an LSN larger than the VCL can be truncated.</p>
 
@@ -53,7 +53,7 @@
 
 <p>Aurora can be configured to track changes so that state of the database can be moved to a previous point in time quickly for any reasons like data corruption due to incorrect code. Once backtracking is configured, data pages are not garbage collected by the storage system and tracked so that users can go back to a desired point time.</p>
 
-<p><img src="http://asquareb.github.io/images/aurora/Aurora-High-Level.png" ALIGN=”left” /></p>
+<p><img src="http://asquareb.github.io/images/aurora/Aurora-High-Level.png" ALIGN=”center” /></p>
 
 <h2>References</h2>
 
@@ -120,7 +120,7 @@
 
 <p>Dynamo uses consistent hashing where the output range of a hash function is treated as a fixed circular space or ring. Each node in Dynamo is assigned a random value within this space which represents its position in the ring. Each data item identified by its key is assigned to a node by hashing the key to identify its position in the ring and assigning to the first node in the ring with a position larger than the item’s position. This node is the coordinator node for the key for writes. Also by assigning items to nodes, adding or removing nodes to Dynamo impacts immediate neighbors and other nodes remain unaffected. To reduce non uniform distribution of data and load distribution due to random position assignment of nodes in the has ring , Dynamo uses virtual nodes. Each virtual node is assigned a position in the hash ring and each physical node is assigned multiple virtual nodes. Varying the number of virtual nodes based on physical node capacity, heterogeneity of the environment can be taken into account. If a node becomes unavailable, virtual nodes help in equal dispersement of load across other nodes.</p>
 
-<p><img src="http://asquareb.github.io/images/dynamo/Dynamo-Partitioning-Schemes.png" ALIGN=”left” /></p>
+<p><img src="http://asquareb.github.io/images/dynamo/Dynamo-Partitioning-Schemes.png" ALIGN=”center” /></p>
 
 <p>The following three partition schemes used and efficiency of load distribution compared</p>
 
@@ -174,7 +174,7 @@ If any of the nodes in the preference list is not available, another node will b
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[HBase 1.0 - Offheap Cache Configuration]]></title>
+    <title type="html"><![CDATA[HBase 1.0 : Offheap Cache Configuration]]></title>
     <link href="http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration/"/>
     <updated>2016-03-12T10:55:14-05:00</updated>
     <id>http://asquareb.github.io/blog/2016/03/12/hbase-1-dot-0-offheap-cache-configuration</id>
@@ -1148,7 +1148,7 @@ If multiple snapshots were made on tables and would like to see the list of avai
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[HBase - Best Practices]]></title>
+    <title type="html"><![CDATA[HBase : Best Practices]]></title>
     <link href="http://asquareb.github.io/blog/2015/09/26/hbase-best-practices/"/>
     <updated>2015-09-26T19:06:10-05:00</updated>
     <id>http://asquareb.github.io/blog/2015/09/26/hbase-best-practices</id>
@@ -1243,7 +1243,7 @@ Once the data manipulation operations are complete each thread should close corr
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[HBase - Data Load]]></title>
+    <title type="html"><![CDATA[HBase : Data Load]]></title>
     <link href="http://asquareb.github.io/blog/2015/08/16/hbase-data-load/"/>
     <updated>2015-08-16T20:56:33-05:00</updated>
     <id>http://asquareb.github.io/blog/2015/08/16/hbase-data-load</id>

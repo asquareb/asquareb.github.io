@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Distributed Systems | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/distributed-systems/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-01-18T19:22:45-08:00</updated>
+  <updated>2021-01-24T10:41:24-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -31,15 +31,15 @@
 
 <h2>Storage System</h2>
 
-<p><img src="/images/aurora/Aurora-storage-workflow.png" ALIGN=”left” /></p>
+<p><img src="/images/aurora/Aurora-storage-workflow.png" ALIGN=”center” /></p>
 
-<p>The storage system exposes API to write redo logs which a database instance can use to persist a redo log entries and need to pass in the LSN for the change while doing so. Since this is a network IO, the database instance can make the request to persist log entries as soon as changes are made. This is in contrast to traditional database where log entries are buffered to group them before persisting since it involves disk IO.  The storage system persists the log entry to a “hot log” and acknowledges the database instance. This is the only write request made from the database instance to the storage system which reduces the number of IOs by a factor of ~7 per transaction.  Data is stored in 10 GB chunks called segments and replicated 6 ways. For availability and recovery, 2 out of 6 copies are made available in an availability zone with a total of 3 AZs where data is stored. The logical group of 6 segments is called the protection group (PG). Storage segments are distributed across storage nodes which are EC2 instances in AWS. Chain of PGs constitutes a database volume which has a one to one relationship to a database instance and the volume can grow as data grows by adding new PGs. The database instance maintains the metadata about the segments, the protection group to which it is part of, the storage nodes which are responsible for the segments along with the data pages and log offsets which is stored in each segment in AWS key value store DynamoDB.</p>
+<p>The storage system exposes API to write redo logs which a database instance can use to persist a redo log entries and need to pass in the LSN for the change while doing so. Since this is a network IO, the database instance can make the request to persist log entries as soon as changes are made. This is in contrast to traditional database where log entries are buffered to group them before persisting since it involves disk IO. The storage system persists the log entry to a “hot log” and acknowledges the database instance. This is the only write request made from the database instance to the storage system which reduces the number of IOs by a factor of ~7 per transaction. Data is stored in 10 GB chunks called segments and replicated 6 ways. For availability and recovery, 2 out of 6 copies are made available in an availability zone with a total of 3 AZs where data is stored. The logical group of 6 segments is called the protection group (PG). Storage segments are distributed across storage nodes which are EC2 instances in AWS. Chain of PGs constitutes a database volume which has a one to one relationship to a database instance and the volume can grow as data grows by adding new PGs. The database instance maintains the metadata about the segments, the protection group to which it is part of, the storage nodes which are responsible for the segments along with the data pages and log offsets which is stored in each segment in AWS key value store DynamoDB.</p>
 
 <p>Database instance sends write requests to all the segments for log write and the write is considered successful if 4 out of the 6 storage node acknowledges that the write is successful. The storage system can identify issues with any storage node or segment and when one is found it will add a  new protection group by replacing the segment with issues with a new segment to the members of the existing protection group. The database instance can decide which PG to drop based on how quickly the issue with the old segment is resolved. Since the write is coordinated by the database instance, there is no need to consensus protocols in the storage layer which reduces complexity.</p>
 
-<p><img src="/images/aurora/Aurora-read-replication.png" ALIGN=”left” /></p>
+<p><img src="/images/aurora/Aurora-read-replication.png" ALIGN=”center” /></p>
 
-<p> In the background the storage system coalesces log entries, create/update data pages, garbage collect unwanted data pages, perform consistency checks of pages and backup data pages to external storage like S3 for recovery relieving the database instance from these operations. This also allows multiple database instances to be attached to the same storage volume. When there are multiple read instances attached to the same storage volume, the write instance along with sending log write requests to the storage system, it will also send the log entries to the read database instances so that they can keep their buffer caches current. Multiple write instances are enabled by pre-allocating range of LSNs for each instance so that there are no conflicts between the updates made through the various instances. If transactions from two write instances updates the same rows in a table, the transaction for which the 4 out of 6 quorum writes completes first gets committed and the other transaction will fail.</p>
+<p>In the background the storage system coalesces log entries, create/update data pages, garbage collect unwanted data pages, perform consistency checks of pages and backup data pages to external storage like S3 for recovery relieving the database instance from these operations. This also allows multiple database instances to be attached to the same storage volume. When there are multiple read instances attached to the same storage volume, the write instance along with sending log write requests to the storage system, it will also send the log entries to the read database instances so that they can keep their buffer caches current. Multiple write instances are enabled by pre-allocating range of LSNs for each instance so that there are no conflicts between the updates made through the various instances. If transactions from two write instances updates the same rows in a table, the transaction for which the 4 out of 6 quorum writes completes first gets committed and the other transaction will fail.</p>
 
 <p>Aurora database instances maintains various consistency points enabled by the monotonically increasing LSN which makes distributed commits and recovery simpler. Segment complete LSN (SCL) is the low watermark below which all the log records has been received. When there are holes in the log records, storage nodes gossip with other nodes in the PG to which is the segment is part of to fill the holes. Protection group complete LSN (PGCL) keeps track of when 4/6 segment SCLs advance in a PG. Volume complete LSN (VCL) tracks the LSN when PGCLs advance at all the PGs. When a recovery happens, the storage system can truncate all the log records with an LSN larger than the VCL can be truncated.</p>
 
@@ -53,7 +53,7 @@
 
 <p>Aurora can be configured to track changes so that state of the database can be moved to a previous point in time quickly for any reasons like data corruption due to incorrect code. Once backtracking is configured, data pages are not garbage collected by the storage system and tracked so that users can go back to a desired point time.</p>
 
-<p><img src="/images/aurora/Aurora-High-Level.png" ALIGN=”left” /></p>
+<p><img src="/images/aurora/Aurora-High-Level.png" ALIGN=”center” /></p>
 
 <h2>References</h2>
 
@@ -120,7 +120,7 @@
 
 <p>Dynamo uses consistent hashing where the output range of a hash function is treated as a fixed circular space or ring. Each node in Dynamo is assigned a random value within this space which represents its position in the ring. Each data item identified by its key is assigned to a node by hashing the key to identify its position in the ring and assigning to the first node in the ring with a position larger than the item’s position. This node is the coordinator node for the key for writes. Also by assigning items to nodes, adding or removing nodes to Dynamo impacts immediate neighbors and other nodes remain unaffected. To reduce non uniform distribution of data and load distribution due to random position assignment of nodes in the has ring , Dynamo uses virtual nodes. Each virtual node is assigned a position in the hash ring and each physical node is assigned multiple virtual nodes. Varying the number of virtual nodes based on physical node capacity, heterogeneity of the environment can be taken into account. If a node becomes unavailable, virtual nodes help in equal dispersement of load across other nodes.</p>
 
-<p><img src="/images/dynamo/Dynamo-Partitioning-Schemes.png" ALIGN=”left” /></p>
+<p><img src="/images/dynamo/Dynamo-Partitioning-Schemes.png" ALIGN=”center” /></p>
 
 <p>The following three partition schemes used and efficiency of load distribution compared</p>
 
@@ -333,6 +333,70 @@ A system is said to be <strong>scalable</strong> if it can handle addition of re
 <li>Is it practical in the environment in which the system is used?</li>
 </ul>
 </li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google File System]]></title>
+    <link href="http://asquareb.github.io/blog/2012/01/24/google-file-system/"/>
+    <updated>2012-01-24T10:14:02-08:00</updated>
+    <id>http://asquareb.github.io/blog/2012/01/24/google-file-system</id>
+    <content type="html"><![CDATA[<p>GFS is Google’s distributed filesystem to support their processing needs based on the following observations</p>
+
+<h2>Observations</h2>
+
+<ul>
+<li>Component failures are the norm rather than the exception. Therefore monitoring, error detection, fault tolerance and recovery should be integral to the system</li>
+<li>Files are large by traditional standards and grows faster.</li>
+<li>Files are mutated by append operation rather than overwriting existing data</li>
+</ul>
+
+
+<!--more-->
+
+
+<ul>
+<li>Co-designing the applications and the file system APIs increases flexibility. For e.g. relaxing consistency model of filesystem reduces burden on the applications</li>
+</ul>
+
+
+<h2>Design Considerations</h2>
+
+<ul>
+<li>The system should run on inexpensive commodity hardware that often fails</li>
+<li>The system should manage large files efficiently while it doesn’t have to be optimized for small files</li>
+<li>The primary workloads to be considered are large streaming reads and small random reads. Also large sequential writes which appends data and small number of writes to random positions which doesn’t have to be efficient</li>
+<li>Atomicity with minimal synchronization overhead is essential when multiple clients concurrently appends to the same file</li>
+<li>Should support data processing done in bulk at a high rate and hence high sustained bandwidth is more important than latency</li>
+</ul>
+
+
+<h2>Architecture</h2>
+
+<p>Files in GFS are divided into fixed size chunks of 64MB and stored in chunkservers which are commodity Linux machines running a user-level server process. The metadata about files like the chunks which form part of a file, the byte range, its namespace and the chunkservers where they are stored are all managed by a single master node. Filesystem metadata is stored in memory of the master and updates due to file creation or deletion is logged to operation log for failure recovery. The operation log is replicated to remote machines for recovery from master machine failure.</p>
+
+<p><img src="/images/gfs/gfs-architecture.png" ALIGN=”center” /></p>
+
+<p>Each chunk is identified by an immutable 64 bit chunk handle and the master determines the check servers that will store a chunk when it is created and stores in the in-memory metadata. When a client requires to read data in a file, the GFS client converts the file name and the byte location to a chunk index and requests the master for the location. Master then sends back the chunkservers where the chunks are stored which then is used by the client.  Not involving the master in the data read-write path makes GFS highly scalable.  Chunks are replicated to multiple chunkservers (3 by default) for resiliency against chunkserver failures.  One copy of all chunks is stored in a chunkserver which is not in the same rack as the previous two so that data is available for clients when there is a rack failure.</p>
+
+<p><img src="/images/gfs/gfs-write-flow.png" ALIGN=”center” /></p>
+
+<p>For writes, client receives from master the chunkservers to which the data need to be written and identifies one as the primary. The client then sends the data to be written to one of the chunkservers which then pipelines the data to other chunkservers to which the data need to be replicated to. After the data is send to all the chunkservers which then acknowledges after writing into its LRU cache, the client client sends a write request to the chunkserver as the primary along with the identify of data pushed. The primary assigns consecutive serial number to all mutations it receives and applies them locally in the serial order and also forwards to other replicas holding the chunk. Once all the replica cunkservers applies the mutations locally and informs the primary, the primary chunkserver acknowledges the client. The communication between chunksevers are over TCP. If a write crosses chunk boundary, the write is split and multiple write operations are initiated across multiple chunks.</p>
+
+<p>Health of master is monitored using an external system and when there is a failure, a new master is brought up which inturn uses the operating log to build the metadata in-memory datastructue. In order to reduce the  recovery time, regular checkpoints are taken when a master is alive which copies the in-memory data on a regular interval which can be mapped directly into the memory of a new master when it is brought up. Once the I’m-memory data is recreated, the new master will need to walk through the mutations which happened after the checkpoint that is logged in the operating log. When checkpoints are made the file chunks to chunkserver mapping is not saved. Instead the new master requests each chunkserver to send the chunks they store which is always kept current.</p>
+
+<p>The health of chunkserver is known by the master through regular heartbeat messages send by the chunkservers and also GFS client informing the master if one of the chunkservers provided by master is not reachable. When a chunkserver is identified as unhealthy, the master identifies other chunkservers to which chunks need to be replicated and initiates the replication. The heartbeat message also includes chunks stored in a chunkserver and if the master identifies that a chunk is no more required like chunks created but not part of a successful write, it will initiate the garbage collection process to reduce the space use. The same process is used when files are deleted. In order to be able to recover a file deleted by mistake, GFS renames the deleted file and hence the chunks are kept in the system for a period of time during which the file can be recovered by renaming the file. After the time period, master deletes the metadata of the file and when a chunkserver informs about the chunk that belonged to the deleted file, the master sees that as garbage and informs the chunkserver to remove the chunk. Stale chunks are also identified when a chunkserver comes back online after a failure and sends heatbeat message to master and is subsequently removed.</p>
+
+<p>Snapshot of a file or directory can be made quickly by GFS master making a copy of the metadata to create the snapshot file or directory which inturn points to the source chunks. Further mutations to the source, will create new chunks on the same chunkserver where original chunks were stored and data gets copied before mutation takes place i.e. copy on write. Given the visibility master has about the state of chunkserver like the amount of chunks it stores, its capacity, its load etc, the master can determine where new chunks should be stored so that the load is balanced. Also in the background it can initiate moving of replicas for rebalancing and recoverability.</p>
+
+<p>Inorder to maintain data integrity and detect data corruption, chunks are broken into 64 KB blocks and checksum of each block is calculated and stored persistently separate from the data. This can be used by the client during reads and also in the background by chunkserver on unread chunks to check the data integrity.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://research.google/pubs/pub51/">Google File System</a></li>
 </ul>
 
 ]]></content>
