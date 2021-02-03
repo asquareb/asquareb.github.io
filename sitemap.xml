@@ -181,6 +181,10 @@
 <lastmod>2013-06-15T18:46:49-04:00</lastmod>
 </url>
 <url>
+<loc>http://asquareb.github.io/blog/2012/02/21/google-bigtable/</loc>
+<lastmod>2012-02-21T21:54:36-08:00</lastmod>
+</url>
+<url>
 <loc>http://asquareb.github.io/blog/2012/01/24/google-file-system/</loc>
 <lastmod>2012-01-24T10:14:02-08:00</lastmod>
 </url>
@@ -267,6 +271,9 @@
 <loc>http://asquareb.github.io/blog/categories/paper/</loc>
 </url>
 <url>
+<loc>http://asquareb.github.io/blog/categories/databases/</loc>
+</url>
+<url>
 <loc>http://asquareb.github.io/blog/categories/programming/</loc>
 </url>
 <url>
@@ -319,8 +326,5 @@
 </url>
 <url>
 <loc>http://asquareb.github.io/blog/categories/phoenix/</loc>
-</url>
-<url>
-<loc>http://asquareb.github.io/blog/categories/databases/</loc>
 </url>
 </urlset>
