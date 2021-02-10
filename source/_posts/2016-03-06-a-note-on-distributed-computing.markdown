@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "A note on Distributed Computing"
+title: "Note on Distributed Computing"
 date: 2016-03-06 16:18:22 -0500
 author: Biju Nair
 comments: true
