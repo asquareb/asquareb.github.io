@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Application Development Connection Object Reuse Creating connections to a server component from an application is a heavy weight operation and it is &hellip;">
+  <meta name="description" content="Often during development and sometimes in production backup of a HBase table need to be made, for e.g., to run a test code against a table during &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/10/24/hbase-back-up/">HBase Back-up</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-10-24T11:02:17-04:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>11:02 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Often during development and sometimes in production backup of a HBase table need to be made, for e.g., to run a test code against a table during development and being able to restore the original data if some thing went wrong or create a clone of the existing table or move table data to a new development cluster. HBase provides the option of taking snapshot of tables which can be used in such scenarios. The following are the various hbase shell commands to accomplish some of the common requirements.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/10/24/hbase-back-up/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -219,42 +253,6 @@ HBase shell is invoked using the hbase shell command which in turn provides the 
   
     <footer>
       <a rel="full-article" href="/blog/2015/06/05/java-direct-bytebuffer-performance-advantages-and-considerations/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/04/30/secure-all-applications-please/">Secure All Applications Please</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-04-30T22:46:43-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>10:46 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>When you work with enterprises often you get to see batch applications storing credentials to login to systems like databases or messaging infrastructure or other enterprise applications in config files as plain text. Also these batch applications don’t get the same attention as customer facing applications when it comes to security. If you have similar application configurations and the thought is that these batch applications are behind the firewall in a DMZ and hence pose less risk, think again. As anyone who work in computer forensics/security can attest, most often data breach is perpetrated by an insider and these instances never get reported or get media attention. If you are looking for numbers here is a <a href="http://blogs.forrester.com/heidi_shey/13-01-07-a_2012_security_incident_recap_by_the_numbers">summary of 2012 security incident report from Forrester</a>.</p>
-
-<p>To de-risk scenarios like these, the solution doesn&rsquo;t have to be too complex. It can be a matter of following a simple process similar to the following across the enterprise,</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/04/30/secure-all-applications-please/">Read on &rarr;</a>
     </footer>
   
 

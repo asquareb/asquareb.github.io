@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Leveraging the architecture of any data management system used in an application will yield the best performance and is the case with HBase. So &hellip;">
+  <meta name="description" content="In a cluster environment there can be a common service running on all the nodes in the cluster which may be requested by an application using the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/">Dynamically Requesting a Common Service in a Chef Managed Environment</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-02-21T22:39:48-04:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2015</span></span> <span class='time'>10:39 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In a cluster environment there can be a common service running on all the nodes in the cluster which may be requested by an application using the cluster. For e.g. in a distributed computing environment logs can be created on each node in the cluster and a common service on each cluster node can be a service which regularly copies log entries into a common location. Copying of logs can be a requirement for some of the applications/services running on the cluster nodes so that users can go to one location to view the log data from all the nodes instead of looking at each node. This can also help with managing the security of the cluster by providing access to this common location instead of providing access to all the nodes in the cluster.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -219,40 +253,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2014/12/18/garbage-first-g1-gc-and-hbase/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/12/16/copy-distributed-log-files-into-hdfs/">Copy Distributed Log Files Into HDFS</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-12-16T21:23:51-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>16</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>9:23 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In a distributed cluster like HBase, logs are created and written on individual nodes participating in the cluster. If users want to look at the log entries say for debugging purposes they would need to logon to individual nodes. Apart from the complexity of going through the logs on the individual nodes, users need to be provided access to all the nodes. One of the ways to mitigate these concerns is to copy the log files into a centralized location.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/12/16/copy-distributed-log-files-into-hdfs/">Read on &rarr;</a>
     </footer>
   
 

@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Heavy Weight Resource Provider (HWRP) is one of the options Chef offers to create custom resources and the other being LWRP. It would be good to read &hellip;">
+  <meta name="description" content="When you work with enterprises often you get to see batch applications storing credentials to login to systems like databases or messaging &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,42 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/30/secure-all-applications-please/">Secure All Applications Please</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-04-30T22:46:43-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>10:46 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>When you work with enterprises often you get to see batch applications storing credentials to login to systems like databases or messaging infrastructure or other enterprise applications in config files as plain text. Also these batch applications don’t get the same attention as customer facing applications when it comes to security. If you have similar application configurations and the thought is that these batch applications are behind the firewall in a DMZ and hence pose less risk, think again. As anyone who work in computer forensics/security can attest, most often data breach is perpetrated by an insider and these instances never get reported or get media attention. If you are looking for numbers here is a <a href="http://blogs.forrester.com/heidi_shey/13-01-07-a_2012_security_incident_recap_by_the_numbers">summary of 2012 security incident report from Forrester</a>.</p>
+
+<p>To de-risk scenarios like these, the solution doesn&rsquo;t have to be too complex. It can be a matter of following a simple process similar to the following across the enterprise,</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/04/30/secure-all-applications-please/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -216,40 +252,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/">Dynamically Requesting a Common Service in a Chef Managed Environment</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-02-21T22:39:48-04:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2015</span></span> <span class='time'>10:39 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In a cluster environment there can be a common service running on all the nodes in the cluster which may be requested by an application using the cluster. For e.g. in a distributed computing environment logs can be created on each node in the cluster and a common service on each cluster node can be a service which regularly copies log entries into a common location. Copying of logs can be a requirement for some of the applications/services running on the cluster nodes so that users can go to one location to view the log data from all the nodes instead of looking at each node. This can also help with managing the security of the cluster by providing access to this common location instead of providing access to all the nodes in the cluster.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/">Read on &rarr;</a>
     </footer>
   
 

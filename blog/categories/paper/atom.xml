@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Paper | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/paper/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-02-02T22:01:23-08:00</updated>
+  <updated>2021-02-10T07:25:48-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -60,6 +60,53 @@
 <ul>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Aurora Design Considerations - SIGMOD 17</a></li>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-on-avoiding-distributed-consensus-for-i-os-commits-and-membership-changes">Amazon Aurora: On Avoiding Distributed Consensus</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[The RUM Conjecture]]></title>
+    <link href="http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture/"/>
+    <updated>2016-05-10T07:19:50-08:00</updated>
+    <id>http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture</id>
+    <content type="html"><![CDATA[<p>Data access methods need to modified or newly invented to adapt with ever changing workload requirements and hardware changes. This paper looks at the challenges in designing new access methods which increasingly needs to be application and hardware aware. The fundamental challenges faced are to minimize a)  Read time - R b) Update cost - U c) memory over head - M and the conjecture made is that when optimizing the read-update-memory (RUM) overheads, optimizing in any two negatively impacts the third. Deciding which overheads to optimize for and to what extend has always been and remains the prominent part of designing access methods.</p>
+
+<!--more-->
+
+
+<h2>RUM Overheads</h2>
+
+<p>Access methods enable us to read or write base data potentially using auxiliary data such as indexes to provide performance improvement.</p>
+
+<h3>Read Overhead</h3>
+
+<p>RO is the read amplification which is the ratio between the total amount of data read including auxiliary data and base data, divided by the amount of data read.</p>
+
+<h3>Update Overhead</h3>
+
+<p>UO is the write amplification which is the ratio between the size of physical update performed for one logical update divided by the size of the logical update. A logical update can involve multiple physical updates for e.g. update to base data and auxiliary data like indexes</p>
+
+<h3>Memory Overhead</h3>
+
+<p>MO is the space amplification which is the ratio between the space utilized for auxiliary and base data, divided by the space utilized for base data.</p>
+
+<p>The theoretical minimum for overhead is to have the ratio equal to 1.0 which implies that the base data is always read and updated directly and no extra bit of memory is wasted. Achieving these bounds for all the three overheads simultaneously is not possible as there is always price to pay for every optimization. When designing an access method all the three overheads should be minimal but depending on the application workload and available technology they need to prioritized.</p>
+
+<h2>RUM Conjecture</h2>
+
+<p><em>designing access methods that set an upper bound for two of the RUM overheads, leads to a hard lower bound for the third overhead which cannot be further reduced</em></p>
+
+<p>In other words, we can choose which two overheads to prioritize and optimize for and pay the price by having the third overhead greater than the hard lower bound. The following figure shows some popular access methods mapped to three dimensional RUM space projected on a two dimensional plane.</p>
+
+<p><img src="/images/rum/rum-space.png" ALIGN=”center” /></p>
+
+<p> Using the RUM space we can understand the current access methods interms of which overhead they prioritize and can choose the appropriate one that suits the need. It also helps in designing new access methods or a combination of access methods which can tune based on available technology and dynamically adapt to new workloads and hence covering the RUM space in aggregate.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://stratos.seas.harvard.edu/files/stratos/files/rum.pdf">Designing Access Methods: The RUM Conjecture</a></li>
 </ul>
 
 ]]></content>
@@ -150,7 +197,7 @@ If any of the nodes in the preference list is not available, another node will b
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[A Note on Distributed Computing]]></title>
+    <title type="html"><![CDATA[Note on Distributed Computing]]></title>
     <link href="http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/"/>
     <updated>2016-03-06T16:18:22-05:00</updated>
     <id>http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing</id>
@@ -249,157 +296,6 @@ If any of the nodes in the preference list is not available, another node will b
 
 
 <p>In order to make these decisions i.e. whether to include functions in lower layers or let the application handle it at the end, application requirements of what need to be accomplished need to be well understood.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Scale in Distributed Systems]]></title>
-    <link href="http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems/"/>
-    <updated>2016-01-10T18:51:35-05:00</updated>
-    <id>http://asquareb.github.io/blog/2016/01/10/scale-in-distributed-systems</id>
-    <content type="html"><![CDATA[<p><a href="http://clifford.neuman.name/papers/pdf/94--_scale-dist-sys-neuman-readings-dcs.pdf">This paper</a> looks at scale and how it affects distributed systems including highlights of how how scale is addressed in existing systems.
-A system is said to be <strong>scalable</strong> if it can handle addition of resources and users without suffering noticeable loss in performance or increase in administrative complexity. Scale also affects the way users perceive the systems. For e.g. as the number of objects accessible grows it becomes increasingly difficult to locate the objects of interest.</p>
-
-<!--more-->
-
-
-<ul>
-<li>Definitions
-
-<ul>
-<li>A <strong>distributed system</strong> is a collection of computers, connected by a computer network, working together to collectively implement some minimal set of services.</li>
-<li>A service or resource is <strong>replicated</strong> when it has multiple logically identical instances appearing on different nodes in a system</li>
-<li>A service is <strong>distributed</strong> when it is provided by multiple nodes each capable of handling a subset of the requests for service. A distribution function maps requests to the subset of the nodes that can handle it</li>
-<li><strong>Caching</strong> is a temporary form of replication used to save and reuse of query results on nodes. Caching need to use validation techniques to make sure that the data saved are current</li>
-</ul>
-</li>
-<li>Effects of Scale
-
-<ul>
-<li>Reliability
-
-<ul>
-<li>Systems should not cease to operate just because nodes are unavailable</li>
-<li>Reliability can be improved by increasing the autonomy of the nodes and replication</li>
-</ul>
-</li>
-<li>System Load
-
-<ul>
-<li>System query load increases with increase in amount of data, nodes, services</li>
-<li>Replication, distribution and caching can be used to reduce the number of requests that need to be handled by each node</li>
-</ul>
-</li>
-<li>Administration
-
-<ul>
-<li>With increase in number of nodes, administration of users, services and systems becomes complex</li>
-<li>Complexity in administration can be reduced by maintaining common information centrally</li>
-</ul>
-</li>
-<li>Heterogeneity
-
-<ul>
-<li>With scale nodes part of the system can not only of different hardware but can also run different OS and different versions of OS</li>
-<li><strong>Coherence</strong> an approach which expects nodes in a system support a common interface is one which is used to deal with heterogeneity
-
-<ul>
-<li>Common instruction set</li>
-<li>Common execution abstraction</li>
-<li>Support a common set of protocols</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Distributed system components affected by scale
-
-<ul>
-<li>Naming and directory services</li>
-<li>Authentication</li>
-<li>Authorization</li>
-<li>Accounting</li>
-<li>Communication</li>
-<li>Remote Resources</li>
-</ul>
-</li>
-</ul>
-
-
-<p><em>Scaling of all the components can be improved by replication, distribution and caching</em></p>
-
-<p>Key points to remember while building scalable systems</p>
-
-<ul>
-<li>Replication
-
-<ul>
-<li>Replication important resources</li>
-<li>Distribute the replicas</li>
-<li>Use loose consistency</li>
-</ul>
-</li>
-<li>Distribution
-
-<ul>
-<li>Distribute across multiple servers</li>
-<li>Distribute evenly</li>
-<li>Exploit locality</li>
-<li>Avoid upper level of hierarchies</li>
-</ul>
-</li>
-<li>Caching
-
-<ul>
-<li>Cache frequently accessed data</li>
-<li>Consider access patterns when caching
-
-<ul>
-<li>amount of data accessed together, read to write ratio, likelihood of conflicts, number of simultaneous users</li>
-</ul>
-</li>
-<li>Cache timeouts</li>
-<li>Caching at multiple levels</li>
-<li>Look first locally</li>
-<li>Data cached extensively must be changed less frequently</li>
-</ul>
-</li>
-<li>Avoid global broadcast</li>
-<li>Shed load but not too much: perform computation where it suits better</li>
-<li>Support multiple access mechanisms</li>
-<li>Keep users in mind</li>
-</ul>
-
-
-<p>Evaluating distributed systems</p>
-
-<ul>
-<li>Use of the system
-
-<ul>
-<li>Growth of queries as the system grows</li>
-<li>Central servers in the system and issues with replication</li>
-</ul>
-</li>
-<li>Data
-
-<ul>
-<li>Increase in data and how it increases data maintained in each node in the system</li>
-<li>Increase in query time with increase in data size</li>
-<li>Data update process and how it scales</li>
-<li>Cache data invalidation and query performance</li>
-</ul>
-</li>
-<li>Administration
-
-<ul>
-<li>Does the system require a centralized admin system?</li>
-<li>Is it practical in the environment in which the system is used?</li>
-</ul>
-</li>
-</ul>
-
 ]]></content>
   </entry>
   

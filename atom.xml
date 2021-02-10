@@ -4,7 +4,7 @@
   <title><![CDATA[Quick Notes]]></title>
   <link href="http://asquareb.github.io/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-02-02T22:01:23-08:00</updated>
+  <updated>2021-02-10T07:25:48-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -60,6 +60,53 @@
 <ul>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Aurora Design Considerations - SIGMOD 17</a></li>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-on-avoiding-distributed-consensus-for-i-os-commits-and-membership-changes">Amazon Aurora: On Avoiding Distributed Consensus</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[The RUM Conjecture]]></title>
+    <link href="http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture/"/>
+    <updated>2016-05-10T07:19:50-08:00</updated>
+    <id>http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture</id>
+    <content type="html"><![CDATA[<p>Data access methods need to modified or newly invented to adapt with ever changing workload requirements and hardware changes. This paper looks at the challenges in designing new access methods which increasingly needs to be application and hardware aware. The fundamental challenges faced are to minimize a)  Read time - R b) Update cost - U c) memory over head - M and the conjecture made is that when optimizing the read-update-memory (RUM) overheads, optimizing in any two negatively impacts the third. Deciding which overheads to optimize for and to what extend has always been and remains the prominent part of designing access methods.</p>
+
+<!--more-->
+
+
+<h2>RUM Overheads</h2>
+
+<p>Access methods enable us to read or write base data potentially using auxiliary data such as indexes to provide performance improvement.</p>
+
+<h3>Read Overhead</h3>
+
+<p>RO is the read amplification which is the ratio between the total amount of data read including auxiliary data and base data, divided by the amount of data read.</p>
+
+<h3>Update Overhead</h3>
+
+<p>UO is the write amplification which is the ratio between the size of physical update performed for one logical update divided by the size of the logical update. A logical update can involve multiple physical updates for e.g. update to base data and auxiliary data like indexes</p>
+
+<h3>Memory Overhead</h3>
+
+<p>MO is the space amplification which is the ratio between the space utilized for auxiliary and base data, divided by the space utilized for base data.</p>
+
+<p>The theoretical minimum for overhead is to have the ratio equal to 1.0 which implies that the base data is always read and updated directly and no extra bit of memory is wasted. Achieving these bounds for all the three overheads simultaneously is not possible as there is always price to pay for every optimization. When designing an access method all the three overheads should be minimal but depending on the application workload and available technology they need to prioritized.</p>
+
+<h2>RUM Conjecture</h2>
+
+<p><em>designing access methods that set an upper bound for two of the RUM overheads, leads to a hard lower bound for the third overhead which cannot be further reduced</em></p>
+
+<p>In other words, we can choose which two overheads to prioritize and optimize for and pay the price by having the third overhead greater than the hard lower bound. The following figure shows some popular access methods mapped to three dimensional RUM space projected on a two dimensional plane.</p>
+
+<p><img src="http://asquareb.github.io/images/rum/rum-space.png" ALIGN=”center” /></p>
+
+<p> Using the RUM space we can understand the current access methods interms of which overhead they prioritize and can choose the appropriate one that suits the need. It also helps in designing new access methods or a combination of access methods which can tune based on available technology and dynamically adapt to new workloads and hence covering the RUM space in aggregate.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://stratos.seas.harvard.edu/files/stratos/files/rum.pdf">Designing Access Methods: The RUM Conjecture</a></li>
 </ul>
 
 ]]></content>
@@ -251,7 +298,7 @@ If any of the nodes in the preference list is not available, another node will b
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[A Note on Distributed Computing]]></title>
+    <title type="html"><![CDATA[Note on Distributed Computing]]></title>
     <link href="http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/"/>
     <updated>2016-03-06T16:18:22-05:00</updated>
     <id>http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing</id>
@@ -2642,120 +2689,6 @@ For basic data manipulations, the put, get, scan, delete commands can be used. T
 <p>The logic behind the library function is to compare the start time of the JMXTrans process against the start time of processes of all the services it is dependent on. If any of the dependent processes start time is later than the start time of JMXTrans process then the JMXTrans service will get restarted.</p>
 
 <p>It would be good to have a Chef primitive that can accomplish what the library function does so that similar situations can use it. Hope this provides a solution option to restart a service dependent on multiple services during a <code>chef-client</code> run.</p>
-
-<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Dynamically Requesting a Common Service in a Chef Managed Environment]]></title>
-    <link href="http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment/"/>
-    <updated>2015-02-21T22:39:48-04:00</updated>
-    <id>http://asquareb.github.io/blog/2015/02/21/dynamically-requesting-a-common-service-in-a-chef-managed-environment</id>
-    <content type="html"><![CDATA[<p>In a cluster environment there can be a common service running on all the nodes in the cluster which may be requested by an application using the cluster. For e.g. in a distributed computing environment logs can be created on each node in the cluster and a common service on each cluster node can be a service which regularly copies log entries into a common location. Copying of logs can be a requirement for some of the applications/services running on the cluster nodes so that users can go to one location to view the log data from all the nodes instead of looking at each node. This can also help with managing the security of the cluster by providing access to this common location instead of providing access to all the nodes in the cluster.</p>
-
-<!-- more -->
-
-
-<p>But copying of the logs may not be a requirement for some other service or application and the requirement may change in the future. It is better to build a solution so that the changes in the requirements to copy logs can be accommodated dynamically.</p>
-
-<p>To explain the pattern on how we can accomplish the requirement, we will assume <code>Apache Flume</code> as the component which will be installed on all the nodes in the cluster and will be used to copy the log file entries to a common location in HDFS. The following is one solution to satisfy the requirement.</p>
-
-<p>Create a new cookbook or reuse an existing cookbook which will be used on all the nodes in the cluster. Create a node attribute which will store a hash of hashes. For e.g.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>default['bcpc']['hadoop']['copylog'] = {}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The following is the datastructure which will be used to populate the hash values to be stored in the attributes</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{
-</span><span class='line'>  'app_id' =>  { 'logfile' => "/path/file_name_of_log_file",
-</span><span class='line'>                 'docopy' => true (or false)
-</span><span class='line'>                },...
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>where the <code>app_id</code> is an unique id of an application which requests the service to copy its logs, <code>logfile</code> is the path of the logfile and <code>docopy</code> is a flag to enable and disable the request to copy the log files based on change in need. If an application requests more than one logfile to be copied the <code>appli_id</code> need to be made unique with in the application by adding additonal details like log name or a sequence number.</p>
-
-<p>When an application need to make a request to copy its log file, in the application&rsquo;s recipe, request can be added to the node attribute. For e.g. if logs from the nodes running <code>hbase-region-server</code> need to copy its logs to the common location, code similar to the following can be included in the recipe installing and starting the <code>hbase-region-server</code> service.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>node.default['bcpc']['hadoop']['copylog']['hbase_regionserver_log'] = {
-</span><span class='line'>    'logfile' => "/var/log/hbase/hbase-regionserver-#{node.hostname}.log",
-</span><span class='line'>    'docopy' => true
-</span><span class='line'>}
-</span><span class='line'>
-</span><span class='line'>node.default['bcpc']['hadoop']['copylog']['hbase_regionserver_out'] = {
-</span><span class='line'>    'logfile' => "/var/log/hbase/hbase-regionserver-#{node.hostname}.out",
-</span><span class='line'>    'docopy' => true
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Note here how an unique identifier is used as the <code>app_id</code> for the two log files from <code>hbase_regionserver</code> to be copied to the common location in HDFS.</p>
-
-<p>For someone not familiar with <code>Flume</code>, flume agents can be used to move data and they need a config file which defines things like the source, sink, the type of sink,the target location etc. Since <code>Flume</code> need to be installed in all nodes in the cluster to be a common service, a recipe need to be created to install the software. But when it comes to start <code>Flume agents</code>, the recipe need to loop through the node attribute to create required Flume configuration files for each logfile copy requests made by the applications running on the node.</p>
-
-<p>For e.g if the node is running only <code>hbase_regionserver</code> there will be two copy requests in the attribute for which the recipe need to create Flume configuration files and start the corresponding <code>Flume agents</code>. If there are other applications/services running on the node for e.g. <code>HDFS Datanode</code> and if the recipes make copy requests then the number of flume configs and <code>flume agents</code> running on the node will be more. The following is the code snippet on how the <code>Flume</code> recipe can accomplish this</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>...
-</span><span class='line'>node['bcpc']['hadoop']['copylog'].each do |id,f|
-</span><span class='line'>   if f['docopy'] 
-</span><span class='line'>     template "/etc/flume/conf/flume-#{id}.conf" do
-</span><span class='line'>       source "flume_flume-conf.erb”
-</span><span class='line'>       action :create ...
-</span><span class='line'>       variables(:agent_name => "#{id}",
-</span><span class='line'>                 :log_location => "#{f['logfile']}" )
-</span><span class='line'>       notifies :restart,"service[flume-agent-multi-#{id}]",:delayed
-</span><span class='line'>     end
-</span><span class='line'>     service "flume-agent-multi-#{id}" do
-</span><span class='line'>       supports :status => true, :restart => true, :reload => false
-</span><span class='line'>       service_name "flume-agent-multi"
-</span><span class='line'>       action :start
-</span><span class='line'>       start_command "service flume-agent-multi start #{id}"
-</span><span class='line'>       restart_command "service flume-agent-multi restart #{id}"
-</span><span class='line'>       status_command "service flume-agent-multi status #{id}"
-</span><span class='line'>     end
-</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
-
-
-<p>A complete <code>Flume</code> recipe which includes this feature is available <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc-hadoop/recipes/copylog.rb">here</a>.</p>
-
-<p>By default the init.d script for Flume starts one <code>Flume agent</code>. But BIGTOP jira <a href="https://issues.apache.org/jira/browse/BIGTOP-1581">BIGTOP-1581</a> provides an option to start/stop/restart flume agents by passing agent names as in the <code>service</code> resource in the previous code snippet. The name passed need to have a corresponding Flume config file under the configuration folder. Since <code>Flume</code> recipe need to know the copy request from all the applications running on the node, it should be the last recipe to be run on the node. This can be accomplished by creating a role to include the <code>Flume</code> recipe and add it to the end of chef-client runlist of all the nodes.</p>
-
-<p>Hope this provides a solution option in a similar situation where applications can dynamically request for a common service in an environment. Also note that the data structure can be expanded so that applications can make richer requests for e.g. in this case request to change the location of the common location where logs are copied into etc.</p>
 
 <p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
 ]]></content>

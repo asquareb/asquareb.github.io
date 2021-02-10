@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>The RUM Conjecture - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Data access methods need to modified or newly invented to adapt with ever changing workload requirements and hardware changes. This paper looks at &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">The RUM Conjecture</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-05-10T07:19:50-08:00'><span class='date'><span class='date-month'>May</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>7:19 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Data access methods need to modified or newly invented to adapt with ever changing workload requirements and hardware changes. This paper looks at the challenges in designing new access methods which increasingly needs to be application and hardware aware. The fundamental challenges faced are to minimize a)  Read time - R b) Update cost - U c) memory over head - M and the conjecture made is that when optimizing the read-update-memory (RUM) overheads, optimizing in any two negatively impacts the third. Deciding which overheads to optimize for and to what extend has always been and remains the prominent part of designing access methods.</p>
+
+<!--more-->
+
+
+<h2>RUM Overheads</h2>
+
+<p>Access methods enable us to read or write base data potentially using auxiliary data such as indexes to provide performance improvement.</p>
+
+<h3>Read Overhead</h3>
+
+<p>RO is the read amplification which is the ratio between the total amount of data read including auxiliary data and base data, divided by the amount of data read.</p>
+
+<h3>Update Overhead</h3>
+
+<p>UO is the write amplification which is the ratio between the size of physical update performed for one logical update divided by the size of the logical update. A logical update can involve multiple physical updates for e.g. update to base data and auxiliary data like indexes</p>
+
+<h3>Memory Overhead</h3>
+
+<p>MO is the space amplification which is the ratio between the space utilized for auxiliary and base data, divided by the space utilized for base data.</p>
+
+<p>The theoretical minimum for overhead is to have the ratio equal to 1.0 which implies that the base data is always read and updated directly and no extra bit of memory is wasted. Achieving these bounds for all the three overheads simultaneously is not possible as there is always price to pay for every optimization. When designing an access method all the three overheads should be minimal but depending on the application workload and available technology they need to prioritized.</p>
+
+<h2>RUM Conjecture</h2>
+
+<p><em>designing access methods that set an upper bound for two of the RUM overheads, leads to a hard lower bound for the third overhead which cannot be further reduced</em></p>
+
+<p>In other words, we can choose which two overheads to prioritize and optimize for and pay the price by having the third overhead greater than the hard lower bound. The following figure shows some popular access methods mapped to three dimensional RUM space projected on a two dimensional plane.</p>
+
+<p><img src="/images/rum/rum-space.png" ALIGN=”center” /></p>
+
+<p> Using the RUM space we can understand the current access methods interms of which overhead they prioritize and can choose the appropriate one that suits the need. It also helps in designing new access methods or a combination of access methods which can tune based on available technology and dynamically adapt to new workloads and hence covering the RUM space in aggregate.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://stratos.seas.harvard.edu/files/stratos/files/rum.pdf">Designing Access Methods: The RUM Conjecture</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">asquareb</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-05-10T07:19:50-08:00'><span class='date'><span class='date-month'>May</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>7:19 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/databases/'>databases</a>, <a class='category' href='/blog/categories/paper/'>paper</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture/" data-via="" data-counturl="http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/04/18/amazon-dynamo/" title="Previous Post: Amazon Dynamo">&laquo; Amazon Dynamo</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2021/01/10/amazon-aurora-storage/" title="Next Post: Amazon Aurora Storage">Amazon Aurora Storage &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture/';
+        var disqus_url = 'http://asquareb.github.io/blog/2016/05/10/the-rum-conjecture/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
