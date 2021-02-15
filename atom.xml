@@ -4,7 +4,7 @@
   <title><![CDATA[Quick Notes]]></title>
   <link href="http://asquareb.github.io/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-02-10T07:25:48-08:00</updated>
+  <updated>2021-02-15T12:05:14-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -60,6 +60,67 @@
 <ul>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Aurora Design Considerations - SIGMOD 17</a></li>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-on-avoiding-distributed-consensus-for-i-os-commits-and-membership-changes">Amazon Aurora: On Avoiding Distributed Consensus</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Active DBMS]]></title>
+    <link href="http://asquareb.github.io/blog/2020/02/15/active-dbms/"/>
+    <updated>2020-02-15T11:55:07-08:00</updated>
+    <id>http://asquareb.github.io/blog/2020/02/15/active-dbms</id>
+    <content type="html"><![CDATA[<p>Passive database management systems (DBMS) are program driven i.e. users query the current state of database and retrieve the information currently available in the database.  An active database is one which automatically executes user specified actions when specified condition arise. The <a href="#reference">first paper</a> details an architecture for an active database using Event-Condition-Action (ECA) rules as a formalism for active database capabilities. The <a href="#reference">second paper</a> details an architecture of transforming a passive DBMS to an active DBMS.</p>
+
+<!--more-->
+
+
+<p>Fundamentally in an active database, users can create a rule which defines the conditions that need to be met and what action need to be taken by the database. When a DML statement is executed on data in the DBMS, it is checked to see whether the DML caused any of the conditions to be satisfied and if so the action is taken by the DBMS. Anyone who is familiar to triggers in DBMS which was just getting supported in commercial DBMS when these papers where published can relate to this ECA paradigm.</p>
+
+<p>At a high level, the following functional components are required for an active DBMS in addition to code data management and transaction management functionality.</p>
+
+<p><img src="http://asquareb.github.io/images/streaming/active-dbms-functional-components.png" ALIGN=”center” /></p>
+
+<ul>
+<li><em>Condition evaluator</em> which evaluates rule conditions against events to check whether they satisfy the conditions and informs the rule manager</li>
+<li><em>Rule manager</em> manages the definition of rules, takes required action when conditions of rules are met by any event and also interacts with the transaction manager to couple the actions with the transaction initiated by the event</li>
+<li><em>Event detectors</em> identifies any DML operation and informs the rule manager</li>
+</ul>
+
+
+<h2>Altert</h2>
+
+<p><em>Alert</em> follows evolutionary approach of extending a passive DBMS into an active DBMS and the components implemented for the extension provides insights into the basic components used in the current data data streaming and processing technologies like Apache Kafka.</p>
+
+<p><img src="http://asquareb.github.io/images/streaming/alert-architecture.png" ALIGN=”center” /></p>
+
+<p>It introduces the notion of <em>active tables</em> and <em>active queries</em> . Active tables are append-only tables in which the tuples are never updated in-place and new tuples are added at the end and active queries are queries that range over the tables. When a cursor is opened for an active query involving one more active tables, tuples added to an active table after the cursor was opened also contribute to answer tuples. This the active queries are defined over past, present and future data where as the domain of the passive queries is limited to past and present data. In order to support active queries a new SQL primitive <em>fetch-wait</em> to iterate over active queries was introduced in Alert which blocks when the current answer set is exhausted and resumes returning data when new tuple is available. The active tables are defined by users similar to any passive tables and they are data is stored in active tables akin to journals created by many applications such as banking transactions.</p>
+
+<p>Users can create rules using standard SQL which includes the condition which need to satisfied and the action the database need to take when the condition is satisfied by a database event.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Create rule cost_watch as
+</span><span class='line'>    SELECT sbmail(‘Irv’,ename)
+</span><span class='line'>    FROM journal
+</span><span class='line'>    WHERE method_name == ‘expense_claim’
+</span><span class='line'>        AND expense_amount &gt; 1000</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Creates a rule to send an email when the conditions are met. Like database views, rules can be referred in any other query. After creating the rules it can be activated and deactivated explicitly. When activating users can specify the transaction and time coupling along with the assertion mode of the rule. Transaction coupling specifies whether the triggered action from the rule need to be executed in the transaction which the triggered event is part of or seperately.  Time coupling specifies whether the triggered action need to be executed synchronously with the triggering event or in parallel with the triggering event asynchrounously.  The assertion mode provides the users the option to specify whether the rule is triggered as soon as the rule condition is satisfied or deferred till the end of the transaction. The following diagram shows the message flow when an event happens which affects an active table which in turn satisfies conditions in multiple rules.</p>
+
+<p><img src="http://asquareb.github.io/images/streaming/alert-message.png" ALIGN=”center” /></p>
+
+<p>The alert rule system which is a new component added to extend a passive DBMS to make it active, does any conflict resolutions between multiple rules and identifies the order of execution. Then the rules are executed in the order to fetch the tuples and passed to the associated action in the rules. To reduce the amount of locks taken on data pages when data is read and rules are evaluated, latches are taken on the pages and locks are deferred to the end.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://web.eecs.umich.edu/~jag/eecs584/papers/md89.pdf">The Architecture of An Active Database Management System</a></li>
+<li><a href="http://www.vldb.org/conf/1991/P469.PDF">Alert: An Architecture for Transforming a Passive DBMS into an Active DBMS</a></li>
 </ul>
 
 ]]></content>
@@ -2473,224 +2534,6 @@ For basic data manipulations, the put, get, scan, delete commands can be used. T
 <p>Note this solution uses the <code>zookeeper</code> ruby gem and the complete code can be found in the <a href="https://github.com/bloomberg/chef-bach/tree/master/cookbooks/bcpc-hadoop">chef-bach bcpc-hadoop cookbook</a>.</p>
 
 <p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Restart of a Service Which Is Dependent on Multiple Services Through Chef]]></title>
-    <link href="http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/"/>
-    <updated>2015-02-28T23:07:47-04:00</updated>
-    <id>http://asquareb.github.io/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef</id>
-    <content type="html"><![CDATA[<p>In a node there can be services that are dependent on other services. For e.g. a monitoring service is dependent on services which it monitors and collects data. So when a service being monitored is restarted, the service monitoring may have to be restarted to establish back the connections. This was the case with older version of JMXTrans which required a restart when any of the services it is monitoring got restarted. Assuming that the older version of JMXTrans is used to monitor various services running on a node how do we restart JMXTrans when any of the process is restarted while using <code>Chef</code> to manage the environment.</p>
-
-<!--more-->
-
-
-<p>First, the processes which need to be monitored can vary in each node and there can be one or many processes. Since Chef role determines the recipes which are run on a node, a default attribute can be added to define the services JMXTrans is dependent on. The following is an example</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>...
-</span><span class='line'>"default_attributes" : {
-</span><span class='line'>   "jmxtrans":{
-</span><span class='line'>      "servers":[
-</span><span class='line'>                  {
-</span><span class='line'>                    "type": "datanode",
-</span><span class='line'>                    "service": "hadoop-hdfs-datanode",
-</span><span class='line'>                    "service_cmd": "org.apache.hadoop.hdfs.server.datanode.DataNode"
-</span><span class='line'>                  }, 
-</span><span class='line'>                  {
-</span><span class='line'>                    "type": "hbase_rs",
-</span><span class='line'>                    "service": "hbase-regionserver",
-</span><span class='line'>                    "service_cmd": “org.apache.hadoop.hbase.regionserver.HRegionServer"
-</span><span class='line'>                  }
-</span><span class='line'>                ]
-</span><span class='line'>              } ...</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here the <code>service</code> key defines the name of the service on which JMXTrans is dependent on. The <code>service_cmd</code> key stores a string which can uniquely identify the running process of the service. The <code>type</code> key is not relevant for this discussion. These attributes will change for each role based on which service is installed as part of the role.</p>
-
-<p>Since JMXTRans need to be installed, configured and started on all the nodes to collect statistics from various services a recipe need to be created for the same. But the recipe can now take into account the new node attribute to build the JMXTrans restart logic. The following is a sample code snippet which shows how the logic can be built</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>...
-</span><span class='line'>jmx_services = Array.new
-</span><span class='line'>
-</span><span class='line'>node['jmxtrans']['servers'].each do |server|
-</span><span class='line'>  jmx_services.push(server['service'])
-</span><span class='line'>  jmx_srvc_cmds[server['service']] = server['service_cmd']
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>service "restart jmxtrans on dependent service" do
-</span><span class='line'>  service_name "jmxtrans"
-</span><span class='line'>  supports :restart => true, :status => true, :reload => true
-</span><span class='line'>  action   :restart
-</span><span class='line'>  #
-</span><span class='line'>  # Create subcribes entries for each of the services on which JMXTrans is dependent on
-</span><span class='line'>  #
-</span><span class='line'>  jmx_services.each do |jmx_dep_service| 
-</span><span class='line'>    subscribes :restart, "service[#{jmx_dep_service}]", :delayed
-</span><span class='line'>  end
-</span><span class='line'>end
-</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
-
-
-<p>With the <code>subscribes</code> clause added to the <code>service</code> resource for every service JMXTrans is monitoring on the node, restarts of any of these services during <code>chef-client</code> run will make sure that JMXTrans service is restarted.</p>
-
-<p>But what will happen if any of the dependent service is restarted externally for e.g. manually or upstart bounces a service. Then Chef will not restart JMXTrans during <code>chef-client</code> run since all the services are running. This will result in services restarted manually not being monitored by JMXTrans. The following is an updated code snippet which will handle this scenario. The complete recipe is available <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc_jmxtrans/recipes/default.rb">here</a>.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>...
-</span><span class='line'>jmx_services = Array.new
-</span><span class='line'>jmx_srvc_cmds = Hash.new
-</span><span class='line'>node['jmxtrans']['servers'].each do |server|
-</span><span class='line'>  jmx_services.push(server['service'])
-</span><span class='line'>  jmx_srvc_cmds[server['service']] = server['service_cmd']
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>service "restart jmxtrans on dependent service" do
-</span><span class='line'>  service_name "jmxtrans"
-</span><span class='line'>  supports :restart => true, :status => true, :reload => true
-</span><span class='line'>  action   :restart
-</span><span class='line'>  jmx_services.each do |jmx_dep_service| 
-</span><span class='line'>    subscribes :restart, "service[#{jmx_dep_service}]", :delayed
-</span><span class='line'>  end
-</span><span class='line'>  #
-</span><span class='line'>  # To determine any of the service JMXTrans depends on is started after JMXTrans service
-</span><span class='line'>  #
-</span><span class='line'>  only_if {process_require_restart?("jmxtrans","jmxtrans-all.jar", jmx_srvc_cmds)}
-</span><span class='line'>end
-</span><span class='line'>...</span></code></pre></td></tr></table></div></figure>
-
-
-<p>As you may have noticed there is a <code>only_if</code> condition calls a library function which takes in a hash of all the services and the string which identifies the service processes as the third paramter. The first two paramters passed are the JMXTrans service name and a string which can uniquely identify a running JMXTrans process.</p>
-
-<p>The following is the code snippet of the library function and the complete code can be found <a href="https://github.com/bloomberg/chef-bach/blob/master/cookbooks/bcpc_jmxtrans/libraries/utils.rb">here</a>.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>def process_require_restart?(process_name, process_cmd, dep_cmds)
-</span><span class='line'>  tgt_proces_pid = `pgrep -f #{process_cmd}`
-</span><span class='line'>  ...
-</span><span class='line'>  #
-</span><span class='line'>  # Find the start time of the JMXTrans process
-</span><span class='line'>  #
-</span><span class='line'>  tgt_proces_stime = `ps --no-header -o start_time #{tgt_process_pid}`
-</span><span class='line'>  ...
-</span><span class='line'>  ret = false
-</span><span class='line'>  restarted_processes = Array.new
-</span><span class='line'>  #
-</span><span class='line'>  # Loop through the processess of all the dependent services
-</span><span class='line'>  #
-</span><span class='line'>  dep_cmds.each do |dep_process, dep_cmd|
-</span><span class='line'>    dep_pids = `pgrep -f #{dep_cmd}` 
-</span><span class='line'>    if dep_pids != ""
-</span><span class='line'>      dep_pids_arr = dep_pids.split("\n")
-</span><span class='line'>      dep_pids_arr.each do |dep_pid| 
-</span><span class='line'>        #
-</span><span class='line'>        # Find the start time of a dependent process
-</span><span class='line'>        #
-</span><span class='line'>        dep_process_stime = `ps --no-header -o start_time #{dep_pid}`
-</span><span class='line'>        #
-</span><span class='line'>        # If the dependent process start time is greater than JMXTrans start time 
-</span><span class='line'>        # set the return value to true
-</span><span class='line'>        #
-</span><span class='line'>        if DateTime.parse(tgt_proces_stime) &lt; DateTime.parse(dep_process_stime)
-</span><span class='line'>          restarted_processes.push(dep_process)
-</span><span class='line'>          ret = true
-</span><span class='line'>        end 
-</span><span class='line'>  ...</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>The logic behind the library function is to compare the start time of the JMXTrans process against the start time of processes of all the services it is dependent on. If any of the dependent processes start time is later than the start time of JMXTrans process then the JMXTrans service will get restarted.</p>
-
-<p>It would be good to have a Chef primitive that can accomplish what the library function does so that similar situations can use it. Hope this provides a solution option to restart a service dependent on multiple services during a <code>chef-client</code> run.</p>
-
-<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/chef/">here</a>.</p>
 ]]></content>
   </entry>
   

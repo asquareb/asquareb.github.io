@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Active DBMS - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Passive database management systems (DBMS) are program driven i.e. users query the current state of database and retrieve the information currently &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2020/02/15/active-dbms/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Active DBMS</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2020-02-15T11:55:07-08:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2020</span></span> <span class='time'>11:55 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Passive database management systems (DBMS) are program driven i.e. users query the current state of database and retrieve the information currently available in the database.  An active database is one which automatically executes user specified actions when specified condition arise. The <a href="#reference">first paper</a> details an architecture for an active database using Event-Condition-Action (ECA) rules as a formalism for active database capabilities. The <a href="#reference">second paper</a> details an architecture of transforming a passive DBMS to an active DBMS.</p>
+
+<!--more-->
+
+
+<p>Fundamentally in an active database, users can create a rule which defines the conditions that need to be met and what action need to be taken by the database. When a DML statement is executed on data in the DBMS, it is checked to see whether the DML caused any of the conditions to be satisfied and if so the action is taken by the DBMS. Anyone who is familiar to triggers in DBMS which was just getting supported in commercial DBMS when these papers where published can relate to this ECA paradigm.</p>
+
+<p>At a high level, the following functional components are required for an active DBMS in addition to code data management and transaction management functionality.</p>
+
+<p><img src="/images/streaming/active-dbms-functional-components.png" ALIGN=”center” /></p>
+
+<ul>
+<li><em>Condition evaluator</em> which evaluates rule conditions against events to check whether they satisfy the conditions and informs the rule manager</li>
+<li><em>Rule manager</em> manages the definition of rules, takes required action when conditions of rules are met by any event and also interacts with the transaction manager to couple the actions with the transaction initiated by the event</li>
+<li><em>Event detectors</em> identifies any DML operation and informs the rule manager</li>
+</ul>
+
+
+<h2>Altert</h2>
+
+<p><em>Alert</em> follows evolutionary approach of extending a passive DBMS into an active DBMS and the components implemented for the extension provides insights into the basic components used in the current data data streaming and processing technologies like Apache Kafka.</p>
+
+<p><img src="/images/streaming/alert-architecture.png" ALIGN=”center” /></p>
+
+<p>It introduces the notion of <em>active tables</em> and <em>active queries</em> . Active tables are append-only tables in which the tuples are never updated in-place and new tuples are added at the end and active queries are queries that range over the tables. When a cursor is opened for an active query involving one more active tables, tuples added to an active table after the cursor was opened also contribute to answer tuples. This the active queries are defined over past, present and future data where as the domain of the passive queries is limited to past and present data. In order to support active queries a new SQL primitive <em>fetch-wait</em> to iterate over active queries was introduced in Alert which blocks when the current answer set is exhausted and resumes returning data when new tuple is available. The active tables are defined by users similar to any passive tables and they are data is stored in active tables akin to journals created by many applications such as banking transactions.</p>
+
+<p>Users can create rules using standard SQL which includes the condition which need to satisfied and the action the database need to take when the condition is satisfied by a database event.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Create rule cost_watch as
+</span><span class='line'>    SELECT sbmail(‘Irv’,ename)
+</span><span class='line'>    FROM journal
+</span><span class='line'>    WHERE method_name == ‘expense_claim’
+</span><span class='line'>        AND expense_amount &gt; 1000</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Creates a rule to send an email when the conditions are met. Like database views, rules can be referred in any other query. After creating the rules it can be activated and deactivated explicitly. When activating users can specify the transaction and time coupling along with the assertion mode of the rule. Transaction coupling specifies whether the triggered action from the rule need to be executed in the transaction which the triggered event is part of or seperately.  Time coupling specifies whether the triggered action need to be executed synchronously with the triggering event or in parallel with the triggering event asynchrounously.  The assertion mode provides the users the option to specify whether the rule is triggered as soon as the rule condition is satisfied or deferred till the end of the transaction. The following diagram shows the message flow when an event happens which affects an active table which in turn satisfies conditions in multiple rules.</p>
+
+<p><img src="/images/streaming/alert-message.png" ALIGN=”center” /></p>
+
+<p>The alert rule system which is a new component added to extend a passive DBMS to make it active, does any conflict resolutions between multiple rules and identifies the order of execution. Then the rules are executed in the order to fetch the tuples and passed to the associated action in the rules. To reduce the amount of locks taken on data pages when data is read and rules are evaluated, latches are taken on the pages and locks are deferred to the end.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://web.eecs.umich.edu/~jag/eecs584/papers/md89.pdf">The Architecture of An Active Database Management System</a></li>
+<li><a href="http://www.vldb.org/conf/1991/P469.PDF">Alert: An Architecture for Transforming a Passive DBMS into an Active DBMS</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">asquareb</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2020-02-15T11:55:07-08:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2020</span></span> <span class='time'>11:55 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/dbms/'>dbms</a>, <a class='category' href='/blog/categories/paper/'>paper</a>, <a class='category' href='/blog/categories/streaming/'>streaming</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2020/02/15/active-dbms/" data-via="" data-counturl="http://asquareb.github.io/blog/2020/02/15/active-dbms/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/05/10/the-rum-conjecture/" title="Previous Post: The RUM Conjecture">&laquo; The RUM Conjecture</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2021/01/10/amazon-aurora-storage/" title="Next Post: Amazon Aurora Storage">Amazon Aurora Storage &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2020/02/15/active-dbms/';
+        var disqus_url = 'http://asquareb.github.io/blog/2020/02/15/active-dbms/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="In a cluster environment there can be a common service running on all the nodes in the cluster which may be requested by an application using the &hellip;">
+  <meta name="description" content="In a node there can be services that are dependent on other services. For e.g. a monitoring service is dependent on services which it monitors and &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/">Restart of a Service Which Is Dependent on Multiple Services Through Chef</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-02-28T23:07:47-04:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>28</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>11:07 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In a node there can be services that are dependent on other services. For e.g. a monitoring service is dependent on services which it monitors and collects data. So when a service being monitored is restarted, the service monitoring may have to be restarted to establish back the connections. This was the case with older version of JMXTrans which required a restart when any of the services it is monitoring got restarted. Assuming that the older version of JMXTrans is used to monitor various services running on a node how do we restart JMXTrans when any of the process is restarted while using <code>Chef</code> to manage the environment.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/02/28/restart-of-a-service-which-is-dependent-on-multiple-services-through-chef/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -212,47 +246,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2014/12/27/build-your-hadoop-cluster-unattended-almostls/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/12/18/garbage-first-g1-gc-and-hbase/">Garbage First (G1) GC and HBase</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-12-18T22:31:37-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>10:31 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>G1 the lastest Java garbage collector is a generational collector like <a href="/blog/2014/12/13/jvm-gc-settings-and-hbase/">CMS</a>. The key differences between G1 and CMS collectors are</p>
-
-<ul>
-<li>In CMS the young and old generation heap space are physically differentiated. But in the case of G1 they are logical. This is achieved by dividing the total heap space into number of <code>regions</code> (2000) and the regions are identified whether they belong to young or old space.</li>
-<li>Compaction of the heap space is done as part of the collection process which was not the case in CMS.</li>
-<li>G1 collector tries to meet user specified target for application pause time during the collection process.</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/12/18/garbage-first-g1-gc-and-hbase/">Read on &rarr;</a>
     </footer>
   
 

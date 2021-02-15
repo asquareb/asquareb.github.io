@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="In a distributed cluster like HBase, logs are created and written on individual nodes participating in the cluster. If users want to look at the log &hellip;">
+  <meta name="description" content="G1 the lastest Java garbage collector is a generational collector like CMS. The key differences between G1 and CMS collectors are In CMS the young &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,47 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/18/garbage-first-g1-gc-and-hbase/">Garbage First (G1) GC and HBase</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-12-18T22:31:37-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>10:31 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>G1 the lastest Java garbage collector is a generational collector like <a href="/blog/2014/12/13/jvm-gc-settings-and-hbase/">CMS</a>. The key differences between G1 and CMS collectors are</p>
+
+<ul>
+<li>In CMS the young and old generation heap space are physically differentiated. But in the case of G1 they are logical. This is achieved by dividing the total heap space into number of <code>regions</code> (2000) and the regions are identified whether they belong to young or old space.</li>
+<li>Compaction of the heap space is done as part of the collection process which was not the case in CMS.</li>
+<li>G1 collector tries to meet user specified target for application pause time during the collection process.</li>
+</ul>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/12/18/garbage-first-g1-gc-and-hbase/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -215,40 +256,6 @@ Inorder to come up with optimal GC settings, it is good to understand GC process
   
     <footer>
       <a rel="full-article" href="/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/11/19/adding-users-to-graphite/">Adding Users to Graphite</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-11-19T14:42:56-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>2:42 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Once you start populating data to Graphite database, users can see data on Graphite UI and create custom graphs to see the data in realtime. When graphs are created users want to save the graphs for future use and probably want to create a dashboard with all the graphs created. One simple (but non user friendly) way to accomplish this is to save the URLs of the graphs created and users can use it to bring up the graphs when they need them.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/11/19/adding-users-to-graphite/">Read on &rarr;</a>
     </footer>
   
 

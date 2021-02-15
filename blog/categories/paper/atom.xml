@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Paper | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/paper/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-02-10T07:25:48-08:00</updated>
+  <updated>2021-02-15T12:05:14-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -60,6 +60,62 @@
 <ul>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Aurora Design Considerations - SIGMOD 17</a></li>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-on-avoiding-distributed-consensus-for-i-os-commits-and-membership-changes">Amazon Aurora: On Avoiding Distributed Consensus</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Active DBMS]]></title>
+    <link href="http://asquareb.github.io/blog/2020/02/15/active-dbms/"/>
+    <updated>2020-02-15T11:55:07-08:00</updated>
+    <id>http://asquareb.github.io/blog/2020/02/15/active-dbms</id>
+    <content type="html"><![CDATA[<p>Passive database management systems (DBMS) are program driven i.e. users query the current state of database and retrieve the information currently available in the database.  An active database is one which automatically executes user specified actions when specified condition arise. The <a href="#reference">first paper</a> details an architecture for an active database using Event-Condition-Action (ECA) rules as a formalism for active database capabilities. The <a href="#reference">second paper</a> details an architecture of transforming a passive DBMS to an active DBMS.</p>
+
+<!--more-->
+
+
+<p>Fundamentally in an active database, users can create a rule which defines the conditions that need to be met and what action need to be taken by the database. When a DML statement is executed on data in the DBMS, it is checked to see whether the DML caused any of the conditions to be satisfied and if so the action is taken by the DBMS. Anyone who is familiar to triggers in DBMS which was just getting supported in commercial DBMS when these papers where published can relate to this ECA paradigm.</p>
+
+<p>At a high level, the following functional components are required for an active DBMS in addition to code data management and transaction management functionality.</p>
+
+<p><img src="/images/streaming/active-dbms-functional-components.png" ALIGN=”center” /></p>
+
+<ul>
+<li><em>Condition evaluator</em> which evaluates rule conditions against events to check whether they satisfy the conditions and informs the rule manager</li>
+<li><em>Rule manager</em> manages the definition of rules, takes required action when conditions of rules are met by any event and also interacts with the transaction manager to couple the actions with the transaction initiated by the event</li>
+<li><em>Event detectors</em> identifies any DML operation and informs the rule manager</li>
+</ul>
+
+
+<h2>Altert</h2>
+
+<p><em>Alert</em> follows evolutionary approach of extending a passive DBMS into an active DBMS and the components implemented for the extension provides insights into the basic components used in the current data data streaming and processing technologies like Apache Kafka.</p>
+
+<p><img src="/images/streaming/alert-architecture.png" ALIGN=”center” /></p>
+
+<p>It introduces the notion of <em>active tables</em> and <em>active queries</em> . Active tables are append-only tables in which the tuples are never updated in-place and new tuples are added at the end and active queries are queries that range over the tables. When a cursor is opened for an active query involving one more active tables, tuples added to an active table after the cursor was opened also contribute to answer tuples. This the active queries are defined over past, present and future data where as the domain of the passive queries is limited to past and present data. In order to support active queries a new SQL primitive <em>fetch-wait</em> to iterate over active queries was introduced in Alert which blocks when the current answer set is exhausted and resumes returning data when new tuple is available. The active tables are defined by users similar to any passive tables and they are data is stored in active tables akin to journals created by many applications such as banking transactions.</p>
+
+<p>Users can create rules using standard SQL which includes the condition which need to satisfied and the action the database need to take when the condition is satisfied by a database event.</p>
+
+<pre><code>Create rule cost_watch as
+    SELECT sbmail(‘Irv’,ename)
+    FROM journal
+    WHERE method_name == ‘expense_claim’
+        AND expense_amount &gt; 1000
+</code></pre>
+
+<p>Creates a rule to send an email when the conditions are met. Like database views, rules can be referred in any other query. After creating the rules it can be activated and deactivated explicitly. When activating users can specify the transaction and time coupling along with the assertion mode of the rule. Transaction coupling specifies whether the triggered action from the rule need to be executed in the transaction which the triggered event is part of or seperately.  Time coupling specifies whether the triggered action need to be executed synchronously with the triggering event or in parallel with the triggering event asynchrounously.  The assertion mode provides the users the option to specify whether the rule is triggered as soon as the rule condition is satisfied or deferred till the end of the transaction. The following diagram shows the message flow when an event happens which affects an active table which in turn satisfies conditions in multiple rules.</p>
+
+<p><img src="/images/streaming/alert-message.png" ALIGN=”center” /></p>
+
+<p>The alert rule system which is a new component added to extend a passive DBMS to make it active, does any conflict resolutions between multiple rules and identifies the order of execution. Then the rules are executed in the order to fetch the tuples and passed to the associated action in the rules. To reduce the amount of locks taken on data pages when data is read and rules are evaluated, latches are taken on the pages and locks are deferred to the end.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://web.eecs.umich.edu/~jag/eecs584/papers/md89.pdf">The Architecture of An Active Database Management System</a></li>
+<li><a href="http://www.vldb.org/conf/1991/P469.PDF">Alert: An Architecture for Transforming a Passive DBMS into an Active DBMS</a></li>
 </ul>
 
 ]]></content>
@@ -258,44 +314,6 @@ If any of the nodes in the preference list is not available, another node will b
 <li>Programmers being aware of the location of the objects so that they can think about the problems differently</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[End-to-end Arguments in System Design]]></title>
-    <link href="http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design/"/>
-    <updated>2016-02-07T18:41:26-05:00</updated>
-    <id>http://asquareb.github.io/blog/2016/02/07/end-to-end-arguments-in-system-design</id>
-    <content type="html"><![CDATA[<p><a href="http://web.mit.edu/Saltzer/www/publications/endtoend/endtoend.pdf">This paper</a> presents the design principle regarding placement of functions in computer system design called &ldquo;end-to-end argument&rdquo;.  The argument of the principle is that any application functions implemented at lower levels of a system may be redundant or of little value when compared with the cost of providing them at lower level.  The paper articulates the argument through requirements and examples in distributed systems like reliable data transmission, encryption, duplicate message detection, message sequencing, detecting host crashes, delivery receipts etc.</p>
-
-<!--more-->
-
-
-<p>Reliable Data Transmission</p>
-
-<ul>
-<li>Even if the communication network provides aid in coping with issues in data transmission like data buffering issues, processor or memory issues, loss of packet, host crashes through duplicate copies, timeout and retry, redundancy for error detection, crash recovery etc, at the end the data transfer application need to perform the check of the data transferred to claim it to be successful</li>
-<li>This makes the functions in the network layer for reliable data transfer redundant. More over these functions will impact other applications which will be using the network layer but doesn&rsquo;t require all the functions</li>
-</ul>
-
-
-<p>Lower layers can implement function which can improve the performance of the application using it. For e.g. in the case of reliable data transmission</p>
-
-<ul>
-<li>The application need to make sure that the data transferred matches the source for e.g. by using checksums. If the checksum at the source and target don&rsquo;t match the data transfer need to be redone</li>
-<li>If functions can be included which will cost less but enhances the end to end reliability this will reduce the retries required to have the data data transferred reliably and hence improves the performance</li>
-</ul>
-
-
-<p>Decisions to include functions in lower layers</p>
-
-<ul>
-<li>Need to take into account the cost of implementing it at the lower layer and the impact on other applications which may be using it</li>
-<li>Need to be made with the understanding that the higher level layers will have much more information than the lower level layers to guarantee a feature/functionality</li>
-</ul>
-
-
-<p>In order to make these decisions i.e. whether to include functions in lower layers or let the application handle it at the end, application requirements of what need to be accomplished need to be well understood.</p>
 ]]></content>
   </entry>
   
