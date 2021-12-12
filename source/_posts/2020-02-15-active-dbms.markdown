@@ -5,7 +5,7 @@ date: 2020-02-15 11:55:07 -0800
 comments: true
 sharing: true
 footer: true
-categories: [dbms,paper,streaming]
+categories: [databases,paper,streaming]
 ---
 Passive database management systems (DBMS) are program driven i.e. users query the current state of database and retrieve the information currently available in the database.  An active database is one which automatically executes user specified actions when specified condition arise. The [first paper](#reference) details an architecture for an active database using Event-Condition-Action (ECA) rules as a formalism for active database capabilities. The [second paper](#reference) details an architecture of transforming a passive DBMS to an active DBMS. 
 <!--more-->
