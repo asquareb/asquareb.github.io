@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Databases | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/databases/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-02-15T12:05:14-08:00</updated>
+  <updated>2021-12-11T21:39:40-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -60,6 +60,62 @@
 <ul>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Aurora Design Considerations - SIGMOD 17</a></li>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-on-avoiding-distributed-consensus-for-i-os-commits-and-membership-changes">Amazon Aurora: On Avoiding Distributed Consensus</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Active DBMS]]></title>
+    <link href="http://asquareb.github.io/blog/2020/02/15/active-dbms/"/>
+    <updated>2020-02-15T11:55:07-08:00</updated>
+    <id>http://asquareb.github.io/blog/2020/02/15/active-dbms</id>
+    <content type="html"><![CDATA[<p>Passive database management systems (DBMS) are program driven i.e. users query the current state of database and retrieve the information currently available in the database.  An active database is one which automatically executes user specified actions when specified condition arise. The <a href="#reference">first paper</a> details an architecture for an active database using Event-Condition-Action (ECA) rules as a formalism for active database capabilities. The <a href="#reference">second paper</a> details an architecture of transforming a passive DBMS to an active DBMS.</p>
+
+<!--more-->
+
+
+<p>Fundamentally in an active database, users can create a rule which defines the conditions that need to be met and what action need to be taken by the database. When a DML statement is executed on data in the DBMS, it is checked to see whether the DML caused any of the conditions to be satisfied and if so the action is taken by the DBMS. Anyone who is familiar to triggers in DBMS which was just getting supported in commercial DBMS when these papers where published can relate to this ECA paradigm.</p>
+
+<p>At a high level, the following functional components are required for an active DBMS in addition to code data management and transaction management functionality.</p>
+
+<p><img src="/images/streaming/active-dbms-functional-components.png" ALIGN=”center” /></p>
+
+<ul>
+<li><em>Condition evaluator</em> which evaluates rule conditions against events to check whether they satisfy the conditions and informs the rule manager</li>
+<li><em>Rule manager</em> manages the definition of rules, takes required action when conditions of rules are met by any event and also interacts with the transaction manager to couple the actions with the transaction initiated by the event</li>
+<li><em>Event detectors</em> identifies any DML operation and informs the rule manager</li>
+</ul>
+
+
+<h2>Altert</h2>
+
+<p><em>Alert</em> follows evolutionary approach of extending a passive DBMS into an active DBMS and the components implemented for the extension provides insights into the basic components used in the current data data streaming and processing technologies like Apache Kafka.</p>
+
+<p><img src="/images/streaming/alert-architecture.png" ALIGN=”center” /></p>
+
+<p>It introduces the notion of <em>active tables</em> and <em>active queries</em> . Active tables are append-only tables in which the tuples are never updated in-place and new tuples are added at the end and active queries are queries that range over the tables. When a cursor is opened for an active query involving one more active tables, tuples added to an active table after the cursor was opened also contribute to answer tuples. This the active queries are defined over past, present and future data where as the domain of the passive queries is limited to past and present data. In order to support active queries a new SQL primitive <em>fetch-wait</em> to iterate over active queries was introduced in Alert which blocks when the current answer set is exhausted and resumes returning data when new tuple is available. The active tables are defined by users similar to any passive tables and they are data is stored in active tables akin to journals created by many applications such as banking transactions.</p>
+
+<p>Users can create rules using standard SQL which includes the condition which need to satisfied and the action the database need to take when the condition is satisfied by a database event.</p>
+
+<pre><code>Create rule cost_watch as
+    SELECT sbmail(‘Irv’,ename)
+    FROM journal
+    WHERE method_name == ‘expense_claim’
+        AND expense_amount &gt; 1000
+</code></pre>
+
+<p>Creates a rule to send an email when the conditions are met. Like database views, rules can be referred in any other query. After creating the rules it can be activated and deactivated explicitly. When activating users can specify the transaction and time coupling along with the assertion mode of the rule. Transaction coupling specifies whether the triggered action from the rule need to be executed in the transaction which the triggered event is part of or seperately.  Time coupling specifies whether the triggered action need to be executed synchronously with the triggering event or in parallel with the triggering event asynchrounously.  The assertion mode provides the users the option to specify whether the rule is triggered as soon as the rule condition is satisfied or deferred till the end of the transaction. The following diagram shows the message flow when an event happens which affects an active table which in turn satisfies conditions in multiple rules.</p>
+
+<p><img src="/images/streaming/alert-message.png" ALIGN=”center” /></p>
+
+<p>The alert rule system which is a new component added to extend a passive DBMS to make it active, does any conflict resolutions between multiple rules and identifies the order of execution. Then the rules are executed in the order to fetch the tuples and passed to the associated action in the rules. To reduce the amount of locks taken on data pages when data is read and rules are evaluated, latches are taken on the pages and locks are deferred to the end.</p>
+
+<h2>Reference</h2>
+
+<ul>
+<li><a href="https://web.eecs.umich.edu/~jag/eecs584/papers/md89.pdf">The Architecture of An Active Database Management System</a></li>
+<li><a href="http://www.vldb.org/conf/1991/P469.PDF">Alert: An Architecture for Transforming a Passive DBMS into an Active DBMS</a></li>
 </ul>
 
 ]]></content>
