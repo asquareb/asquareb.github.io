@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Databases | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/databases/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-12-19T12:31:26-08:00</updated>
+  <updated>2021-12-19T12:35:06-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -300,73 +300,56 @@ If any of the nodes in the preference list is not available, another node will b
 
 <h2>Implementation</h2>
 
-<p><img src="/images/spanner/spanner-overview.png" ALIGN=”center” /></p>
-
-<h3>Spanner deployment is called the universe</h3>
-
-<ul>
-<li>Organized as a set of Zones which are administrative units and set of locations for replication
-
-<ul>
-<li>Zone has one Zone Master and between one hundred and several thousand span servers
-
-<ul>
-<li>Zone Master assigns data to Span servers</li>
-<li>Span servers serve data to clients</li>
-<li>Zones can be added or removed from a running system</li>
-</ul>
-</li>
-<li>Location proxies are used by clients to locate span servers which can serve the data</li>
-<li>Universe master is a console which provides status information of all zones</li>
-<li>Placement driver identifies data that need to be moved by communicating with span servers
+<p><img src="/images/spanner/spanner-overview.png" ALIGN=”center” />
+Spanner deployment is called the universe
+- Organized as a set of Zones which are administrative units and set of locations for replication
+    - Zone has one Zone Master and between one hundred and several thousand span servers
+        - Zone Master assigns data to Span servers
+        - Span servers serve data to clients
+        - Zones can be added or removed from a running system
+    - Location proxies are used by clients to locate span servers which can serve the data
+    - Universe master is a console which provides status information of all zones
+    - Placement driver identifies data that need to be moved by communicating with span servers</p>
 
 <h3>Spanserver</h3>
 
-<p><img src="/images/spanner/spanserver.png" ALIGN=”center” /></p></li>
-</ul>
-</li>
-<li>Manages between 100 and 1000 instances of “tablets” which stores timestamped key value pairs</li>
-<li>Tablets state is stored in a set of B-tree like files and a WAL on a distributed filesystem (Colossus)</li>
-<li>For replication a Paxos state machine is created for each tablet and the set of replica is called Paxos group</li>
-<li>Leader in a Paxos group implements a lock table which maps range of keys to locks for concurrency control
-
-<ul>
-<li>all transactional reads need two acquire locks while the others can bypass the lock table</li>
-</ul>
-</li>
-<li>Leader in a Paxos group also implements a transaction manager to support distributed transactions
-
-<ul>
-<li>Transaction manager coordinate a two phase commit when a transaction involved more than one Pax’s group</li>
-</ul>
-</li>
-<li>With in each tablet Spanner implements an abstraction called directory which is a contiguous set of keys with common prefix
-
-<ul>
-<li>Directories are units of data placement and applications can control the locality of data by choosing keys</li>
-<li>Directories makes moving data to reduce load from a Paxos group or to keep frequently accessed or data accessed together efficient</li>
-<li>Tablet is a container which can store multiple directories which in turn multiple key ranges for the same table or multiple tables</li>
-<li>Directory is the smallest unit for replication and when the size of a directory grows Spanner shards into multiple fragments. Fragments from a directory are the real unit of replication and fragments from a directory can be managed by multiple Paxos group</li>
-</ul>
-</li>
-</ul>
-
+<p><img src="/images/spanner/spanserver.png" ALIGN=”center” />
+- Manages between 100 and 1000 instances of “tablets” which stores timestamped key value pairs
+- Tablets state is stored in a set of B-tree like files and a WAL on a distributed filesystem (Colossus)
+- For replication a Paxos state machine is created for each tablet and the set of replica is called Paxos group
+- Leader in a Paxos group implements a lock table which maps range of keys to locks for concurrency control
+    - all transactional reads need two acquire locks while the others can bypass the lock table
+- Leader in a Paxos group also implements a transaction manager to support distributed transactions
+    - Transaction manager coordinate a two phase commit when a transaction involved more than one Pax’s group
+- With in each tablet Spanner implements an abstraction called directory which is a contiguous set of keys with common prefix
+    - Directories are units of data placement and applications can control the locality of data by choosing keys
+    - Directories makes moving data to reduce load from a Paxos group or to keep frequently accessed or data accessed together efficient
+    - Tablet is a container which can store multiple directories which in turn multiple key ranges for the same table or multiple tables
+    - Directory is the smallest unit for replication and when the size of a directory grows Spanner shards into multiple fragments. Fragments from a directory are the real unit of replication and fragments from a directory can be managed by multiple Paxos group</p>
 
 <h2>Data Model</h2>
 
-<p><img src="/images/spanner/spanner-schema.png" ALIGN=”center” />
-- support schematized semi-relational tables and synchronous replication
-- Cross row transactions with the assumption that application programmers will take into account performance overhead
-- Data model is layered on top of directory bucketed key value mappings
-- Create database in a universe which can contain unlimited number of schematized tables
-- Every row in a table need to have a set of one or more primary key columns
-- Application can create a hierarchy of tables using “INTERLEAVE IN” clause which will lead to the storage of related rows in the same directory. This improves performance.</p>
+<p><img src="/images/spanner/spanner-schema.png" ALIGN=”center” /></p>
+
+<ul>
+<li>support schematized semi-relational tables and synchronous replication</li>
+<li>Cross row transactions with the assumption that application programmers will take into account performance overhead</li>
+<li>Data model is layered on top of directory bucketed key value mappings</li>
+<li>Create database in a universe which can contain unlimited number of schematized tables</li>
+<li>Every row in a table need to have a set of one or more primary key columns</li>
+<li>Application can create a hierarchy of tables using “INTERLEAVE IN” clause which will lead to the storage of related rows in the same directory. This improves performance.</li>
+</ul>
+
 
 <h2>Truetime</h2>
 
-<p><img src="/images/spanner/TrueTime-API.png" ALIGN=”center” />
-- TT.now() will return TT.interval which will be within the error boundary and guaranteed to include the absolute time when now() is invoked
-- TrueTime API is used by Spanner for concurrency control and is provided by Google infrastructure which used  atomic clocks and GPS to implement</p>
+<p><img src="/images/spanner/TrueTime-API.png" ALIGN=”center” /></p>
+
+<ul>
+<li>TT.now() will return TT.interval which will be within the error boundary and guaranteed to include the absolute time when now() is invoked</li>
+<li>TrueTime API is used by Spanner for concurrency control and is provided by Google infrastructure which used  atomic clocks and GPS to implement</li>
+</ul>
+
 
 <h2>Concurrency Control</h2>
 
