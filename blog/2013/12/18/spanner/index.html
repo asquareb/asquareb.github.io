@@ -144,31 +144,59 @@
 <h2>Implementation</h2>
 
 <p><img src="/images/spanner/spanner-overview.png" ALIGN=”center” />
-Spanner deployment is called the universe
-- Organized as a set of Zones which are administrative units and set of locations for replication
-    - Zone has one Zone Master and between one hundred and several thousand span servers
-        - Zone Master assigns data to Span servers
-        - Span servers serve data to clients
-        - Zones can be added or removed from a running system
-    - Location proxies are used by clients to locate span servers which can serve the data
-    - Universe master is a console which provides status information of all zones
-    - Placement driver identifies data that need to be moved by communicating with span servers</p>
+Spanner deployment is called the universe</p>
+
+<ul>
+<li>Organized as a set of Zones which are administrative units and set of locations for replication
+
+<ul>
+<li>Zone has one Zone Master and between one hundred and several thousand span servers
+
+<ul>
+<li>Zone Master assigns data to Span servers</li>
+<li>Span servers serve data to clients</li>
+<li>Zones can be added or removed from a running system</li>
+</ul>
+</li>
+<li>Location proxies are used by clients to locate span servers which can serve the data</li>
+<li>Universe master is a console which provides status information of all zones</li>
+<li>Placement driver identifies data that need to be moved by communicating with span servers</li>
+</ul>
+</li>
+</ul>
+
 
 <h3>Spanserver</h3>
 
-<p><img src="/images/spanner/spanserver.png" ALIGN=”center” />
-- Manages between 100 and 1000 instances of “tablets” which stores timestamped key value pairs
-- Tablets state is stored in a set of B-tree like files and a WAL on a distributed filesystem (Colossus)
-- For replication a Paxos state machine is created for each tablet and the set of replica is called Paxos group
-- Leader in a Paxos group implements a lock table which maps range of keys to locks for concurrency control
-    - all transactional reads need two acquire locks while the others can bypass the lock table
-- Leader in a Paxos group also implements a transaction manager to support distributed transactions
-    - Transaction manager coordinate a two phase commit when a transaction involved more than one Pax’s group
-- With in each tablet Spanner implements an abstraction called directory which is a contiguous set of keys with common prefix
-    - Directories are units of data placement and applications can control the locality of data by choosing keys
-    - Directories makes moving data to reduce load from a Paxos group or to keep frequently accessed or data accessed together efficient
-    - Tablet is a container which can store multiple directories which in turn multiple key ranges for the same table or multiple tables
-    - Directory is the smallest unit for replication and when the size of a directory grows Spanner shards into multiple fragments. Fragments from a directory are the real unit of replication and fragments from a directory can be managed by multiple Paxos group</p>
+<p><img src="/images/spanner/spanserver.png" ALIGN=”center” /></p>
+
+<ul>
+<li>Manages between 100 and 1000 instances of “tablets” which stores timestamped key value pairs</li>
+<li>Tablets state is stored in a set of B-tree like files and a WAL on a distributed filesystem (Colossus)</li>
+<li>For replication a Paxos state machine is created for each tablet and the set of replica is called Paxos group</li>
+<li>Leader in a Paxos group implements a lock table which maps range of keys to locks for concurrency control
+
+<ul>
+<li>all transactional reads need two acquire locks while the others can bypass the lock table</li>
+</ul>
+</li>
+<li>Leader in a Paxos group also implements a transaction manager to support distributed transactions
+
+<ul>
+<li>Transaction manager coordinate a two phase commit when a transaction involved more than one Pax’s group</li>
+</ul>
+</li>
+<li>With in each tablet Spanner implements an abstraction called directory which is a contiguous set of keys with common prefix
+
+<ul>
+<li>Directories are units of data placement and applications can control the locality of data by choosing keys</li>
+<li>Directories makes moving data to reduce load from a Paxos group or to keep frequently accessed or data accessed together efficient</li>
+<li>Tablet is a container which can store multiple directories which in turn multiple key ranges for the same table or multiple tables</li>
+<li>Directory is the smallest unit for replication and when the size of a directory grows Spanner shards into multiple fragments. Fragments from a directory are the real unit of replication and fragments from a directory can be managed by multiple Paxos group</li>
+</ul>
+</li>
+</ul>
+
 
 <h2>Data Model</h2>
 
