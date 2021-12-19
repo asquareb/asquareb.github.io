@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Databases | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/databases/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-12-19T12:45:37-08:00</updated>
+  <updated>2021-12-19T12:53:09-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -407,6 +407,13 @@ If any of the nodes in the preference list is not available, another node will b
 <li>Uses future timestamp and hence all writes with timestamp greater that the transaction timestamp need to wait to commit</li>
 </ul>
 </li>
+</ul>
+
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://static.googleusercontent.com/media/research.google.com/en//archive/spanner-osdi2012.pdf">Spanner: Google&rsquo;s Globally-Distributed Database</a></li>
 </ul>
 
 ]]></content>
