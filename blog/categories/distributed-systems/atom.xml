@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Distributed Systems | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/distributed-systems/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-12-19T12:53:09-08:00</updated>
+  <updated>2021-12-19T12:57:56-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -349,7 +349,7 @@ A system is said to be <strong>scalable</strong> if it can handle addition of re
 
 
 <ul>
-<li>Compared to Bigtable, Spanned provides cross datacenter replicated data
+<li>Compared to Bigtable, Spanner provides cross datacenter replicated data
 
 <ul>
 <li>Provides strong consistency in the presence of wide area replication</li>
@@ -368,11 +368,11 @@ A system is said to be <strong>scalable</strong> if it can handle addition of re
 
 <ul>
 <li>Data is stored in schematized semirelational tables</li>
-<li>data is versioned, and each version is automatically timestamped with its commit time</li>
-<li>old versions of data are subject to configurable garbage-collection policies</li>
-<li>applications can read data at old timestamps.</li>
-<li> provides an SQL-based query language.</li>
-<li>supports general-purpose transactions
+<li>Data is versioned, and each version is automatically timestamped with its commit time</li>
+<li>Old versions of data are subject to configurable garbage-collection policies</li>
+<li>Applications can read data at old timestamps.</li>
+<li> Provides an SQL-based query language.</li>
+<li>Supports general-purpose transactions
 
 <ul>
 <li>Made possible by the fact that Spanner assigns globally meaningful commit timestamps using TrueTime API</li>
