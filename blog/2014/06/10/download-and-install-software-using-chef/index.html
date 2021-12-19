@@ -108,7 +108,7 @@
 
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>knife create cookbook zookeep</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class=''><span class='line'>knife cookbook create zookeep</span></code></pre></td></tr></table></div></figure>
 
 
 <!-- more -->
@@ -143,7 +143,7 @@
 </pre></td><td class='code'><pre><code class=''><span class='line'>tarball = "zookeeper-#{node[:zookeeper][:version]}.tar.gz"
 </span><span class='line'>download_file = "#{node[:zookeeper][:download_url]}/#{tarball}"
 </span><span class='line'>
-</span><span class='line'>remote_file "#{Chef::config[:file_cache_path]}/#{tarball}" do
+</span><span class='line'>remote_file "#{Chef::Config[:file_cache_path]}/#{tarball}" do
 </span><span class='line'>  source download_file
 </span><span class='line'>  action :create_if_missing
 </span><span class='line'>  mode 00644
@@ -171,8 +171,8 @@
 </span><span class='line'>  group "root"
 </span><span class='line'>  cwd zk_install_dir
 </span><span class='line'>  action :run
-</span><span class='line'>  command "tar xvzf #{Chef::config[:file_Cache_path]}/#{tarball}"
-</span><span class='line'>  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper")
+</span><span class='line'>  command "tar xvzf #{Chef::Config[:file_Cache_path]}/#{tarball}"
+</span><span class='line'>  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper") }
 </span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
 
 
@@ -198,7 +198,7 @@
 </span><span class='line'>  cwd zk_install_dir
 </span><span class='line'>  action :run
 </span><span class='line'>  command "mv zookeeper* zookeeper"
-</span><span class='line'>  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper")
+</span><span class='line'>  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper") }
 </span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
 
 

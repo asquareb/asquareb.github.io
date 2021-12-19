@@ -1,0 +1,338 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Spanner - Quick Notes</title>
+  <meta name="author" content="asquareb">
+
+  
+  <meta name="description" content="Globally distributed database that automatically shards data across many sets of Paxos state machines in datacenters spread all over the world. &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://asquareb.github.io/blog/2013/12/18/spanner/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-59760174-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body    class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Quick Notes</a></h1>
+  
+    <h2>Things that came on the way</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="asquareb.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/docs">Documents</a></li>
+  <li><a href="/slides">Presentations</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Spanner</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2013-12-18T21:47:12-08:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>9:47 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Globally distributed database that automatically shards data across many sets of Paxos state machines in datacenters spread all over the world. Replication is used for global availability and geographic locality; clients automatically failover between replicas. It automatically migrates data between machines to balance load and during failures.
+- Compared to Bigtable, Spanned provides cross datacenter replicated data
+    - Provides strong consistency in the presence of wide area replication
+    - Applications can specify replication constraints</p>
+
+<!--more-->
+
+
+<pre><code>    - Which datacenter can have which data
+    - How far data is from its users to control read latency
+    - How far replicas are from each other to control write latency
+    - How many replicas are maintained to control durability, availability and read performance
+</code></pre>
+
+<ul>
+<li>Database features on top of distributes systems infrastructure
+
+<ul>
+<li>Data is stored in schematized semirelational tables</li>
+<li>data is versioned, and each version is automatically timestamped with its commit time</li>
+<li>old versions of data are subject to configurable garbage-collection policies</li>
+<li>applications can read data at old timestamps.</li>
+<li> provides an SQL-based query language.</li>
+<li>supports general-purpose transactions
+
+<ul>
+<li>Made possible by the fact that Spanner assigns globally meaningful commit timestamps using TrueTime API</li>
+<li>TrueTime API exposes clock uncertainty and Spanner will slowdown when the uncertainty is large</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>Implementation</h2>
+
+<p>&lt;<img src="/images/spanner/spanner-overview.png" ALIGN=”center” /></p>
+
+<h3>Spanner deployment is called the universe</h3>
+
+<ul>
+<li>Organized as a set of Zones which are administrative units and set of locations for replication
+
+<ul>
+<li>Zone has one Zone Master and between one hundred and several thousand span servers
+
+<ul>
+<li>Zone Master assigns data to Span servers</li>
+<li>Span servers serve data to clients</li>
+<li>Zones can be added or removed from a running system</li>
+</ul>
+</li>
+<li>Location proxies are used by clients to locate span servers which can serve the data</li>
+<li>Universe master is a console which provides status information of all zones</li>
+<li>Placement driver identifies data that need to be moved by communicating with span servers
+
+<h3>Spanserver</h3>
+
+<p>&lt;<img src="/images/spanner/spanserver.png" ALIGN=”center” /></p></li>
+</ul>
+</li>
+<li>Manages between 100 and 1000 instances of “tablets” which stores timestamped key value pairs</li>
+<li>Tablets state is stored in a set of B-tree like files and a WAL on a distributed filesystem (Colossus)</li>
+<li>For replication a Paxos state machine is created for each tablet and the set of replica is called Paxos group</li>
+<li>Leader in a Paxos group implements a lock table which maps range of keys to locks for concurrency control
+
+<ul>
+<li>all transactional reads need two acquire locks while the others can bypass the lock table</li>
+</ul>
+</li>
+<li>Leader in a Paxos group also implements a transaction manager to support distributed transactions
+
+<ul>
+<li>Transaction manager coordinate a two phase commit when a transaction involved more than one Pax’s group</li>
+</ul>
+</li>
+<li>With in each tablet Spanner implements an abstraction called directory which is a contiguous set of keys with common prefix
+
+<ul>
+<li>Directories are units of data placement and applications can control the locality of data by choosing keys</li>
+<li>Directories makes moving data to reduce load from a Paxos group or to keep frequently accessed or data accessed together efficient</li>
+<li>Tablet is a container which can store multiple directories which in turn multiple key ranges for the same table or multiple tables</li>
+<li>Directory is the smallest unit for replication and when the size of a directory grows Spanner shards into multiple fragments. Fragments from a directory are the real unit of replication and fragments from a directory can be managed by multiple Paxos group</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>Data Model</h2>
+
+<p>&lt;<img src="/images/spanner/spanner-schema.png" ALIGN=”center” />
+- support schematized semi-relational tables and synchronous replication
+- Cross row transactions with the assumption that application programmers will take into account performance overhead
+- Data model is layered on top of directory bucketed key value mappings
+- Create database in a universe which can contain unlimited number of schematized tables
+- Every row in a table need to have a set of one or more primary key columns
+- Application can create a hierarchy of tables using “INTERLEAVE IN” clause which will lead to the storage of related rows in the same directory. This improves performance.</p>
+
+<h2>Truetime</h2>
+
+<p> &lt;<img src="/images/spanner/TrueTime-API.png" ALIGN=”center” />
+- TT.now() will return TT.interval which will be within the error boundary and guaranteed to include the absolute time when now() is invoked
+- TrueTime API is used by Spanner for concurrency control and is provided by Google infrastructure which used  atomic clocks and GPS to implement</p>
+
+<h2>Concurrency Control</h2>
+
+<p>Spanner supports following transactions
+- Lock free snapshot transaction: Should be pre-declared as not having any writes
+- Non blocking reads/ snapshot reads for client chosen timestamp or bound
+- Externally consistent transaction (Read write)
+    - Read with in read write transaction use wound-wait to avoid deadlocks
+    - Client issues read to the leader replica which acquires locks and reads the recent data
+    - Client sends keepalive messages to prevent participant leaders from timing out
+    - After reading and buffering all the writes, client initiates two phase commit first by choosing a coordinator Paxos group and sending each participant’s leader with the identity of coordinator along with any buffered writes
+    - All non coordinator participant leaders acquires a write lock, chooses a prepare timestamp greater than all any timestamp they have assigned to previous transaction and notifies the coordinator
+    - The coordinator leader also first acquires write locks, but skips the prepare phase.
+    - The coordinator chooses a commit timestamp for the entire transaction which is greater than all prepare timestamps received from participants, greater than all the timestamps the coordinator assigned to previous transactions and greater than TT.now().latest when the coordinator received its commit message
+    - The coordinator waits for unit TT.after(s), s being the commit time chosen before sending the commit time to client and all the participant leaders. Participants commits data with the commit time and release the lock
+- Schema change transaction
+    - Similar to read write transaction but not blocking
+    - Uses future timestamp and hence all writes with timestamp greater that the transaction timestamp need to wait to commit</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">asquareb</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2013-12-18T21:47:12-08:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>9:47 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/databases/'>databases</a>, <a class='category' href='/blog/categories/distributed-systems/'>distributed systems</a>, <a class='category' href='/blog/categories/paper/'>paper</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2013/12/18/spanner/" data-via="" data-counturl="http://asquareb.github.io/blog/2013/12/18/spanner/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/11/14/points-to-remember-while-designing-for-concurrency/" title="Previous Post: Points to remember while designing for concurrency">&laquo; Points to remember while designing for concurrency</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/06/07/contribute-using-git/" title="Next Post: Setting up to contribute using Git">Setting up to contribute using Git &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2021 - asquareb -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'asquareb-blog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2013/12/18/spanner/';
+        var disqus_url = 'http://asquareb.github.io/blog/2013/12/18/spanner/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

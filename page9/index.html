@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Following are some of the points to consider while designing and developing solutions involving concurrent processing. Identify independent &hellip;">
+  <meta name="description" content="Globally distributed database that automatically shards data across many sets of Paxos state machines in datacenters spread all over the world. &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,43 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/18/spanner/">Spanner</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2013-12-18T21:47:12-08:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>9:47 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Globally distributed database that automatically shards data across many sets of Paxos state machines in datacenters spread all over the world. Replication is used for global availability and geographic locality; clients automatically failover between replicas. It automatically migrates data between machines to balance load and during failures.
+- Compared to Bigtable, Spanned provides cross datacenter replicated data
+    - Provides strong consistency in the presence of wide area replication
+    - Applications can specify replication constraints</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/12/18/spanner/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -228,40 +265,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2013/08/15/challenges-in-concurrent-programming-i/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/07/29/determine-to-stay-serial-or-go-parallel/">Determine to Stay Serial or Go Parallel</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2013-07-29T18:12:46-04:00'><span class='date'><span class='date-month'>Jul</span> <span class='date-day'>29</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>6:12 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Given that concurrent programming involves unique challenges like race conditions and deadlocks, it would be advantageous to determine whether concurrent processing of a problem provides better performance than serial processing. Speedup is the metric which can be used to make this comparison. This involves identifying the best solutions to solve the problem through serial processing and concurrent processing.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2013/07/29/determine-to-stay-serial-or-go-parallel/">Read on &rarr;</a>
     </footer>
   
 
