@@ -203,13 +203,15 @@
 
 <p><img src="/images/spanner/spanner-schema.png" ALIGN=”center” /></p>
 
-<pre><code>- support schematized semi-relational tables and synchronous replication 
-- Cross row transactions with the assumption that application programmers will take into account performance overhead
-- Data model is layered on top of directory bucketed key value mappings 
-- Create database in a universe which can contain unlimited number of schematized tables
-- Every row in a table need to have a set of one or more primary key columns
-- Application can create a hierarchy of tables using “INTERLEAVE IN” clause which will lead to the storage of related rows in the same directory. This improves performance.
-</code></pre>
+<ul>
+<li>support schematized semi-relational tables and synchronous replication</li>
+<li>Cross row transactions with the assumption that application programmers will take into account performance overhead</li>
+<li>Data model is layered on top of directory bucketed key value mappings</li>
+<li>Create database in a universe which can contain unlimited number of schematized tables</li>
+<li>Every row in a table need to have a set of one or more primary key columns</li>
+<li>Application can create a hierarchy of tables using “INTERLEAVE IN” clause which will lead to the storage of related rows in the same directory. This improves performance.</li>
+</ul>
+
 
 <h2>Truetime</h2>
 
