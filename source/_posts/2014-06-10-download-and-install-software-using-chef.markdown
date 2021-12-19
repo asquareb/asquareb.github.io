@@ -10,7 +10,7 @@ With open source software it is common to download and install software from the
 
 - Create a Chef cookbook. Assumed that Chef is already available for use.
 {% codeblock %}
-knife create cookbook zookeep
+knife cookbook create zookeep
 {% endcodeblock %}
 <!-- more -->
 
@@ -26,7 +26,7 @@ default[:zookeeper][:download_url]="http://apache.claz.org/zookeeper/stable"
 tarball = "zookeeper-#{node[:zookeeper][:version]}.tar.gz"
 download_file = "#{node[:zookeeper][:download_url]}/#{tarball}"
 
-remote_file "#{Chef::config[:file_cache_path]}/#{tarball}" do
+remote_file "#{Chef::Config[:file_cache_path]}/#{tarball}" do
   source download_file
   action :create_if_missing
   mode 00644
@@ -44,8 +44,8 @@ execute "tar" do
   group "root"
   cwd zk_install_dir
   action :run
-  command "tar xvzf #{Chef::config[:file_Cache_path]}/#{tarball}"
-  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper")
+  command "tar xvzf #{Chef::Config[:file_Cache_path]}/#{tarball}"
+  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper") }
 end
 {% endcodeblock %}
  "zk_install_dir" variable will store the directory into which the zookeeper software need to be installed into and uses the value set to default[:zookeeper][:install] attribute in the attribute file.
@@ -59,7 +59,7 @@ execute "move" do
   cwd zk_install_dir
   action :run
   command "mv zookeeper* zookeeper"
-  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper")
+  not_if{ ::File.directory?("#{zk_install_dir}/zookeeper") }
 end
 {% endcodeblock %}
 

@@ -97,4 +97,4 @@ cookbook_path "/where-ever/chef-repo/cookbooks"
 sudo chef-solo -c solo.rb -j kafka.json
 {% endcodeblock %}
 
-If you don't have the time to go through these steps manually, check out a quick hack which automates these steps https://github.com/bijugs/simple-scripts/blob/master/install_kafka_using_chef_solo.sh
+Happy cheffing!!
