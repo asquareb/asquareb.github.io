@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>“Ceph” - Quick Notes</title>
+  <title>Ceph - Quick Notes</title>
   <meta name="author" content="asquareb">
 
   
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://asquareb.github.io/blog/2022/03/20/ceph/">
+  <link rel="canonical" href="http://asquareb.github.io/blog/2012/03/20/ceph/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
@@ -84,7 +84,7 @@
   
   <header>
     
-      <h1 class="entry-title">“Ceph”</h1>
+      <h1 class="entry-title">Ceph</h1>
     
     
       <p class="meta">
@@ -93,7 +93,7 @@
 
 
 
-<time class='entry-date' datetime='2022-03-20T22:21:11-08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2022</span></span> <span class='time'>10:21 pm</span></time>
+<time class='entry-date' datetime='2012-03-20T22:21:11-08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2012</span></span> <span class='time'>10:21 pm</span></time>
         
       </p>
     
@@ -105,7 +105,7 @@
 <!--more-->
 
 
-<p>System Overview</p>
+<h2>System Overview</h2>
 
 <p><img src="/images/ceph/ceph-sys-arch.png" ALIGN=”center” /></p>
 
@@ -121,7 +121,7 @@
 
 <p>Metadata read operations like <code>readdir</code>, <code>stats</code> and update operations like <code>unlink</code>, <code>chmod</code> are applied synchronously by MDS for security, consistency and safety without taking a lock. CEPH optimizes common metadata access scenarios like <code>readdir</code> followed by stats. In this case, CEPH will return the briefly cached data from <code>readdir</code> for the <code>stats</code> call. When multiple clients have opened a file for writes, a <code>stats</code> request against the file will involve revoking the write capability of all the clients, collect up-to date size and mtime value from all the clients, return the highest value for the <code>stats</code> request and reissue the write capabilities to all the clients. This is required to ensure proper serializability.</p>
 
-<p>Metadata Management</p>
+<h2>Metadata Management</h2>
 
 <p>While metadata requests are serviced by in-memory cache in MDS, meta is flushed to ODS for recovery. Meta data is   distributed in MDS cluster based on a dynamic partitioning strategy that adaptively distributes cached metadata hierarchically across set of nodes. An authoritative MDS is responsible for managing cache coherence and serializing updates for a given piece of metadata. Each MDS in the MDS cluster measures the popularity of metadata within the directory hierarchy using counters with an exponential time decay. Any operation increments the counter on the affected inode and all of its ancestors up to the root directory, providing each MDS with a weighted tree describing the recent load distribution. MDS load values are compared and subtrees of the metadata hierarchy are migrated to keep the workload evenly distributed. During metadata migration, additional journal entries are written on both MDSs and in addition the imported meta data is written to the new MDS’s journal for failure recovery.</p>
 
@@ -129,7 +129,7 @@
 
 <p>CEPH also uses the knowledge about the metadata use to distribute popular meta data to reduce hotspots. Contents of heavily read directories are selectively replicated across multiple nodes to reduce load. Directories that experience heavy write workloads have their contents hashed by file name across the cluster to achieve a balanced distribution of workload at the expense of directory locality. Clients are directed to authoritative MDS for updates while it is directed to random node for read operations.</p>
 
-<p>Distributed Object Storage</p>
+<h2>Distributed Object Storage</h2>
 
 <p>CEPH clients and MDS view ODS cluster as a single logical object store and namespace. Ceph’s RADOS (Reliable Autonomic Distributed Object Store) achieves linear scaling in both capacity and aggregate performance by delegating management of object replication, cluster expansion, failure detection and recovery to OSDs in a distributed fashion. Ceph first maps objects to placement groups (PG). Placement groups are then assigned to OSDs using CRUSH (Controlled Replication Under Scalable Hashing) a pseudo-random data distribution function that efficiently maps each PG to an ordered list of OSDs upon which to store object replicas. CRUSH maps PGs onto OSDs based on placement rules which determines the the level of replication and any constraints on placement like using OSDs on different racks.</p>
 
@@ -145,7 +145,7 @@
 
 <p>To identify transient failures and system wide failures, a small cluster of monitors collects failure reports. Monitors provide an updated cluster map when failures are identified and they are distributed via the inter OSD communication. When an active OSD receives an updated cluster map, it iterates over all locally stored placement groups and calculates the CRUSH mapping to determine which ones it is responsible for, either as a primary or replica. If the OSD is the primary for the PG, it collects current (and former) replicas’ PG versions. If the primary lacks the most recent PG state, it retrieves the log of recent PG changes from current or prior OSDs in the PG in order to determine the correct (most recent) PG contents. The primary then sends each replica an incremental log update, such that all parties know what the PG contents should be, even if their locally stored object set may not match. Only after the primary determines the correct PG state and shares it with any replicas is I/O to objects in the PG permitted. OSDs are then independently responsible for retrieving missing or outdated objects from their peers. If an OSD receives a request for a stale or missing object, it delays processing and moves that object to the front of the recovery queue.</p>
 
-<p> ##Reference##</p>
+<h2>Reference</h2>
 
 <ul>
 <li><a href="https://www.usenix.org/legacy/event/osdi06/tech/full_papers/weil/weil.pdf">Ceph: A Scalable, High-Performance Distributed File System </a></li>
@@ -166,7 +166,7 @@
 
 
 
-<time class='entry-date' datetime='2022-03-20T22:21:11-08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2022</span></span> <span class='time'>10:21 pm</span></time>
+<time class='entry-date' datetime='2012-03-20T22:21:11-08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2012</span></span> <span class='time'>10:21 pm</span></time>
       
 
 <span class="categories">
@@ -180,7 +180,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2022/03/20/ceph/" data-via="" data-counturl="http://asquareb.github.io/blog/2022/03/20/ceph/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2012/03/20/ceph/" data-via="" data-counturl="http://asquareb.github.io/blog/2012/03/20/ceph/" >Tweet</a>
   
   
   
@@ -189,8 +189,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2021/01/10/amazon-aurora-storage/" title="Previous Post: Amazon Aurora Storage">&laquo; Amazon Aurora Storage</a>
+        <a class="basic-alignment left" href="/blog/2012/02/21/google-bigtable/" title="Previous Post: Google Bigtable">&laquo; Google Bigtable</a>
       
+      
+        <a class="basic-alignment right" href="/blog/2013/06/15/concurrency-and-why-application-developers-need-to-know-about-it/" title="Next Post: Concurrency and why application developers need to know about it">Concurrency and why application developers need to know about it &raquo;</a>
       
     </p>
   </footer>
@@ -230,8 +232,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://asquareb.github.io/blog/2022/03/20/ceph/';
-        var disqus_url = 'http://asquareb.github.io/blog/2022/03/20/ceph/';
+        var disqus_identifier = 'http://asquareb.github.io/blog/2012/03/20/ceph/';
+        var disqus_url = 'http://asquareb.github.io/blog/2012/03/20/ceph/';
         var disqus_script = 'embed.js';
       
     (function () {

@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Wide variety of applications in high performance computing faced issues with scalability of file systems like NFS (Network File Systems) which led to &hellip;">
+  <meta name="description" content="Two fundamental concepts enables Amazon Aurora help meet requirements that need to be satisfied by any cloud based database like seamless scalability &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,40 +81,6 @@
     <div id="content">
       <div class="blog-index">
   
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2022/03/20/ceph/">“Ceph”</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2022-03-20T22:21:11-08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2022</span></span> <span class='time'>10:21 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Wide variety of applications in high performance computing faced issues with scalability of file systems like NFS (Network File Systems) which led to the adoption of distributed file systems based on object based storage architecture. Object storage improved the scalability by separating the file system meta operations and the data storage operations. The meta operations were handles by metadata servers (MDS) while the traditional block level interface was replaced by object storage devices (OSD). Clients interact with MDS to perform meta operations like open and then directly interacts with OSD to store the data which in-turn delegates the data placement to devices themselves. Reliance and operations done by MDS and not having enough intelligence in OSD constrained the scalability and CEPH tries to mitigate it.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2022/03/20/ceph/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
   
   
     <article>
@@ -261,6 +227,40 @@
   
     <footer>
       <a rel="full-article" href="/blog/2016/04/18/amazon-dynamo/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/03/31/jdbc-connection-to-apache-phoenix/">JDBC Connection to Apache Phoenix</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-03-31T12:27:36-04:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>31</span><span class='date-suffix'>st</span>, <span class='date-year'>2016</span></span> <span class='time'>12:27 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Phoenix provides a JDBC driver for Java client and hence can be connected to Phoenix by following the steps required to get a JDBC connection. As with JDBC drivers for other DBMS, there are are some Phoenix specific requirements to get a JDBC connection. For a non secure HBase cluster the Phoenix JDBC connection string should be of the form <code>jdbc:phoenix:&lt;ZK-QUORUM&gt;:&lt;ZK-PORT&gt;:&lt;ZK-HBASE-NODE&gt;</code>. The following is the code snippet to get a Phoenix JDBC connection object for a non secure HBase cluster.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/03/31/jdbc-connection-to-apache-phoenix/">Read on &rarr;</a>
     </footer>
   
 
