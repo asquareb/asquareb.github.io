@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Distributed Systems | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/distributed-systems/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2021-12-19T12:57:56-08:00</updated>
+  <updated>2022-01-10T22:24:16-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -12,6 +12,65 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[“Ceph”]]></title>
+    <link href="http://asquareb.github.io/blog/2022/03/20/ceph/"/>
+    <updated>2022-03-20T22:21:11-08:00</updated>
+    <id>http://asquareb.github.io/blog/2022/03/20/ceph</id>
+    <content type="html"><![CDATA[<p>Wide variety of applications in high performance computing faced issues with scalability of file systems like NFS (Network File Systems) which led to the adoption of distributed file systems based on object based storage architecture. Object storage improved the scalability by separating the file system meta operations and the data storage operations. The meta operations were handles by metadata servers (MDS) while the traditional block level interface was replaced by object storage devices (OSD). Clients interact with MDS to perform meta operations like open and then directly interacts with OSD to store the data which in-turn delegates the data placement to devices themselves. Reliance and operations done by MDS and not having enough intelligence in OSD constrained the scalability and CEPH tries to mitigate it.</p>
+
+<!--more-->
+
+
+<p>System Overview</p>
+
+<p><img src="/images/ceph/ceph-sys-arch.png" ALIGN=”center” /></p>
+
+<p>CEPH eliminates file allocation tables which involves meta data updates by using distribution function called CRUSH. This reduction in dependency on MDS during file operations improves scalability. File data is striped onto predictably named objects and CRUSH assigns the objects to storage devices. This intelligence is used by the client and OSD reducing considerably the interaction with MDS.</p>
+
+<p>CEPH MDS is also highly adaptive and distributed which dramatically improves the scalability of meta access and in-turn the scalability of the file system. CEPH MDS architecture is based on dynamic subtree partitioning that lets it to distribute metadata among tens of MDSs.</p>
+
+<p>Given that any distributed system like CEPH will experience failures, growth etc which requires addition and removal of storage, CEPH delegates the responsibility for data migration, replication, failure detection and recovery to the cluster of OSDs. While OSDs provide a logical object store to clients and MDS, they can leverage the knowledge about the state of the system to achieve reliable, highly available object store with linear scaling.</p>
+
+<p>Applications that need to use CEPH can directly link CEPH client or interact with CEPH as a mounted file system via FUSE. When a process opens a file, the client sends a request to the MDS cluster which traverses the file system hierarchy and translates the file name to a file inode which includes a unique inode number, the owner, size, mode etc. If the client has access to the file, the inode number, file size and the striping strategy used to map the file to objects is returned to the client. Armed with this data client can name and locate all the objects containing the file data using CRUSH and directly read from the OSD cluster. Similarly when a new file is open for writing, the client can write data directly to the OSD using CRUSH eliminating the need to interact with MDSs.</p>
+
+<p>POSIX semantics requires that read reflects and previous writes and that writes are atomic. When a file is accessed by multiple clients for reads and writes, MDS will revoke any caching and buffering capabilities issues previously forcing the I/O operations to synchronous. Since synchronous operations are slower, CEPH offers POSIX extensions like <code>O_LAZY</code> flag for clients to perform I/O operations asynchronously.</p>
+
+<p>Metadata read operations like <code>readdir</code>, <code>stats</code> and update operations like <code>unlink</code>, <code>chmod</code> are applied synchronously by MDS for security, consistency and safety without taking a lock. CEPH optimizes common metadata access scenarios like <code>readdir</code> followed by stats. In this case, CEPH will return the briefly cached data from <code>readdir</code> for the <code>stats</code> call. When multiple clients have opened a file for writes, a <code>stats</code> request against the file will involve revoking the write capability of all the clients, collect up-to date size and mtime value from all the clients, return the highest value for the <code>stats</code> request and reissue the write capabilities to all the clients. This is required to ensure proper serializability.</p>
+
+<p>Metadata Management</p>
+
+<p>While metadata requests are serviced by in-memory cache in MDS, meta is flushed to ODS for recovery. Meta data is   distributed in MDS cluster based on a dynamic partitioning strategy that adaptively distributes cached metadata hierarchically across set of nodes. An authoritative MDS is responsible for managing cache coherence and serializing updates for a given piece of metadata. Each MDS in the MDS cluster measures the popularity of metadata within the directory hierarchy using counters with an exponential time decay. Any operation increments the counter on the affected inode and all of its ancestors up to the root directory, providing each MDS with a weighted tree describing the recent load distribution. MDS load values are compared and subtrees of the metadata hierarchy are migrated to keep the workload evenly distributed. During metadata migration, additional journal entries are written on both MDSs and in addition the imported meta data is written to the new MDS’s journal for failure recovery.</p>
+
+<p><img src="/images/ceph/ceph-meta-data.png" ALIGN=”center” /></p>
+
+<p>CEPH also uses the knowledge about the metadata use to distribute popular meta data to reduce hotspots. Contents of heavily read directories are selectively replicated across multiple nodes to reduce load. Directories that experience heavy write workloads have their contents hashed by file name across the cluster to achieve a balanced distribution of workload at the expense of directory locality. Clients are directed to authoritative MDS for updates while it is directed to random node for read operations.</p>
+
+<p>Distributed Object Storage</p>
+
+<p>CEPH clients and MDS view ODS cluster as a single logical object store and namespace. Ceph’s RADOS (Reliable Autonomic Distributed Object Store) achieves linear scaling in both capacity and aggregate performance by delegating management of object replication, cluster expansion, failure detection and recovery to OSDs in a distributed fashion. Ceph first maps objects to placement groups (PG). Placement groups are then assigned to OSDs using CRUSH (Controlled Replication Under Scalable Hashing) a pseudo-random data distribution function that efficiently maps each PG to an ordered list of OSDs upon which to store object replicas. CRUSH maps PGs onto OSDs based on placement rules which determines the the level of replication and any constraints on placement like using OSDs on different racks.</p>
+
+<p><img src="/images/ceph/ceph-rados.png" ALIGN=”center” /></p>
+
+<p>When a client sends write requests for an object, it is send to the one of the OSD in the objects PG which in-turn sends the write to additional replication OSDs. Once the replications OSDs had applied the changes they respond to the primary OSD which in-turn applies the writes and acknowledges the client.  While this ack is generated when all the OSDs updated the in-memory cache and second ack is send to the client when the changes are persisted to make sure that the changes can withstand failures. The client buffers the writes until the second ack is received to avoid data loss. Client read requests are send to the primary OSD in the PG.</p>
+
+<p>Instead of relying on the local filesystem like ext3, Ceph manages it local object datastore using EBOFS (Extent and B-Tree based Object File System). EBOFS is implemented entirely in user space and interacts directly with raw block device.</p>
+
+<h2>Failure Detection and Recovery</h2>
+
+<p>OSDs in a PG monitors liveness of other OSDs. While replication acts as a passive confirmation of liveness, when a OSD is not heard from a peer recently, an explicit ping is sent. Non responsive is marked as <code>down</code> initially and if the OSD doesn’t recover quickly it is marked as<code>out</code> and another OSD joins PG to re-replicate its contents. Clients which have pending operations with the failed OSD will resubmit the request to the new primary. By marking OSDs as <code>down</code>, RADOS prevents initiating widespread data re-replication. Failures like disk failures or data corruption OSDs self report them.</p>
+
+<p>To identify transient failures and system wide failures, a small cluster of monitors collects failure reports. Monitors provide an updated cluster map when failures are identified and they are distributed via the inter OSD communication. When an active OSD receives an updated cluster map, it iterates over all locally stored placement groups and calculates the CRUSH mapping to determine which ones it is responsible for, either as a primary or replica. If the OSD is the primary for the PG, it collects current (and former) replicas’ PG versions. If the primary lacks the most recent PG state, it retrieves the log of recent PG changes from current or prior OSDs in the PG in order to determine the correct (most recent) PG contents. The primary then sends each replica an incremental log update, such that all parties know what the PG contents should be, even if their locally stored object set may not match. Only after the primary determines the correct PG state and shares it with any replicas is I/O to objects in the PG permitted. OSDs are then independently responsible for retrieving missing or outdated objects from their peers. If an OSD receives a request for a stale or missing object, it delays processing and moves that object to the front of the recovery queue.</p>
+
+<p> ##Reference##</p>
+
+<ul>
+<li><a href="https://www.usenix.org/legacy/event/osdi06/tech/full_papers/weil/weil.pdf">Ceph: A Scalable, High-Performance Distributed File System </a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Amazon Aurora Storage]]></title>
@@ -333,173 +392,6 @@ A system is said to be <strong>scalable</strong> if it can handle addition of re
 <li>Is it practical in the environment in which the system is used?</li>
 </ul>
 </li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Spanner]]></title>
-    <link href="http://asquareb.github.io/blog/2013/12/18/spanner/"/>
-    <updated>2013-12-18T21:47:12-08:00</updated>
-    <id>http://asquareb.github.io/blog/2013/12/18/spanner</id>
-    <content type="html"><![CDATA[<p>Globally distributed database that automatically shards data across many sets of Paxos state machines in datacenters spread all over the world. Replication is used for global availability and geographic locality; clients automatically failover between replicas. It automatically migrates data between machines to balance load and during failures.</p>
-
-<!--more-->
-
-
-<ul>
-<li>Compared to Bigtable, Spanner provides cross datacenter replicated data
-
-<ul>
-<li>Provides strong consistency in the presence of wide area replication</li>
-<li>Applications can specify replication constraints
-
-<ul>
-<li>Which datacenter can have which data</li>
-<li>How far data is from its users to control read latency</li>
-<li>How far replicas are from each other to control write latency</li>
-<li>How many replicas are maintained to control durability, availability and read performance</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Database features on top of distributes systems infrastructure
-
-<ul>
-<li>Data is stored in schematized semirelational tables</li>
-<li>Data is versioned, and each version is automatically timestamped with its commit time</li>
-<li>Old versions of data are subject to configurable garbage-collection policies</li>
-<li>Applications can read data at old timestamps.</li>
-<li> Provides an SQL-based query language.</li>
-<li>Supports general-purpose transactions
-
-<ul>
-<li>Made possible by the fact that Spanner assigns globally meaningful commit timestamps using TrueTime API</li>
-<li>TrueTime API exposes clock uncertainty and Spanner will slowdown when the uncertainty is large</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-
-<h2>Implementation</h2>
-
-<p><img src="/images/spanner/spanner-overview.png" ALIGN=”center” /></p>
-
-<p>Spanner deployment is called the universe</p>
-
-<ul>
-<li>Organized as a set of Zones which are administrative units and set of locations for replication
-
-<ul>
-<li>Zone has one Zone Master and between one hundred and several thousand span servers
-
-<ul>
-<li>Zone Master assigns data to Span servers</li>
-<li>Span servers serve data to clients</li>
-<li>Zones can be added or removed from a running system</li>
-</ul>
-</li>
-<li>Location proxies are used by clients to locate span servers which can serve the data</li>
-<li>Universe master is a console which provides status information of all zones</li>
-<li>Placement driver identifies data that need to be moved by communicating with span servers</li>
-</ul>
-</li>
-</ul>
-
-
-<h3>Spanserver</h3>
-
-<p><img src="/images/spanner/spanserver.png" ALIGN=”center” /></p>
-
-<ul>
-<li>Manages between 100 and 1000 instances of “tablets” which stores timestamped key value pairs</li>
-<li>Tablets state is stored in a set of B-tree like files and a WAL on a distributed filesystem (Colossus)</li>
-<li>For replication a Paxos state machine is created for each tablet and the set of replica is called Paxos group</li>
-<li>Leader in a Paxos group implements a lock table which maps range of keys to locks for concurrency control
-
-<ul>
-<li>all transactional reads need two acquire locks while the others can bypass the lock table</li>
-</ul>
-</li>
-<li>Leader in a Paxos group also implements a transaction manager to support distributed transactions
-
-<ul>
-<li>Transaction manager coordinate a two phase commit when a transaction involved more than one Pax’s group</li>
-</ul>
-</li>
-<li>With in each tablet Spanner implements an abstraction called directory which is a contiguous set of keys with common prefix
-
-<ul>
-<li>Directories are units of data placement and applications can control the locality of data by choosing keys</li>
-<li>Directories makes moving data to reduce load from a Paxos group or to keep frequently accessed or data accessed together efficient</li>
-<li>Tablet is a container which can store multiple directories which in turn multiple key ranges for the same table or multiple tables</li>
-<li>Directory is the smallest unit for replication and when the size of a directory grows Spanner shards into multiple fragments. Fragments from a directory are the real unit of replication and fragments from a directory can be managed by multiple Paxos group</li>
-</ul>
-</li>
-</ul>
-
-
-<h2>Data Model</h2>
-
-<p><img src="/images/spanner/spanner-schema.png" ALIGN=”center” /></p>
-
-<ul>
-<li>support schematized semi-relational tables and synchronous replication</li>
-<li>Cross row transactions with the assumption that application programmers will take into account performance overhead</li>
-<li>Data model is layered on top of directory bucketed key value mappings</li>
-<li>Create database in a universe which can contain unlimited number of schematized tables</li>
-<li>Every row in a table need to have a set of one or more primary key columns</li>
-<li>Application can create a hierarchy of tables using “INTERLEAVE IN” clause which will lead to the storage of related rows in the same directory. This improves performance.</li>
-</ul>
-
-
-<h2>Truetime</h2>
-
-<p><img src="/images/spanner/TrueTime-API.png" ALIGN=”center” /></p>
-
-<ul>
-<li>TT.now() will return TT.interval which will be within the error boundary and guaranteed to include the absolute time when now() is invoked</li>
-<li>TrueTime API is used by Spanner for concurrency control and is provided by Google infrastructure which used  atomic clocks and GPS to implement</li>
-</ul>
-
-
-<h2>Concurrency Control</h2>
-
-<p>Spanner supports following transactions</p>
-
-<ul>
-<li>Lock free snapshot transaction: Should be pre-declared as not having any writes</li>
-<li>Non blocking reads/ snapshot reads for client chosen timestamp or bound</li>
-<li>Externally consistent transaction (Read write)
-
-<ul>
-<li>Read with in read write transaction use wound-wait to avoid deadlocks</li>
-<li>Client issues read to the leader replica which acquires locks and reads the recent data</li>
-<li>Client sends keepalive messages to prevent participant leaders from timing out</li>
-<li>After reading and buffering all the writes, client initiates two phase commit first by choosing a coordinator Paxos group and sending each participant’s leader with the identity of coordinator along with any buffered writes</li>
-<li>All non coordinator participant leaders acquires a write lock, chooses a prepare timestamp greater than all any timestamp they have assigned to previous transaction and notifies the coordinator</li>
-<li>The coordinator leader also first acquires write locks, but skips the prepare phase.</li>
-<li>The coordinator chooses a commit timestamp for the entire transaction which is greater than all prepare timestamps received from participants, greater than all the timestamps the coordinator assigned to previous transactions and greater than TT.now().latest when the coordinator received its commit message</li>
-<li>The coordinator waits for unit TT.after(s), s being the commit time chosen before sending the commit time to client and all the participant leaders. Participants commits data with the commit time and release the lock</li>
-</ul>
-</li>
-<li>Schema change transaction
-
-<ul>
-<li>Similar to read write transaction but not blocking</li>
-<li>Uses future timestamp and hence all writes with timestamp greater that the transaction timestamp need to wait to commit</li>
-</ul>
-</li>
-</ul>
-
-
-<h2>References</h2>
-
-<ul>
-<li><a href="https://static.googleusercontent.com/media/research.google.com/en//archive/spanner-osdi2012.pdf">Spanner: Google&rsquo;s Globally-Distributed Database</a></li>
 </ul>
 
 ]]></content>

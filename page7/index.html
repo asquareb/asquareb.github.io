@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Once you start populating data to Graphite database, users can see data on Graphite UI and create custom graphs to see the data in realtime. When &hellip;">
+  <meta name="description" content="As with any database management system, proper utilization of caches will improve the query performance in HBase. If someone is looking to optimize &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,42 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/">Leverage HBase Cache and Improve Read Performance</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-11-21T16:51:39-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>4:51 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>As with any database management system, proper utilization of caches will improve the query performance in HBase. If someone is looking to optimize caching, it is good to understand the HBase data structures since optimization will vary with each use case. The following is a simplistic view of HBase read write path of HBase and the participating components.</p>
+
+<p>HBase has two in-memory data structures (memstore, blockcache) and two on disk data structures (WAL, HFile). During data write, HBase writes data into WAL (Write Ahead Log) on disk and also to memstore in memory. When a memstore utilization threshold is reached data is flushed into HFiles on disk.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/11/21/leverage-hbase-cache-and-improve-read-performance/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -234,40 +270,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/19/creating-a-single-node-kafka-server-using-chef/">Creating a Single Node Kafka Server Using Chef</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-06-19T18:13:42-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>6:13 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>If you need to create a single node Kafka server quickly for development or testing and need to be repeatable, the following are the steps. This uses Chef-Solo and community cookbooks.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/06/19/creating-a-single-node-kafka-server-using-chef/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/page8">&larr; Older</a>
@@ -291,7 +293,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2021 - asquareb -
+  Copyright &copy; 2022 - asquareb -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

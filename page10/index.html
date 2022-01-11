@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="Given that concurrent programming involves unique challenges like race conditions and deadlocks, it would be advantageous to determine whether &hellip;">
+  <meta name="description" content="Inherently concurrent processing will involve shared resources like memory and will lead to race conditions. A simple example would be an accumulator &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/08/15/challenges-in-concurrent-programming-i/">Challenges in Concurrent Programming I</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2013-08-15T18:38:19-04:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>6:38 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Inherently concurrent processing will involve shared resources like memory and will lead to race conditions. A simple example would be an accumulator variable which needs to be read by all the processes running concurrently, adding some value to it and storing back the result. The race condition occurs when</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/08/15/challenges-in-concurrent-programming-i/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -225,49 +259,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/01/24/google-file-system/">Google File System</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2012-01-24T10:14:02-08:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2012</span></span> <span class='time'>10:14 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>GFS is Google’s distributed filesystem to support their processing needs based on the following observations</p>
-
-<h2>Observations</h2>
-
-<ul>
-<li>Component failures are the norm rather than the exception. Therefore monitoring, error detection, fault tolerance and recovery should be integral to the system</li>
-<li>Files are large by traditional standards and grows faster.</li>
-<li>Files are mutated by append operation rather than overwriting existing data</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2012/01/24/google-file-system/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/page11">&larr; Older</a>
@@ -291,7 +282,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2021 - asquareb -
+  Copyright &copy; 2022 - asquareb -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 
