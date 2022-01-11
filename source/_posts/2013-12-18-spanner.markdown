@@ -11,7 +11,7 @@ categories: [databases, paper, distributed systems]
 Globally distributed database that automatically shards data across many sets of Paxos state machines in datacenters spread all over the world. Replication is used for global availability and geographic locality; clients automatically failover between replicas. It automatically migrates data between machines to balance load and during failures.
 
 <!--more-->
-- Compared to Bigtable, Spanned provides cross datacenter replicated data
+- Compared to Bigtable, Spanner provides cross datacenter replicated data
     - Provides strong consistency in the presence of wide area replication 
     - Applications can specify replication constraints
         - Which datacenter can have which data
@@ -20,11 +20,11 @@ Globally distributed database that automatically shards data across many sets of
         - How many replicas are maintained to control durability, availability and read performance
 - Database features on top of distributes systems infrastructure
     - Data is stored in schematized semirelational tables
-    - data is versioned, and each version is automatically timestamped with its commit time
-    - old versions of data are subject to configurable garbage-collection policies
-    - applications can read data at old timestamps. 
-    -  provides an SQL-based query language. 
-    - supports general-purpose transactions
+    - Data is versioned, and each version is automatically timestamped with its commit time
+    - Old versions of data are subject to configurable garbage-collection policies
+    - Applications can read data at old timestamps. 
+    -  Provides an SQL-based query language. 
+    - Supports general-purpose transactions
         - Made possible by the fact that Spanner assigns globally meaningful commit timestamps using TrueTime API
         - TrueTime API exposes clock uncertainty and Spanner will slowdown when the uncertainty is large
 
@@ -91,3 +91,7 @@ Spanner supports following transactions
 - Schema change transaction
     - Similar to read write transaction but not blocking
     - Uses future timestamp and hence all writes with timestamp greater that the transaction timestamp need to wait to commit 
+
+## References ##
+
+- [Spanner: Google's Globally-Distributed Database](https://static.googleusercontent.com/media/research.google.com/en//archive/spanner-osdi2012.pdf)
