@@ -11,7 +11,7 @@ categories: [filesystem, paper, distributed systems]
 Wide variety of applications in high performance computing faced issues with scalability of file systems like NFS (Network File Systems) which led to the adoption of distributed file systems based on object based storage architecture. Object storage improved the scalability by separating the file system meta operations and the data storage operations. The meta operations are  handled by metadata servers (MDS) while the traditional block level interface was replaced by object storage devices (OSD). Clients interact with MDS to perform meta operations like open and then directly interact with OSD to store the data which in-turn delegates the data placement to devices themselves. Reliance and operations done by MDS and not having enough intelligence in OSD constrained the scalability and CEPH tried to mitigate it.
 <!--more-->
 
-System Overview
+##System Overview##
 
 <img src="{{ root_url }}/images/ceph/ceph-sys-arch.png" ALIGN=”center” />
 
@@ -27,7 +27,7 @@ POSIX semantics requires that read reflects previous writes and that writes are 
 
 Metadata read operations like ``readdir``, ``stats`` and update operations like ``unlink``, ``chmod`` are applied synchronously by MDS for security, consistency and safety without taking a lock. CEPH optimizes common metadata access scenarios like ``readdir`` followed by stats. In this case, CEPH will return the briefly cached data from ``readdir`` for the ``stats`` call. When multiple clients have opened a file for writes, a ``stats`` request against the file will involve revoking the write capability of all the clients, collect up-to date size and mtime value from all the clients, return the highest value for the ``stats`` request and reissue the write capabilities to all the clients. This is required to ensure proper serializability.
 
-Metadata Management
+##Metadata Management##
 
 While metadata requests are serviced by in-memory cache in MDS, meta is flushed to ODS for recovery. Metadata is 	distributed in an MDS cluster based on a dynamic partitioning strategy that adaptively distributes cached metadata hierarchically across a set of nodes. An authoritative MDS is responsible for managing cache coherence and serializing updates for a given piece of metadata. Each MDS in the MDS cluster measures the popularity of metadata within the directory hierarchy using counters with an exponential time decay. Any operation increments the counter on the affected inode and all of its ancestors up to the root directory, providing each MDS with a weighted tree describing the recent load distribution. MDS load values are compared and subtrees of the metadata hierarchy are migrated to keep the workload evenly distributed. During metadata migration, additional journal entries are written on both MDSs and in addition the imported meta data is written to the new MDS’s journal for failure recovery.  
 
@@ -35,7 +35,7 @@ While metadata requests are serviced by in-memory cache in MDS, meta is flushed 
 
 CEPH also uses the knowledge about the metadata used to distribute popular metadata to reduce hotspots. Contents of heavily read directories are selectively replicated across multiple nodes to reduce load. Directories that experience heavy write workloads have their contents hashed by file name across the cluster to achieve a balanced distribution of workload at the expense of directory locality. Clients are directed to authoritative MDS for updates while it is directed to random nodes for read operations.
 
-Distributed Object Storage
+##Distributed Object Storage##
 
 CEPH clients and MDS view ODS clusters as a single logical object store and namespace. Ceph’s RADOS (Reliable Autonomic Distributed Object Store) achieves linear scaling in both capacity and aggregate performance by delegating management of object replication, cluster expansion, failure detection and recovery to OSDs in a distributed fashion. Ceph first maps objects to placement groups (PG). Placement groups are then assigned to OSDs using CRUSH (Controlled Replication Under Scalable Hashing) a pseudo-random data distribution function that efficiently maps each PG to an ordered list of OSDs upon which to store object replicas. CRUSH maps PGs onto OSDs based on placement rules which determines the level of replication and any constraints on placement like using OSDs on different racks. 
 
@@ -51,6 +51,6 @@ OSDs in a PG monitor liveness of other OSDs. While replication acts as a passive
 
 To identify transient failures and system wide failures, a small cluster of monitors collects failure reports. Monitors provide an updated cluster map when failures are identified and they are distributed via the inter OSD communication. When an active OSD receives an updated cluster map, it iterates over all locally stored placement groups and calculates the CRUSH mapping to determine which ones it is responsible for, either as a primary or replica. If the OSD is the primary for the PG, it collects current (and former) replicas’ PG versions. If the primary lacks the most recent PG state, it retrieves the log of recent PG changes from current or prior OSDs in the PG in order to determine the correct (most recent) PG contents. The primary then sends each replica an incremental log update, such that all parties know what the PG contents should be, even if their locally stored object set may not match. Only after the primary determines the correct PG state and shares it with any replicas is I/O to objects in the PG permitted. OSDs are then independently responsible for retrieving missing or outdated objects from their peers. If an OSD receives a request for a stale or missing object, it delays processing and moves that object to the front of the recovery queue. 
 
- ##Reference##
+##Reference##
 
 - [Ceph: A Scalable, High-Performance Distributed File System ](https://www.usenix.org/legacy/event/osdi06/tech/full_papers/weil/weil.pdf)
