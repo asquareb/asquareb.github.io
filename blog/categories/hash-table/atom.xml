@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Hash Table | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/hash-table/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2022-01-27T22:08:19-08:00</updated>
+  <updated>2022-01-27T22:10:54-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -69,7 +69,7 @@
 </ul>
 
 
-<p> ##Reference##</p>
+<h2>Reference</h2>
 
 <ul>
 <li><a href="http://conferences.sigcomm.org/sigcomm/2001/p13-ratnasamy.pdf">A Scalable Content-Addressable Network</a></li>
