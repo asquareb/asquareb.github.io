@@ -193,6 +193,10 @@
 <lastmod>2013-06-15T18:46:49-04:00</lastmod>
 </url>
 <url>
+<loc>http://asquareb.github.io/blog/2013/02/27/a-scalable-content-addressable-network/</loc>
+<lastmod>2013-02-27T22:01:13-08:00</lastmod>
+</url>
+<url>
 <loc>http://asquareb.github.io/blog/2013/01/23/cassandra-a-decentralized-structured-storage-system/</loc>
 <lastmod>2013-01-23T21:44:21-08:00</lastmod>
 </url>
@@ -295,6 +299,9 @@
 </url>
 <url>
 <loc>http://asquareb.github.io/blog/categories/filesystem/</loc>
+</url>
+<url>
+<loc>http://asquareb.github.io/blog/categories/hash-table/</loc>
 </url>
 <url>
 <loc>http://asquareb.github.io/blog/categories/programming/</loc>
