@@ -4,7 +4,7 @@
   <title><![CDATA[Quick Notes]]></title>
   <link href="http://asquareb.github.io/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2022-02-07T14:51:51-08:00</updated>
+  <updated>2022-02-07T14:53:36-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -72,6 +72,9 @@
     <id>http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail</id>
     <content type="html"><![CDATA[<p>Spikes in tail latency is a common challenge faced especially in large scale, parallel and interactive applications and this paper looks at the sources of this spike at the hardware, os and application layers. The study is done by performing tests and collecting fine grained measurements on three servers a custom null RPC service, Memchached and Ngnix on Linux. The measurements are compared against best achievable latency distribution by modeling these services as a queueing system. This comparison identifies the major sources of tail latency beyond that caused by workload bursts namely</p>
 
+<!--more-->
+
+
 <ul>
 <li>Interference from other processes including background processes on a seemingly dedicated machine</li>
 <li>Request re-ordering caused by scheduling policies that are not designed with tail latency in mind</li>
@@ -82,9 +85,6 @@
 
 
 <p>and quantify them.</p>
-
-<!--more-->
-
 
 <h2>Summary of the findings</h2>
 
