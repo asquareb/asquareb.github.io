@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Quick Notes</title>
+  <title>Tales of the Tail - Quick Notes</title>
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="There are many reasons why Cloud is being adopted by enterprises and why some are holding back. Apart from the obvious reasons from the definition, &hellip;">
+  <meta name="description" content="Spikes in tail latency is a common challenge faced especially in large scale, parallel and interactive applications and this paper looks at the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://asquareb.github.io/page14/">
+  <link rel="canonical" href="http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Quick Notes" type="application/atom+xml">
@@ -79,15 +79,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2010/11/15/why-and-why-not-cloud/">Why and Why Not Cloud</a></h1>
+      <h1 class="entry-title">Tales of the Tail</h1>
     
     
       <p class="meta">
@@ -96,73 +93,95 @@
 
 
 
-<time class='entry-date' datetime='2010-11-15T07:55:35-05:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2010</span></span> <span class='time'>7:55 am</span></time>
+<time class='entry-date' datetime='2020-03-07T14:39:56-08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2020</span></span> <span class='time'>2:39 pm</span></time>
         
       </p>
     
   </header>
 
 
-  <div class="entry-content"><p>There are many reasons why Cloud is being adopted by enterprises and why some are holding back. Apart from the obvious reasons from the <a href="/blog/2010/10/27/in-the-cloud/">definition</a>, the following is a good list of reasons for the Why and Why not&hellip;.</p>
+<div class="entry-content"><p>Spikes in tail latency is a common challenge faced especially in large scale, parallel and interactive applications and this paper looks at the sources of this spike at the hardware, os and application layers. The study is done by performing tests and collecting fine grained measurements on three servers a custom null RPC service, Memchached and Ngnix on Linux. The measurements are compared against best achievable latency distribution by modeling these services as a queueing system. This comparison identifies the major sources of tail latency beyond that caused by workload bursts namely</p>
 
-<p>Factors appealing to Cloud adoption:</p>
+<ul>
+<li>Interference from other processes including background processes on a seemingly dedicated machine</li>
+<li>Request re-ordering caused by scheduling policies that are not designed with tail latency in mind</li>
+<li>Application design choices involving how transport connections are bound to processes or threads</li>
+<li>Multi core issues such as how NIC interrupts and server processes are mapped to cores</li>
+<li>CPU power saving mechanisms
+and quantify them.</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>Summary of the findings</h2>
+
+<p>The following table provides the summary of findings on the cause of the spike in tail latency due to various factors and how they can be mitigated</p>
+
+<p><img src="/images/can/Tales-of-the-tail.png" ALIGN=”center” /></p>
+
+<p> ##Reference##</p>
+
+<ul>
+<li><a href="hhttps://drkp.net/papers/latency-socc14.pdf">Hardware, OS, and Application-level Sources of Tail Latency</a></li>
+</ul>
 
 </div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2010/11/15/why-and-why-not-cloud/">Read on &rarr;</a>
-    </footer>
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
+  
+
+<span class="byline author vcard">Posted by <span class="fn">asquareb</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2020-03-07T14:39:56-08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2020</span></span> <span class='time'>2:39 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/paper/'>paper</a>, <a class='category' href='/blog/categories/performance/'>performance</a>
+  
+</span>
+
+
+    </p>
     
-      <h1 class="entry-title"><a href="/blog/2010/10/27/in-the-cloud/">In the Cloud?</a></h1>
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail/" data-via="" data-counturl="http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail/" >Tweet</a>
+  
+  
+  
+</div>
+
     
-    
-      <p class="meta">
-        
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2020/02/15/active-dbms/" title="Previous Post: Active DBMS">&laquo; Active DBMS</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2021/01/10/amazon-aurora-storage/" title="Next Post: Amazon Aurora Storage">Amazon Aurora Storage &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
 
-
-
-
-<time class='entry-date' datetime='2010-10-27T07:48:53-05:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2010</span></span> <span class='time'>7:48 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Every one is talking about Cloud and everyone wants to be on it!!!. At the same time when interacting with customers, there are questions raised which highlights the various levels of awareness and understanding of what Cloud delivery model means.</p>
-
-<p>Some of the queries go like these
-&ldquo;Our systems are hosted by a vendor and we get the required capacity when required. Does this mean we are on the Cloud?&rdquo;</p>
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2010/10/27/in-the-cloud/">Read on &rarr;</a>
-    </footer>
-  
 
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-    <a class="next" href="/page13">Newer &rarr;</a>
-    
-  </div>
-</div>
 <aside class="sidebar">
   
     
@@ -172,6 +191,7 @@
 
   
 </aside>
+
 
     </div>
   </div>
@@ -187,7 +207,10 @@
       var disqus_shortname = 'asquareb-blog';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail/';
+        var disqus_url = 'http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

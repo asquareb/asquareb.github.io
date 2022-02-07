@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="HBase supports inter-cluster data replication which can be used to propagate data to a secondary cluster/data center that can be accessed when &hellip;">
+  <meta name="description" content="HBase performs time based major compaction and in-order to prevent this resource intensive process interfere performance sensitive applications, this &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction/">Oozie Job to Schedule HBase Major Compaction</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-12-20T12:10:23-04:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>12:10 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>HBase performs time based major compaction and in-order to prevent this resource intensive process interfere performance sensitive applications, this can be disabled. Once disabled, in order to keep the HBase store files in optimal condition, application team need to schedule regular compaction. The following details the steps which need to be followed to schedule daily compaction through Oozie.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -216,41 +250,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2015/08/16/hbase-data-load/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/07/05/hbase-shell/">HBase Shell</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-07-05T18:05:25-05:00'><span class='date'><span class='date-month'>Jul</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>6:05 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>HBase shell is a Ruby based shell which can be used to interact with HBase cluster and perform data definition and data manipulation tasks. The shell is made available as part of the HBase code base and by default gets installed on all the nodes of the HBase cluster. In order to access the shell, HBase software need to be installed on the machine from where the shell is invoked and the PATH environment variable updated with the directory where the hbase shell program is stored. Commonly users and administrators access the shell through one of the nodes in the HBase cluster. Following is a quick introduction to frequently used hbase shell commands.
-HBase shell is invoked using the hbase shell command which in turn provides the user with a command prompt to enter the commands supported by the particular version of HBase.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/07/05/hbase-shell/">Read on &rarr;</a>
     </footer>
   
 

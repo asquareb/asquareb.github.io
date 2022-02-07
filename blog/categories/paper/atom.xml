@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Paper | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/paper/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2022-01-27T22:10:54-08:00</updated>
+  <updated>2022-02-07T14:44:23-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -60,6 +60,41 @@
 <ul>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Aurora Design Considerations - SIGMOD 17</a></li>
 <li><a href="https://www.amazon.science/publications/amazon-aurora-on-avoiding-distributed-consensus-for-i-os-commits-and-membership-changes">Amazon Aurora: On Avoiding Distributed Consensus</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Tales of the Tail]]></title>
+    <link href="http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail/"/>
+    <updated>2020-03-07T14:39:56-08:00</updated>
+    <id>http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail</id>
+    <content type="html"><![CDATA[<p>Spikes in tail latency is a common challenge faced especially in large scale, parallel and interactive applications and this paper looks at the sources of this spike at the hardware, os and application layers. The study is done by performing tests and collecting fine grained measurements on three servers a custom null RPC service, Memchached and Ngnix on Linux. The measurements are compared against best achievable latency distribution by modeling these services as a queueing system. This comparison identifies the major sources of tail latency beyond that caused by workload bursts namely</p>
+
+<ul>
+<li>Interference from other processes including background processes on a seemingly dedicated machine</li>
+<li>Request re-ordering caused by scheduling policies that are not designed with tail latency in mind</li>
+<li>Application design choices involving how transport connections are bound to processes or threads</li>
+<li>Multi core issues such as how NIC interrupts and server processes are mapped to cores</li>
+<li>CPU power saving mechanisms
+and quantify them.</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>Summary of the findings</h2>
+
+<p>The following table provides the summary of findings on the cause of the spike in tail latency due to various factors and how they can be mitigated</p>
+
+<p><img src="/images/can/Tales-of-the-tail.png" ALIGN=”center” /></p>
+
+<p> ##Reference##</p>
+
+<ul>
+<li><a href="hhttps://drkp.net/papers/latency-socc14.pdf">Hardware, OS, and Application-level Sources of Tail Latency</a></li>
 </ul>
 
 ]]></content>
@@ -247,71 +282,6 @@ If any of the nodes in the preference list is not available, another node will b
 
 <ul>
 <li><a href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf">Amazon Dynamo</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Note on Distributed Computing]]></title>
-    <link href="http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing/"/>
-    <updated>2016-03-06T16:18:22-05:00</updated>
-    <id>http://asquareb.github.io/blog/2016/03/06/a-note-on-distributed-computing</id>
-    <content type="html"><![CDATA[<p>A distributed system is a collection of independent computers that appears to its users as a single coherent system. <a href="http://theory.stanford.edu/people/jcm/cs358-96/spring-os.ps">This paper</a> argues that the objects in a distributed object oriented system form a single ontological class where all entities can be described by the specification of the set of interfaces of the objects and the semantics of operation is mistaken. This vision of unified objects for distributed systems is centered around the principles that</p>
-
-<!-- more -->
-
-
-<ul>
-<li>There is a single natural object oriented design for a given application, irrespective of context in which the application will be deployed</li>
-<li>Failure and performance issues are tied to the implementation of the components of the application and can be left out of initial design</li>
-<li>The interface of an object is independent of the context in which the object is used</li>
-</ul>
-
-
-<p>While this view is a natural extension of object oriented design, it doesn&rsquo;t take into account the important issues in distributed systems namely</p>
-
-<ul>
-<li>Latency
-
-<ul>
-<li>Ignoring the difference between the performance of local and remote invocations can lead to designs whose implementations will have performance problems because of large amount of communication between components that are in different address spaces and on different machines.</li>
-</ul>
-</li>
-<li>Memory access
-
-<ul>
-<li>Disparate address spaces both local and remote makes accessing memory locations/objects a bigger challenge</li>
-<li>This would require a common component like DSM which would translate memory pointer/object locations</li>
-<li>The other option is that the programmer is aware of the local and remote access which breaks transparency</li>
-</ul>
-</li>
-<li>Partial failure and concurrency due to lack of common agent
-
-<ul>
-<li>Interfaces of components can be designed as if all are local resulting in unhandled catastrophic failures</li>
-<li>Or design the interfaces as if all objects are remote resulting in the undesirable overhead on components which are local</li>
-<li>Partial failure also brings up the challenge of bringing back to an acceptable state which is not there in non distributed systems</li>
-</ul>
-</li>
-</ul>
-
-
-<p>Historically there is a desire to merge programming and computational models of local and remote computing. For e.g. communications protocol development has followed</p>
-
-<ul>
-<li>A path where integration with the current programming language is emphasized</li>
-<li>The other path where solving the inherent problems in distributed computing is emphasized</li>
-</ul>
-
-
-<p>These two approaches can be used in distributed object oriented systems by accepting the fact that there are irreconcilable differences in local and distributed computing</p>
-
-<ul>
-<li>Using IDLs which can be used to define local and remote objects and the IDL compilers which can vary its output based on object location</li>
-<li>Objects which are local but on a different address space can be considered as a separate category of object by the IDL compilers</li>
-<li>Developing tools like the ones which can identify the interaction between objects so that they can be designed to be local or remote</li>
-<li>Programmers being aware of the location of the objects so that they can think about the problems differently</li>
 </ul>
 
 ]]></content>

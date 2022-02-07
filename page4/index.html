@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="During execution, objects/variables created by Java programs gets their space allocated in the JVM heap memory. The total amount of heap memory &hellip;">
+  <meta name="description" content="HBase shell is a Ruby based shell which can be used to interact with HBase cluster and perform data definition and data manipulation tasks. The shell &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,41 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/07/05/hbase-shell/">HBase Shell</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-07-05T18:05:25-05:00'><span class='date'><span class='date-month'>Jul</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>6:05 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>HBase shell is a Ruby based shell which can be used to interact with HBase cluster and perform data definition and data manipulation tasks. The shell is made available as part of the HBase code base and by default gets installed on all the nodes of the HBase cluster. In order to access the shell, HBase software need to be installed on the machine from where the shell is invoked and the PATH environment variable updated with the directory where the hbase shell program is stored. Commonly users and administrators access the shell through one of the nodes in the HBase cluster. Following is a quick introduction to frequently used hbase shell commands.
+HBase shell is invoked using the hbase shell command which in turn provides the user with a command prompt to enter the commands supported by the particular version of HBase.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/07/05/hbase-shell/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -218,42 +253,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2015/04/19/chef-lwrp-using-hdfs-directory-as-an-example/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/">Integrating Chef and Apache ZooKeeper for Coordination in a Cluster</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-04-03T23:36:21-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>3</span><span class='date-suffix'>rd</span>, <span class='date-year'>2015</span></span> <span class='time'>11:36 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In a cluster environment services on nodes may have to be coordinated for various reasons. For e.g., when a configuration change is made to a distributed computing component like <code>HDFS</code>, the <code>HDFS</code> service on all nodes shouldn&rsquo;t stop at the same time to restart so that the configuration takes in effect. Stopping of the service on all the nodes will end up in unavailability which is not desired to put it lightly.</p>
-
-<p>There are many options to perform orchestration/coordination with varied maturity when you manage a cluster using <code>Chef</code>. Here we look at how <code>Chef</code> and <code>ZooKeeper</code> can work together to perform coordination of services on cluster nodes. We will use the need to control and coordinate service restart so that the service in all nodes are not stopped at the same time as the example to explain the solution.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/">Read on &rarr;</a>
     </footer>
   
 

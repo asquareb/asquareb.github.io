@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="In a node there can be services that are dependent on other services. For e.g. a monitoring service is dependent on services which it monitors and &hellip;">
+  <meta name="description" content="In a cluster environment services on nodes may have to be coordinated for various reasons. For e.g., when a configuration change is made to a &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,42 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/">Integrating Chef and Apache ZooKeeper for Coordination in a Cluster</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-04-03T23:36:21-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>3</span><span class='date-suffix'>rd</span>, <span class='date-year'>2015</span></span> <span class='time'>11:36 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In a cluster environment services on nodes may have to be coordinated for various reasons. For e.g., when a configuration change is made to a distributed computing component like <code>HDFS</code>, the <code>HDFS</code> service on all nodes shouldn&rsquo;t stop at the same time to restart so that the configuration takes in effect. Stopping of the service on all the nodes will end up in unavailability which is not desired to put it lightly.</p>
+
+<p>There are many options to perform orchestration/coordination with varied maturity when you manage a cluster using <code>Chef</code>. Here we look at how <code>Chef</code> and <code>ZooKeeper</code> can work together to perform coordination of services on cluster nodes. We will use the need to control and coordinate service restart so that the service in all nodes are not stopped at the same time as the example to explain the solution.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/04/03/integrating-chef-and-apache-zookeeper-for-coordination-in-a-cluster/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -212,40 +248,6 @@
   
     <footer>
       <a rel="full-article" href="/blog/2015/01/01/configuration-parameters-that-can-influence-hbase-performance/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/12/27/build-your-hadoop-cluster-unattended-almostls/">Build Your Hadoop Cluster Unattended (Almost!!)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-12-27T21:13:36-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>9:13 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>If you are a developer who would like to have a Hadoop cluster or a dev lead who would like everyone in your team a cluster of their own without going through the hassle of creating machines, networking them, install the required software components, <a href="https://github.com/bloomberg/chef-bach">chef-bach</a> is an option you want to try.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/12/27/build-your-hadoop-cluster-unattended-almostls/">Read on &rarr;</a>
     </footer>
   
 

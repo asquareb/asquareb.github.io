@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Performance | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/performance/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2022-01-27T22:10:54-08:00</updated>
+  <updated>2022-02-07T14:44:23-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -12,6 +12,41 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tales of the Tail]]></title>
+    <link href="http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail/"/>
+    <updated>2020-03-07T14:39:56-08:00</updated>
+    <id>http://asquareb.github.io/blog/2020/03/07/tales-of-the-tail</id>
+    <content type="html"><![CDATA[<p>Spikes in tail latency is a common challenge faced especially in large scale, parallel and interactive applications and this paper looks at the sources of this spike at the hardware, os and application layers. The study is done by performing tests and collecting fine grained measurements on three servers a custom null RPC service, Memchached and Ngnix on Linux. The measurements are compared against best achievable latency distribution by modeling these services as a queueing system. This comparison identifies the major sources of tail latency beyond that caused by workload bursts namely</p>
+
+<ul>
+<li>Interference from other processes including background processes on a seemingly dedicated machine</li>
+<li>Request re-ordering caused by scheduling policies that are not designed with tail latency in mind</li>
+<li>Application design choices involving how transport connections are bound to processes or threads</li>
+<li>Multi core issues such as how NIC interrupts and server processes are mapped to cores</li>
+<li>CPU power saving mechanisms
+and quantify them.</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>Summary of the findings</h2>
+
+<p>The following table provides the summary of findings on the cause of the spike in tail latency due to various factors and how they can be mitigated</p>
+
+<p><img src="/images/can/Tales-of-the-tail.png" ALIGN=”center” /></p>
+
+<p> ##Reference##</p>
+
+<ul>
+<li><a href="hhttps://drkp.net/papers/latency-socc14.pdf">Hardware, OS, and Application-level Sources of Tail Latency</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[HBase 1.0 : Offheap Cache Configuration]]></title>
@@ -241,37 +276,6 @@ If you are wondering what x GB is for, it is for Java direct memory used by hdfs
 <p>As with any database based application, Even with a well tuned cluster with the best hardware, an application will not get the best performance if it is not designed properly.</p>
 
 <p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Garbage First (G1) GC and HBase]]></title>
-    <link href="http://asquareb.github.io/blog/2014/12/18/garbage-first-g1-gc-and-hbase/"/>
-    <updated>2014-12-18T22:31:37-05:00</updated>
-    <id>http://asquareb.github.io/blog/2014/12/18/garbage-first-g1-gc-and-hbase</id>
-    <content type="html"><![CDATA[<p>G1 the lastest Java garbage collector is a generational collector like <a href="/blog/2014/12/13/jvm-gc-settings-and-hbase/">CMS</a>. The key differences between G1 and CMS collectors are</p>
-
-<ul>
-<li>In CMS the young and old generation heap space are physically differentiated. But in the case of G1 they are logical. This is achieved by dividing the total heap space into number of <code>regions</code> (2000) and the regions are identified whether they belong to young or old space.</li>
-<li>Compaction of the heap space is done as part of the collection process which was not the case in CMS.</li>
-<li>G1 collector tries to meet user specified target for application pause time during the collection process.</li>
-</ul>
-
-
-<!-- more -->
-
-
-<p>As with <a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/G1GettingStarted/index.html">CMS</a>, heap objects are created in eden space first. Then objects are copied to survivor space and objects which survive the aging threshold during minor GC gets moved into old gen space.</p>
-
-<p>When GC gets triggered, G1 can identify liveliness of objects in the various <code>regions</code> in a particular space (young or old). In order to fully utilize heap space and at the same time meet the acceptable application pause threshold, G1 collects the regions with lowest liveliness (hence more garbage) since it will be fast in releasing more heap space. Also during GC, live objects remaining in a <code>region</code> gets copied to another region with enough space to accomodate the objects. Freeing up regions results due to this copy process results in better compaction of heap space. Since GC pause times are a major component to HBase latency and latency fluctuations, any reduction in the pause time as with G1 collector will improve HBase latency.</p>
-
-<p>One interesting question which pops up is whether the compaction step in the G1 process is necessary for a system like HBase. Compaction which involves copying of objects between regions which requires resetting of references will be the costliest operation in the G1 collection process.</p>
-
-<p>In the case of HBase most of the objects which will survive and get moved to old gen heap space will be memstore or blockcache objects. They are of fixed sizes (2K and 64K respectively) and hence any new objects which gets moved to old space will be able to fit into a slot which got released earlier by HBase. So the only advantage of compaction of heap for a system like HBase is to be able to free GC regions quickly. But the time to perform G1 GC that meets user specified threshold includes compaction and freeing of regions, it is hard to imagine the advantage of G1 GC over CMS where there is no compaction.</p>
-
-<p>While G1 collector is set to replace CMS in the future and will be improved upon to better the performance of Java based systems in general, for systems like HBase which has a prescribed heap usage and operational pattern the improvements may not always be beneficial. One of the options to reduce the impact of GC on HBase subsystems, is to use more of offheap memory like <a href="/blog/2014/11/24/how-to-leverage-large-physical-memory-to-improve-hbase-read-performance/">BucketCache</a> since objects in offheap memory is not managed by GC and it is left to applications to manage it. This sounds more like the earlier database systems where services were inbuilt instead of relying on the <a href="http://www.eecs.berkeley.edu/~prabal/resources/osprelim/Sto81.pdf">OS based services which are general purpose</a>.</p>
-
-<p>More notes on this category can be found <a href="http://blog.asquareb.com/blog/categories/hbase/">here</a>.</p>
 ]]></content>
   </entry>
   

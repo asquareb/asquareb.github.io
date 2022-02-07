@@ -9,7 +9,7 @@
   <meta name="author" content="asquareb">
 
   
-  <meta name="description" content="If you have been using HBase off-heap bucketcache, you may agree that configuration it is a bit cumbersome to say the least. In version 1.0, the &hellip;">
+  <meta name="description" content="Phoenix provides a JDBC driver for Java client and hence can be connected to Phoenix by following the steps required to get a JDBC connection. As &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/03/31/jdbc-connection-to-apache-phoenix/">JDBC Connection to Apache Phoenix</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-03-31T12:27:36-04:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>31</span><span class='date-suffix'>st</span>, <span class='date-year'>2016</span></span> <span class='time'>12:27 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Phoenix provides a JDBC driver for Java client and hence can be connected to Phoenix by following the steps required to get a JDBC connection. As with JDBC drivers for other DBMS, there are are some Phoenix specific requirements to get a JDBC connection. For a non secure HBase cluster the Phoenix JDBC connection string should be of the form <code>jdbc:phoenix:&lt;ZK-QUORUM&gt;:&lt;ZK-PORT&gt;:&lt;ZK-HBASE-NODE&gt;</code>. The following is the code snippet to get a Phoenix JDBC connection object for a non secure HBase cluster.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/03/31/jdbc-connection-to-apache-phoenix/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -213,40 +247,6 @@ A system is said to be <strong>scalable</strong> if it can handle addition of re
   
     <footer>
       <a rel="full-article" href="/blog/2016/01/10/scale-in-distributed-systems/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction/">Oozie Job to Schedule HBase Major Compaction</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-12-20T12:10:23-04:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>12:10 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>HBase performs time based major compaction and in-order to prevent this resource intensive process interfere performance sensitive applications, this can be disabled. Once disabled, in order to keep the HBase store files in optimal condition, application team need to schedule regular compaction. The following details the steps which need to be followed to schedule daily compaction through Oozie.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/12/20/oozie-job-to-schedule-hbase-major-compaction/">Read on &rarr;</a>
     </footer>
   
 
