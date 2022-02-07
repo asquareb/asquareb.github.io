@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Paper | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/paper/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2022-02-07T14:44:23-08:00</updated>
+  <updated>2022-02-07T14:47:05-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -89,7 +89,7 @@ and quantify them.</li>
 
 <p>The following table provides the summary of findings on the cause of the spike in tail latency due to various factors and how they can be mitigated</p>
 
-<p><img src="/images/can/Tales-of-the-tail.png" ALIGN=”center” /></p>
+<p><img src="/images/tales-of-the-tail/Tales-of-the-tail.png" ALIGN=”center” /></p>
 
 <p> ##Reference##</p>
 
