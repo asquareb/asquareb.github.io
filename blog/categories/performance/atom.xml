@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Performance | Quick Notes]]></title>
   <link href="http://asquareb.github.io/blog/categories/performance/atom.xml" rel="self"/>
   <link href="http://asquareb.github.io/"/>
-  <updated>2022-02-07T14:47:05-08:00</updated>
+  <updated>2022-02-07T14:47:55-08:00</updated>
   <id>http://asquareb.github.io/</id>
   <author>
     <name><![CDATA[asquareb]]></name>
@@ -42,7 +42,7 @@ and quantify them.</li>
 <p> ##Reference##</p>
 
 <ul>
-<li><a href="hhttps://drkp.net/papers/latency-socc14.pdf">Hardware, OS, and Application-level Sources of Tail Latency</a></li>
+<li><a href="https://drkp.net/papers/latency-socc14.pdf">Hardware, OS, and Application-level Sources of Tail Latency</a></li>
 </ul>
 
 ]]></content>
